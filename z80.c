@@ -64,7 +64,7 @@ uint8_t *z80_get_phl_dest(z80_t *z){
 
     uint16_t addr = z->hl;
 
-    if ((z->code_prefix == 0xdd)||(z->code_prefix == 0xfd)){
+    if ((z->code_prefix == 0xDD)||(z->code_prefix == 0xFD)){
 
         uint8_t ofs = z80_fetch(z);
 
@@ -208,23 +208,76 @@ void z80_step(z80_t *z){
 
     z->opcode = z80_fetch(z);
 
+    if (z->opcode == 0xdd){   //DD Prefix (IX)
+
+        z->code_prefix = 0xdd; return;
+    }
+
+    if (z->opcode == 0xfd){   //FD Prefix (IY)
+
+        z->code_prefix = 0xfd; return;
+    }
+
+    if (z->opcode == 0xcb){   //CB Prefix (bit ops)
+
+        z->code_prefix = 0xcb; return;
+    }
+
+    if (z->opcode == 0xed){   //ED Prefix (specials)
+
+        z->code_prefix = 0xed; return;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    if (z->code_prefix == 0xcb){
+
+
+
+
+
+
+
+
+
+        z->code_prefix = 0;
+        return;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    if (z->code_prefix == 0xED){
+
+        if (z->opcode == 0x57){   // LD A,I
+
+            z->_a = z->_i;
+        }
+        else
+        if (z->opcode == 0x5F){   // LD A,R
+
+            z->_a = z->_r;
+        }
+        else
+        if (z->opcode == 0x47){   // LD I,A
+
+            z->_i = z->_a;
+        }
+        else
+        if (z->opcode == 0x4F){   // LD R,A
+
+            z->_r = z->_a;
+        }
+
+        z->code_prefix = 0;
+        return;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     //0x76 = 0b01 110 110
     if (z->opcode == 0x76){   //HALT
 
         // TODO: HALT
     }
     else
-    if (z->opcode == 0xdd){   //DD Prefix (IX)
-
-        z->code_prefix = 0xdd;
-    }
-    else
-    if (z->opcode == 0xfd){   //FD Prefix (IY)
-
-        z->code_prefix = 0xfd;
-    }
-    else
-    if ((z->opcode & 0b11000000) == 0b01000000){  // LD R,R' / LD (HL),R / LD R,(HL)
+    if ((z->opcode & 0b11000000) == 0b01000000){  // LD R,R' / LD (HL),R / LD R,(HL) / LD (IX+d),R / LD R,(IX+d) / LD (IY+d),R / LD R,(IY+d)
 
         uint8_t *pdest = z80_get_dest(z);
         if (pdest){
@@ -244,6 +297,68 @@ void z80_step(z80_t *z){
         if (pdest){
 
             *pdest = arg;
+        }
+    }
+    else
+    if (z->opcode == 0x0a){   // LD A,(BC)
+
+        z->_a = z80_read(z, z->bc);
+    }
+    else
+    if (z->opcode == 0x1a){   // LD A,(DE)
+
+        z->_a = z80_read(z, z->de);
+    }
+    else
+    if (z->opcode == 0x3a){   // LD A,(nn)
+
+        uint16_t addrl = z80_fetch(z);
+        uint16_t addrh = z80_fetch(z);
+        z->_a = z80_read(z, addrh<<8 | addrl);
+    }
+    else
+    if (z->opcode == 0x02){   // LD (BC),A
+
+        z80_write(z, z->bc, z->_a);
+    }
+    else
+    if (z->opcode == 0x12){   // LD (DE),A
+
+        z80_write(z, z->de, z->_a);
+    }
+    else
+    if (z->opcode == 0x32){   // LD (nn),A
+
+        uint16_t addrl = z80_fetch(z);
+        uint16_t addrh = z80_fetch(z);
+        z80_write(z, addrh<<8 | addrl, z->_a);
+    }
+    else
+    if ((z->opcode & 0b11001111) == 0b00000001){  // LD dd,nn / LD IX,nn / LD IY,nn
+
+        uint16_t argl = z80_fetch(z);
+        uint16_t argh = z80_fetch(z);
+        argh <<= 8;
+        argh |= argl;
+        switch(z->opcode & 0b00110000){
+            case 0b00000000:
+                z->bc = argh;
+                break;
+            case 0b00010000:
+                z->de = argh;
+                break;
+            case 0b00100000:
+                if (z->code_prefix == 0xDD)
+                    z->ix = argh;
+                else
+                if (z->code_prefix == 0xFD)
+                    z->iy = argh;
+                else
+                    z->hl = argh;
+                break;
+            case 0b00110000:
+                z->sp = argh;
+                break;
         }
     }
 
