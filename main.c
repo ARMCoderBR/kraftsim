@@ -23,7 +23,7 @@ int main (int argc, char *argv[]){
     memset(rom,0xff,ROMSZ);
     // TODO: programar a rom aqui
 
-    z80_initialize(&z,rom,ROMSZ,ram,RAMSZ);
+    z80_initialize(&z,rom,ROMSZ,ram,RAMBASE,RAMSZ);
 
     z80_reset(&z);
 

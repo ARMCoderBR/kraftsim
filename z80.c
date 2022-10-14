@@ -5,6 +5,7 @@
  *      Author: milton
  */
 
+#include <stddef.h>
 #include "z80.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -30,6 +31,7 @@ void z80_reset (z80_t *z){
     z->_i = z->_r = 0;
     z->im = 0;
     z->pc = 0;
+    z->code_prefix = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +56,74 @@ void z80_write(z80_t *z, uint16_t addr, uint8_t byte){
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t z80_fetch(z80_t *z){
 
-    return z80_read(z->pc);
+    return z80_read(z,z->pc++);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint8_t *z80_get_phl_dest(z80_t *z){
+
+    uint16_t addr = z->hl;
+
+    if ((z->code_prefix == 0xdd)||(z->code_prefix == 0xfd)){
+
+        uint8_t ofs = z80_fetch(z);
+
+        if (ofs < 128){
+
+            if (z->code_prefix == 0xdd)
+                addr = z->ix + ofs;
+            else
+                addr = z->iy + ofs;
+        }
+        else{
+            ofs ^= 0xff;
+            ofs ++;
+            if (z->code_prefix == 0xdd)
+                addr = z->ix - ofs;
+            else
+                addr = z->iy - ofs;
+        }
+    }
+
+    if ((addr >= z->rambase)&&(addr <= z->ramend))
+        return z->ram+(addr - z->rambase);
+
+    return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+const uint8_t *z80_get_phl_orig(z80_t *z){
+
+    uint16_t addr = z->hl;
+
+    if ((z->code_prefix == 0xdd)||(z->code_prefix == 0xfd)){
+
+        uint8_t ofs = z80_fetch(z);
+
+        if (ofs < 128){
+
+            if (z->code_prefix == 0xdd)
+                addr = z->ix + ofs;
+            else
+                addr = z->iy + ofs;
+        }
+        else{
+            ofs ^= 0xff;
+            ofs ++;
+            if (z->code_prefix == 0xdd)
+                addr = z->ix - ofs;
+            else
+                addr = z->iy - ofs;
+        }
+    }
+
+    if (addr < z->romsz)
+        return z->rom+addr;
+
+    if ((addr >= z->rambase)&&(addr <= z->ramend))
+        return z->ram+(addr - z->rambase);
+
+    return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,10 +150,103 @@ uint16_t z80_pop(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+uint8_t *z80_get_dest(z80_t *z){
+
+    uint8_t opc = z->opcode;
+
+    switch (opc & 0b00111000){
+
+        case 0b00000000:
+            return &z->_b;
+        case 0b00001000:
+            return &z->_c;
+        case 0b00010000:
+            return &z->_d;
+        case 0b00011000:
+            return &z->_e;
+        case 0b00100000:
+            return &z->_h;
+        case 0b00101000:
+            return &z->_l;
+        case 0b00111000:
+            return &z->_a;
+    }
+
+    // (hl)
+    return z80_get_phl_dest(z);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+const uint8_t *z80_get_orig(z80_t *z){
+
+    uint8_t opc = z->opcode;
+
+    switch (opc & 0b00000111){
+
+        case 0b00000000:
+            return &z->_b;
+        case 0b00000001:
+            return &z->_c;
+        case 0b00000010:
+            return &z->_d;
+        case 0b00000011:
+            return &z->_e;
+        case 0b00000100:
+            return &z->_h;
+        case 0b00000101:
+            return &z->_l;
+        case 0b00000111:
+            return &z->_a;
+    }
+
+    // (hl)
+    return z80_get_phl_orig(z);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void z80_step(z80_t *z){
 
-    uint8_t op1 = z80_fetch(z);
+    z->opcode = z80_fetch(z);
 
+    //0x76 = 0b01 110 110
+    if (z->opcode == 0x76){   //HALT
 
+        // TODO: HALT
+    }
+    else
+    if (z->opcode == 0xdd){   //DD Prefix (IX)
+
+        z->code_prefix = 0xdd;
+    }
+    else
+    if (z->opcode == 0xfd){   //FD Prefix (IY)
+
+        z->code_prefix = 0xfd;
+    }
+    else
+    if ((z->opcode & 0b11000000) == 0b01000000){  // LD R,R' / LD (HL),R / LD R,(HL)
+
+        uint8_t *pdest = z80_get_dest(z);
+        if (pdest){
+
+            const uint8_t *porig = z80_get_orig(z);
+            uint8_t orig = 0xFF;
+            if (porig)
+                orig = *porig;
+            *pdest = orig;
+        }
+    }
+    else
+    if ((z->opcode & 0b11000111) == 0b00000110){  // LD R,n / LD (HL),n / LD (IX+d),n / LD (IY+d),n
+
+        uint8_t *pdest = z80_get_dest(z);
+        uint8_t arg = z80_fetch(z);
+        if (pdest){
+
+            *pdest = arg;
+        }
+    }
+
+    z->code_prefix = 0;
 }
 

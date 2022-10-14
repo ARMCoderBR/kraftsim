@@ -47,7 +47,10 @@ typedef struct {
     uint8_t iff2;
     uint8_t im;
 
-    uint8_t *rom;
+    uint8_t opcode;
+    uint8_t code_prefix;
+
+    const uint8_t *rom;
     uint8_t *ram;
     uint16_t romsz;
     uint16_t rambase;
