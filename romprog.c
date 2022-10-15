@@ -13,6 +13,8 @@
 
 #include "romprog.h"
 
+#define DEBUG 0
+
 uint16_t pc;
 uint8_t bufwrite[5];
 uint8_t nbufwrite = 0;
@@ -20,6 +22,7 @@ uint8_t nbufwrite = 0;
 ////////////////////////////////////////////////////////////////////////////////
 const char *src[]={
         "org 0x0000",
+        "nop",
         "ld sp,0x4000",
         "ld a,1",
         "ld b,a",
@@ -32,7 +35,9 @@ const char *src[]={
         "ld a,(iy-2)",
         "ld a,(10000)",
         "ld de,1234",
+        "ld de,(1234)",
         "ld hl,(16396)",
+        "ld (1234),hl",
         "push ix",
         "pop de",
         "halt",
@@ -313,37 +318,11 @@ int proc_ld (char *op1, char *op2){
             else
             if (index1 == 7){   // Reg a
 
-                if (!strcmp(op2,"(BC)")){               // LD A,(BC)
-                    bufwrite[0] = 0x0a;
-                    nbufwrite = 1;
-                    return 0;
-                }
-                else
-                if (!strcmp(op2,"(DE)")){               // LD A,(DE)
-                    bufwrite[0] = 0x1a;
-                    nbufwrite = 1;
-                    return 0;
-                }
-                else
                 if (parse_immediate16_paren(op2,&dst16)>=0){   // LD A,(nn)
                     bufwrite[0] = 0x3a;
                     bufwrite[1] = dst16&0xFF;
                     bufwrite[2] = dst16>>8;
                     nbufwrite = 3;
-                    return 0;
-                }
-                else
-                if (!strcmp(op2,"I")){               // LD A,I
-                    bufwrite[0] = 0xED;
-                    bufwrite[1] = 0x57;
-                    nbufwrite = 2;
-                    return 0;
-                }
-                else
-                if (!strcmp(op2,"R")){               // LD A,R
-                    bufwrite[0] = 0xED;
-                    bufwrite[1] = 0x5F;
-                    nbufwrite = 2;
                     return 0;
                 }
             }
@@ -382,37 +361,11 @@ int proc_ld (char *op1, char *op2){
             else
             if (index2 == 7){
 
-                if (!strcmp(op1,"(BC)")){               // LD (BC),A
-                    bufwrite[0] = 0x02;
-                    nbufwrite = 1;
-                    return 0;
-                }
-                else
-                if (!strcmp(op1,"(DE)")){               // LD (DE),A
-                    bufwrite[0] = 0x12;
-                    nbufwrite = 1;
-                    return 0;
-                }
-                else
                 if (parse_immediate16_paren(op1,&dst16)>=0){   // LD (nn),A
                     bufwrite[0] = 0x32;
                     bufwrite[1] = dst16&0xFF;
                     bufwrite[2] = dst16>>8;
                     nbufwrite = 3;
-                    return 0;
-                }
-                else
-                if (!strcmp(op1,"I")){               // LD I,A
-                    bufwrite[0] = 0xED;
-                    bufwrite[1] = 0x47;
-                    nbufwrite = 2;
-                    return 0;
-                }
-                else
-                if (!strcmp(op1,"R")){               // LD R,A
-                    bufwrite[0] = 0xED;
-                    bufwrite[1] = 0x4F;
-                    nbufwrite = 2;
                     return 0;
                 }
             }
@@ -454,34 +407,6 @@ int proc_ld (char *op1, char *op2){
             }
 
             ///// LD 16 bits
-
-            if (!strcmp(op1,"SP")){
-
-                if (!strcmp(op2,"HL")){
-
-                    bufwrite[0] = 0xF9;
-                    nbufwrite = 1;
-                    return 0;
-                }
-                else
-                if (!strcmp(op2,"IX")){
-
-                    bufwrite[0] = 0xDD;
-                    bufwrite[1] = 0xF9;
-                    nbufwrite = 2;
-                    return 0;
-                }
-                else
-                if (!strcmp(op2,"IY")){
-
-                    bufwrite[0] = 0xFD;
-                    bufwrite[1] = 0xF9;
-                    nbufwrite = 2;
-                    return 0;
-                }
-
-                return -1;
-            }
 
             if (parse_immediate16(op2, &imm16) >= 0){
 
@@ -618,6 +543,168 @@ int proc_ld (char *op1, char *op2){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+const char *opcodesimple[]={
+
+        "LD A,(BC)",
+        "LD A,(DE)",
+        "LD A,I",
+        "LD A,R",
+
+        "LD (BC),A",
+        "LD (DE),A",
+        "LD I,A",
+        "LD R,A",
+
+        "LD SP,HL",
+        "LD SP,IX",
+        "LD SP,IY",
+
+        "PUSH IX",
+        "PUSH IY",
+        "POP IX",
+        "POP IY",
+
+        "EX DE,HL",
+        "EX AF,AF'",
+        "EXX",
+        "EX (SP),HL",
+        "EX (SP),IX",
+        "EX (SP),IY",
+
+        "LDI",
+        "LDIR",
+        "LDD",
+        "LDDR",
+        "CPI",
+        "CPIR",
+        "CPD",
+        "CPDR",
+
+        "ADD A,(HL)",
+        "INC (HL)",
+
+        "DAA",
+        "CPL",
+        "NEG",
+        "CCF",
+        "SCF",
+        "NOP",
+        "HALT",
+        "DI",
+        "EI",
+        "IM 0",
+        "IM 1",
+        "IM 2",
+
+        "INC IX",
+        "INC IY",
+        "DEC IX",
+        "DEC IY",
+
+        "RLCA",
+        "RLA",
+        "RRCA",
+        "RRA",
+        "RLC (HL)",
+        "RLD",
+        "RRD",
+
+        "RET",
+        "RETI",
+        "RETN",
+
+        "INI",
+        "INIR",
+        "IND",
+        "INDR",
+        "OUTI",
+        "OTIR",
+        "OUTD",
+        "OTDR",
+        NULL
+};
+
+const uint8_t opcodesimplecode[]={
+
+        0x00,0x0A,  //ld a,(bc)
+        0x00,0x1A,  //ld a,(de)
+        0xED,0x57,  //ld a,i
+        0xED,0x5F,  //ld a,r
+
+        0x00,0x02,  //ld (bc),a
+        0x00,0x12,  //ld (de),a
+        0xED,0x47,  //ld i,a
+        0xED,0x4F,  //ld r,a
+
+        0x00,0xF9,  //ld sp,hl
+        0xDD,0xF9,  //ld sp,ix
+        0xFD,0xF9,  //ld sp,iy
+
+        0xDD,0xE5,  //push ix
+        0xFD,0xE5,  //push iy
+        0xDD,0xE1,  //pop ix
+        0xFD,0xE1,  //pop iy
+
+        0x00,0xEB,  //ex de,hl
+        0x00,0x08,  //ex af,af'
+        0x00,0xD9,  //exx
+        0x00,0xE3,  //ex (sp),hl
+        0xDD,0xE3,  //ex (sp),ix
+        0xFD,0xE3,  //ex (sp),iy
+
+        0xED,0xA0,  //ldi
+        0xED,0xB0,  //ldir
+        0xED,0xA8,  //ldd
+        0xED,0xB8,  //lddr
+        0xED,0xA1,  //cpi
+        0xED,0xB1,  //cpir
+        0xED,0xA9,  //cpd
+        0xED,0xB9,  //cpdr
+
+        0x00,0x86,  //add a,(hl)
+        0x00,0x34,  //inc (hl)
+
+        0x00,0x27,  //daa
+        0x00,0x2F,  //cpl
+        0xED,0x44,  //neg
+        0x00,0x3F,  //ccf
+        0x00,0x37,  //scf
+        0x00,0x00,  //nop
+        0x00,0x76,  //halt
+        0x00,0xF3,  //di
+        0x00,0xFB,  //ei
+        0xED,0x46,  //im 0
+        0xED,0x56,  //im 1
+        0xED,0x5E,  //im 2
+
+        0xDD,0x23,  //inc ix
+        0xFD,0x23,  //inc iy
+        0xDD,0x2B,  //dec ix
+        0xFD,0x2B,  //dec iy
+
+        0x00,0x07,  //rlca
+        0x00,0x17,  //rla
+        0x00,0x0F,  //rrca
+        0x00,0x1F,  //rra
+        0xCB,0x06,  //rlc (hl)
+        0xED,0x6F,  //rld
+        0xED,0x67,  //rrd
+
+        0x00,0xC9,  //ret
+        0xED,0x4D,  //reti
+        0xED,0x45,  //retn
+
+        0xED,0xA2,  //ini
+        0xED,0xB2,  //inir
+        0xED,0xAA,  //ind
+        0xED,0xBA,  //indr
+        0xED,0xA3,  //outi
+        0xED,0xB3,  //otir
+        0xED,0xAB,  //outd
+        0xED,0xBB,  //otdr
+};
+
+////////////////////////////////////////////////////////////////////////////////
 int procline (uint8_t *rom, const char *l){
 
     char buf[80];
@@ -632,16 +719,31 @@ int procline (uint8_t *rom, const char *l){
         i++;
     }
 
+    int index = get_index(buf,opcodesimple);
+    if (index >= 0){
+
+        index *=2;
+        uint8_t prefix = opcodesimplecode[index];
+        uint8_t code = opcodesimplecode[index+1];
+        nbufwrite = 0;
+        if (prefix)
+            bufwrite[nbufwrite++] = prefix;
+        bufwrite[nbufwrite++] = code;
+        return 0;
+    }
+
     char *cmd = strtok(buf," ");
 
+#if DEBUG
     printf("cmd:%s\n",cmd);
+#endif
 
     char *op1 = strtok(NULL,",");
     char *op2 = strtok(NULL,",");
 
+#if DEBUG
     printf("op1:%s op2:%s\n",op1,op2);
-
-    nbufwrite = 0;
+#endif
 
     if (!strcmp(cmd,"ORG")){
 
@@ -665,20 +767,6 @@ int procline (uint8_t *rom, const char *l){
             return 0;
         }
         else
-        if (!strcmp(op1,"IX")){
-            bufwrite[0] = 0xDD;
-            bufwrite[1] = 0xE5;
-            nbufwrite = 2;
-            return 0;
-        }
-        else
-        if (!strcmp(op1,"IY")){
-            bufwrite[0] = 0xFD;
-            bufwrite[1] = 0xE5;
-            nbufwrite = 2;
-            return 0;
-        }
-        else
             return -1;
     }
     else
@@ -693,23 +781,8 @@ int procline (uint8_t *rom, const char *l){
             return 0;
         }
         else
-        if (!strcmp(op1,"IX")){
-            bufwrite[0] = 0xDD;
-            bufwrite[1] = 0xE1;
-            nbufwrite = 2;
-            return 0;
-        }
-        else
-        if (!strcmp(op1,"IY")){
-            bufwrite[0] = 0xFD;
-            bufwrite[1] = 0xE1;
-            nbufwrite = 2;
-            return 0;
-        }
-        else
             return -1;
     }
-
 
     return 0;
 }
