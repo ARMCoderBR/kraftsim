@@ -5,6 +5,7 @@
  *      Author: milton
  */
 
+#include <stdio.h>
 #include <malloc.h>
 #include <string.h>
 
@@ -23,11 +24,20 @@ int main (int argc, char *argv[]){
     memset(rom,0xff,ROMSZ);
     // TODO: programar a rom aqui
 
+    if (romprog(rom,ROMSZ) < 0){
+
+        printf("Error assembling!\n");
+        return -1;
+    }
+
     z80_initialize(&z,rom,ROMSZ,ram,RAMBASE,RAMSZ);
 
     z80_reset(&z);
 
+    for (;;){
 
+        z80_step(&z);
+    }
 
     return 0;
 }

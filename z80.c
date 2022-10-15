@@ -618,7 +618,7 @@ void z80_step(z80_t *z){
 
     if (z->opcode == 0x76){   //HALT
 
-        // TODO: HALT     01110110
+        --z->pc;
     }
     else
     if ((z->opcode & 0b11000000) == 0b01000000){         // LD r,r' - só registrador, sem acesso a memória
