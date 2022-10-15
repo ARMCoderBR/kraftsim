@@ -270,27 +270,26 @@ int proc_ld (char *op1, char *op2){
     uint16_t dst16;
     uint16_t imm16;
 
+    nbufwrite = 0;
+
     if (index1 >= 0){
 
         if (index2 >= 0){                       // LD r,r'
 
-            bufwrite[0] = 0b01000000 | (index1 << 3) | index2;
-            nbufwrite = 1;
+            bufwrite[nbufwrite++] = 0b01000000 | (index1 << 3) | index2;
             return 0;
         }
         else{   // index2 < 0
 
             if (parse_immediate8(op2, &imm) >= 0){  // LD r,n
 
-                bufwrite[0] = 0b00000110 | (index1 << 3);
-                bufwrite[1] = imm;
-                nbufwrite = 2;
+                bufwrite[nbufwrite++] = 0b00000110 | (index1 << 3);
+                bufwrite[nbufwrite++] = imm;
                 return 0;
             }
             else
             if (!strcmp(op2,"(HL)")){               // LD r,(HL)
-                bufwrite[0] = 0b01000110 | (index1 << 3);
-                nbufwrite = 1;
+                bufwrite[nbufwrite++] = 0b01000110 | (index1 << 3);
                 return 0;
             }
             else
@@ -298,10 +297,9 @@ int proc_ld (char *op1, char *op2){
 
                 if (parse_ixy_d(op2+3,&dst)<0)
                     return -1;
-                bufwrite[0] = 0xDD;
-                bufwrite[1] = 0b01000110 | (index1 << 3);
-                bufwrite[2] = dst;
-                nbufwrite = 3;
+                bufwrite[nbufwrite++] = 0xDD;
+                bufwrite[nbufwrite++] = 0b01000110 | (index1 << 3);
+                bufwrite[nbufwrite++] = dst;
                 return 0;
             }
             else
@@ -309,21 +307,17 @@ int proc_ld (char *op1, char *op2){
 
                 if (parse_ixy_d(op2+3,&dst)<0)
                     return -1;
-                bufwrite[0] = 0xFD;
-                bufwrite[1] = 0b01000110 | (index1 << 3);
-                bufwrite[2] = dst;
-                nbufwrite = 3;
+                bufwrite[nbufwrite++] = 0xFD;
+                bufwrite[nbufwrite++] = 0b01000110 | (index1 << 3);
+                bufwrite[nbufwrite++] = dst;
                 return 0;
             }
             else
             if (index1 == 7){   // Reg a
 
                 if (parse_immediate16_paren(op2,&dst16)>=0){   // LD A,(nn)
-                    bufwrite[0] = 0x3a;
-                    bufwrite[1] = dst16&0xFF;
-                    bufwrite[2] = dst16>>8;
-                    nbufwrite = 3;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0x3a;
+                    goto w_dst16;
                 }
             }
         }
@@ -334,39 +328,33 @@ int proc_ld (char *op1, char *op2){
         if (index2 >= 0){
 
             if (!strcmp(op1,"(HL)")){               // LD (HL),r
-                bufwrite[0] = 0b01110000 | index2;
-                nbufwrite = 1;
+                bufwrite[nbufwrite++] = 0b01110000 | index2;
                 return 0;
             }
             else
             if (!strncmp(op1,"(IX",3)){             // LD (IX+d),r
                 if (parse_ixy_d(op1+3,&dst)<0)
                     return -1;
-                bufwrite[0] = 0xDD;
-                bufwrite[1] = 0b01110000 | index2;
-                bufwrite[2] = dst;
-                nbufwrite = 3;
+                bufwrite[nbufwrite++] = 0xDD;
+                bufwrite[nbufwrite++] = 0b01110000 | index2;
+                bufwrite[nbufwrite++] = dst;
                 return 0;
             }
             else
             if (!strncmp(op1,"(IY",3)){             // LD (IY+d),r
                 if (parse_ixy_d(op1+3,&dst)<0)
                     return -1;
-                bufwrite[0] = 0xFD;
-                bufwrite[1] = 0b01110000 | index2;
-                bufwrite[2] = dst;
-                nbufwrite = 3;
+                bufwrite[nbufwrite++] = 0xFD;
+                bufwrite[nbufwrite++] = 0b01110000 | index2;
+                bufwrite[nbufwrite++] = dst;
                 return 0;
             }
             else
             if (index2 == 7){
 
                 if (parse_immediate16_paren(op1,&dst16)>=0){   // LD (nn),A
-                    bufwrite[0] = 0x32;
-                    bufwrite[1] = dst16&0xFF;
-                    bufwrite[2] = dst16>>8;
-                    nbufwrite = 3;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0x32;
+                    goto w_dst16;
                 }
             }
 
@@ -377,31 +365,26 @@ int proc_ld (char *op1, char *op2){
             if (parse_immediate8(op2, &imm) >= 0){
 
                 if (!strcmp(op1,"(HL)")){               // LD (HL),n
-                    bufwrite[0] = 0b00110110;
-                    bufwrite[1] = imm;
-                    nbufwrite = 2;
+                    bufwrite[nbufwrite++] = 0b00110110;
+                    bufwrite[nbufwrite++] = imm;
                     return 0;
                 }
                 else
                 if (!strncmp(op1,"(IX",3)){             // LD (IX+d),n
                     if (parse_ixy_d(op1+3,&dst)<0)
                         return -1;
-                    bufwrite[0] = 0xDD;
-                    bufwrite[1] = 0b00110110;
-                    bufwrite[2] = dst;
-                    bufwrite[3] = imm;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xDD;
+                    goto ld_ixiy_d_n;
                 }
                 else
                 if (!strncmp(op1,"(IY",3)){             // LD (IY+d),n
                     if (parse_ixy_d(op1+3,&dst)<0)
                         return -1;
-                    bufwrite[0] = 0xFD;
-                    bufwrite[1] = 0b00110110;
-                    bufwrite[2] = dst;
-                    bufwrite[3] = imm;
-                    nbufwrite = 4;
+                    bufwrite[nbufwrite++] = 0xFD;
+ld_ixiy_d_n:
+                    bufwrite[nbufwrite++] = 0b00110110;
+                    bufwrite[nbufwrite++] = dst;
+                    bufwrite[nbufwrite++] = imm;
                     return 0;
                 }
             }
@@ -414,30 +397,24 @@ int proc_ld (char *op1, char *op2){
 
                 if (index1 >= 0){                   // LD dd,nn
 
-                    bufwrite[0] = 0b00000001 | (index1<<4);
-                    bufwrite[1] = imm16&0xFF;
-                    bufwrite[2] = imm16>>8;
-                    nbufwrite = 3;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0b00000001 | (index1<<4);
+                    goto w_imm16;
                 }
                 else
                 if (!strcmp(op1,"IX")){             // LD IX,nn
 
-                    bufwrite[0] = 0xDD;
-                    bufwrite[1] = 0x21;
-                    bufwrite[2] = imm16&0xFF;
-                    bufwrite[3] = imm16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xDD;
+                    bufwrite[nbufwrite++] = 0x21;
+                    goto w_imm16;
                 }
                 else
                 if (!strcmp(op1,"IY")){             // LD IY,nn
 
-                    bufwrite[0] = 0xFD;
-                    bufwrite[1] = 0x21;
-                    bufwrite[2] = imm16&0xFF;
-                    bufwrite[3] = imm16>>8;
-                    nbufwrite = 4;
+                    bufwrite[nbufwrite++] = 0xFD;
+                    bufwrite[nbufwrite++] = 0x21;
+w_imm16:
+                    bufwrite[nbufwrite++] = imm16&0xFF;
+                    bufwrite[nbufwrite++] = imm16>>8;
                     return 0;
                 }
 
@@ -449,42 +426,28 @@ int proc_ld (char *op1, char *op2){
                 int index1 = get_index(op1,reg16);
 
                 if (!strcmp(op1,"HL")){             // LD HL,(nn)
-
-                    bufwrite[0] = 0x2A;
-                    bufwrite[1] = dst16&0xFF;
-                    bufwrite[2] = dst16>>8;
-                    nbufwrite = 3;
-                    return 0;
+ld_hl_nnad:
+                    bufwrite[nbufwrite++] = 0x2A;
+                    goto w_dst16;
                 }
                 else
                 if (index1 >= 0){
 
-                    bufwrite[0] = 0xED;
-                    bufwrite[1] = 0b01001011 | (index1 << 4);
-                    bufwrite[2] = dst16&0xFF;
-                    bufwrite[3] = dst16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xED;
+                    bufwrite[nbufwrite++] = 0b01001011 | (index1 << 4);
+                    goto w_dst16;
                 }
                 else
                 if (!strcmp(op1,"IX")){             // LD IX,(nn)
 
-                    bufwrite[0] = 0xDD;
-                    bufwrite[1] = 0x2A;
-                    bufwrite[2] = dst16&0xFF;
-                    bufwrite[3] = dst16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xDD;
+                    goto ld_hl_nnad;
                 }
                 else
                 if (!strcmp(op1,"IY")){             // LD IY,(nn)
 
-                    bufwrite[0] = 0xFD;
-                    bufwrite[1] = 0x2A;
-                    bufwrite[2] = dst16&0xFF;
-                    bufwrite[3] = dst16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xFD;
+                    goto ld_hl_nnad;
                 }
                 return -1;
             }
@@ -494,42 +457,31 @@ int proc_ld (char *op1, char *op2){
                 int index2 = get_index(op2,reg16);
 
                 if (!strcmp(op2,"HL")){             // LD (nn),HL
-
-                    bufwrite[0] = 0x22;
-                    bufwrite[1] = dst16&0xFF;
-                    bufwrite[2] = dst16>>8;
-                    nbufwrite = 3;
+ld_nnad_hl:
+                    bufwrite[nbufwrite++] = 0x22;
+w_dst16:
+                    bufwrite[nbufwrite++] = dst16&0xFF;
+                    bufwrite[nbufwrite++] = dst16>>8;
                     return 0;
                 }
                 else
                 if (index2 >= 0){                   // LD (nn),dd
 
-                    bufwrite[0] = 0xED;
-                    bufwrite[1] = 0b01000011 | (index2 << 4);
-                    bufwrite[2] = dst16&0xFF;
-                    bufwrite[3] = dst16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xED;
+                    bufwrite[nbufwrite++] = 0b01000011 | (index2 << 4);
+                    goto w_dst16;
                 }
                 else
                 if (!strcmp(op2,"IX")){             // LD (nn),IX
 
-                    bufwrite[0] = 0xDD;
-                    bufwrite[1] = 0x22;
-                    bufwrite[2] = dst16&0xFF;
-                    bufwrite[3] = dst16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xDD;
+                    goto ld_nnad_hl;
                 }
                 else
                 if (!strcmp(op2,"IY")){             // LD (nn),IY
 
-                    bufwrite[0] = 0xFD;
-                    bufwrite[1] = 0x22;
-                    bufwrite[2] = dst16&0xFF;
-                    bufwrite[3] = dst16>>8;
-                    nbufwrite = 4;
-                    return 0;
+                    bufwrite[nbufwrite++] = 0xFD;
+                    goto ld_nnad_hl;
                 }
                 return -1;
             }
