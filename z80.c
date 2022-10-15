@@ -338,33 +338,35 @@ void z80_exec_ed(z80_t *z){
         z80_write(z, addrh, arg >> 8);
     }
     else
-    if ((opcode == 0xA0)||(opcode == 0xB0)){            // LDI / LDIR
+    if ((opcode == 0xA0)||(opcode == 0xB0)||
+        (opcode == 0xA8)||(opcode == 0xB8)){            // LDI / LDIR / LDD / LDDR
 
-        z80_write(z, z->de++, z80_read(z, z->hl++));
+        z80_write(z, z->de, z80_read(z, z->hl));
+        if (opcode & 0x08){
+            --z->hl; --z->de;
+        }
+        else{
+            ++z->hl; ++z->de;
+        }
         z->bc--;
         z->_f &= ~(FLG_H|FLG_N|FLG_PV);
         if (z->bc){
             z->_f |= FLG_PV;
-            if (opcode == 0xB0)
+            if (opcode == 0x10)
                 z->pc -= 2;
         }
     }
     else
-    if ((opcode == 0xA8)||(opcode == 0xB8)){            // LDD / LDDR
+    if ((opcode == 0xA1)||(opcode == 0xB1)||
+        (opcode == 0xA9)||(opcode == 0xB9)){            // CPI / CPIR / CPD / CPDR
 
-        z80_write(z, z->de--, z80_read(z, z->hl--));
-        z->bc--;
-        z->_f &= ~(FLG_H|FLG_N|FLG_PV);
-        if (z->bc){
-            z->_f |= FLG_PV;
-            if (opcode == 0xB0)
-                z->pc -= 2;
+        uint8_t arg = z80_read(z, z->hl);
+        if (opcode & 0x08){
+            --z->hl;
         }
-    }
-    else
-    if ((opcode == 0xA1)||(opcode == 0xB1)){      // CPI / CPIR
-
-        uint8_t arg = z80_read(z, z->hl++);
+        else{
+            ++z->hl;
+        }
         z->bc--;
 
         z->_f &= ~(FLG_H|FLG_PV|FLG_S|FLG_Z);
@@ -382,34 +384,7 @@ void z80_exec_ed(z80_t *z){
         if (z->_a == arg)
             z->_f |= FLG_Z;
         else{
-            if (opcode == 0xB1){
-                if (z->bc)
-                    z->pc -= 2;
-            }
-        }
-    }
-    else
-    if ((opcode == 0xA9)||(opcode == 0xB9)){            // CPD / CPDR
-
-        uint8_t arg = z80_read(z, z->hl--);
-        z->bc--;
-
-        z->_f &= ~(FLG_H|FLG_PV|FLG_S|FLG_Z);
-        z->_f |= FLG_N;
-
-        if (z->bc)
-            z->_f |= FLG_PV;
-
-        if ((z->_a & 0x0F) < (arg & 0x0F))
-            z->_f |= FLG_H;
-
-        if (z->_a < arg)
-            z->_f |= FLG_S;
-        else
-        if (z->_a == arg)
-            z->_f |= FLG_Z;
-        else{
-            if (opcode == 0xB9){
+            if (opcode & 0x10){
                 if (z->bc)
                     z->pc -= 2;
             }
