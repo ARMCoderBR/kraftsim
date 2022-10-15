@@ -13,9 +13,14 @@
 #define FLG_S 0x80
 #define FLG_Z 0x40
 #define FLG_H 0x10
-#define FLG_P 0x04
+#define FLG_PV 0x04
 #define FLG_N 0x02
 #define FLG_C 0x01
+
+#define CODE_PREFIX_DD 0x08
+#define CODE_PREFIX_FD 0x04
+#define CODE_PREFIX_CB 0x02
+#define CODE_PREFIX_ED 0x01
 
 typedef union {
         struct {
@@ -61,6 +66,11 @@ typedef struct {
 #define de _de.r16
 #define hl _hl.r16
 #define af _af.r16
+
+#define bca _bca.r16
+#define dea _dea.r16
+#define hla _hla.r16
+#define afa _afa.r16
 
 #define _b _bc.r8.h
 #define _c _bc.r8.l
