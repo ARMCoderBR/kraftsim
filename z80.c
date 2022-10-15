@@ -245,7 +245,8 @@ void z80_exec_cb(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_exec_ed(z80_t *z){
 
-    if (z->opcode == 0x57){                             // LD A,I
+    uint8_t opcode = z->opcode;
+    if (opcode == 0x57){                             // LD A,I
 
         z->_a = z->_i;
         z->_f &= FLG_C;
@@ -258,7 +259,7 @@ void z80_exec_ed(z80_t *z){
             z->_f |= FLG_PV;
     }
     else
-    if (z->opcode == 0x5F){                             // LD A,R
+    if (opcode == 0x5F){                             // LD A,R
 
         z->_a = z->_r;
         z->_f &= FLG_C;
@@ -271,17 +272,17 @@ void z80_exec_ed(z80_t *z){
             z->_f |= FLG_PV;
     }
     else
-    if (z->opcode == 0x47){                             // LD I,A
+    if (opcode == 0x47){                             // LD I,A
 
         z->_i = z->_a;
     }
     else
-    if (z->opcode == 0x4F){                             // LD R,A
+    if (opcode == 0x4F){                             // LD R,A
 
         z->_r = z->_a;
     }
     else
-    if ((z->opcode & 0b11001111) == 0b01001011){        // LD dd,(nn)
+    if ((opcode & 0b11001111) == 0b01001011){        // LD dd,(nn)
 
         uint16_t addrl = z80_fetch(z);
         uint16_t addrh = z80_fetch(z);
@@ -292,7 +293,7 @@ void z80_exec_ed(z80_t *z){
         uint16_t arg2 = z80_read(z, addrh);
         arg2 <<= 8;
         arg |= arg2;
-        switch(z->opcode & 0b00110000){
+        switch(opcode & 0b00110000){
 
             case 0b00000000:
                 z->bc = arg;
@@ -309,7 +310,7 @@ void z80_exec_ed(z80_t *z){
         }
     }
     else
-    if ((z->opcode & 0b11001111) == 0b01000011){        // LD (nn),dd
+    if ((opcode & 0b11001111) == 0b01000011){        // LD (nn),dd
 
         uint16_t addrl = z80_fetch(z);
         uint16_t addrh = z80_fetch(z);
@@ -317,7 +318,7 @@ void z80_exec_ed(z80_t *z){
         addrh |= addrl;
 
         uint16_t arg;
-        switch(z->opcode & 0b00110000){
+        switch(opcode & 0b00110000){
 
             case 0b00000000:
                 arg = z->bc;
@@ -337,43 +338,31 @@ void z80_exec_ed(z80_t *z){
         z80_write(z, addrh, arg >> 8);
     }
     else
-    if (z->opcode == 0xA0){                             // LDI
+    if ((opcode == 0xA0)||(opcode == 0xB0)){            // LDI / LDIR
 
         z80_write(z, z->de++, z80_read(z, z->hl++));
         z->bc--;
         z->_f &= ~(FLG_H|FLG_N|FLG_PV);
-        if (z->bc)
+        if (z->bc){
             z->_f |= FLG_PV;
+            if (opcode == 0xB0)
+                z->pc -= 2;
+        }
     }
     else
-    if (z->opcode == 0xB0){                             // LDIR
-
-        do{
-            z80_write(z, z->de++, z80_read(z, z->hl++));
-            z->bc--;
-        } while (z->bc);
-        z->_f &= ~(FLG_H|FLG_N|FLG_PV);
-    }
-    else
-    if (z->opcode == 0xA8){                             // LDD
+    if ((opcode == 0xA8)||(opcode == 0xB8)){            // LDD / LDDR
 
         z80_write(z, z->de--, z80_read(z, z->hl--));
         z->bc--;
         z->_f &= ~(FLG_H|FLG_N|FLG_PV);
-        if (z->bc)
+        if (z->bc){
             z->_f |= FLG_PV;
+            if (opcode == 0xB0)
+                z->pc -= 2;
+        }
     }
     else
-    if (z->opcode == 0xB8){                             // LDDR
-
-        do{
-            z80_write(z, z->de--, z80_read(z, z->hl--));
-            z->bc--;
-        } while (z->bc);
-        z->_f &= ~(FLG_H|FLG_N|FLG_PV);
-    }
-    else
-    if (z->opcode == 0xA1){                             // CPI
+    if ((opcode == 0xA1)||(opcode == 0xB1)){      // CPI / CPIR
 
         uint8_t arg = z80_read(z, z->hl++);
         z->bc--;
@@ -392,35 +381,15 @@ void z80_exec_ed(z80_t *z){
         else
         if (z->_a == arg)
             z->_f |= FLG_Z;
-    }
-    else
-    if (z->opcode == 0xB1){                             // CPIR
-
-        do {
-            uint8_t arg = z80_read(z, z->hl++);
-            z->bc--;
-
-            z->_f &= ~(FLG_H|FLG_PV|FLG_S|FLG_Z);
-            z->_f |= FLG_N;
-
-            if (z->bc)
-                z->_f |= FLG_PV;
-
-            if ((z->_a & 0x0F) < (arg & 0x0F))
-                z->_f |= FLG_H;
-
-            if (z->_a < arg)
-                z->_f |= FLG_S;
-            else
-            if (z->_a == arg){
-                z->_f |= FLG_Z;
-                break;
+        else{
+            if (opcode == 0xB1){
+                if (z->bc)
+                    z->pc -= 2;
             }
-
-        } while (z->bc);
+        }
     }
     else
-    if (z->opcode == 0xA9){                             // CPD
+    if ((opcode == 0xA9)||(opcode == 0xB9)){            // CPD / CPDR
 
         uint8_t arg = z80_read(z, z->hl--);
         z->bc--;
@@ -439,34 +408,13 @@ void z80_exec_ed(z80_t *z){
         else
         if (z->_a == arg)
             z->_f |= FLG_Z;
-    }
-    else
-    if (z->opcode == 0xB9){                             // CPDR
-
-        do {
-            uint8_t arg = z80_read(z, z->hl--);
-            z->bc--;
-
-            z->_f &= ~(FLG_H|FLG_PV|FLG_S|FLG_Z);
-            z->_f |= FLG_N;
-
-            if (z->bc)
-                z->_f |= FLG_PV;
-
-            if ((z->_a & 0x0F) < (arg & 0x0F))
-                z->_f |= FLG_H;
-
-            if (z->_a < arg)
-                z->_f |= FLG_S;
-            else
-            if (z->_a == arg){
-                z->_f |= FLG_Z;
-                break;
+        else{
+            if (opcode == 0xB9){
+                if (z->bc)
+                    z->pc -= 2;
             }
-
-        } while (z->bc);
+        }
     }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
