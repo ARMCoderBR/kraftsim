@@ -260,6 +260,193 @@ int parse_ixy_d(char *op, uint8_t *dst){
     return -1;
 }
 
+/*
+                            IMP     TST
+8-Bit Load Group
+
+LD r, r'                    OK
+LD r,n                      OK
+LD r, (HL)                  OK
+LD r, (IX+d)                OK
+LD r, (IY+d)                OK
+LD (HL), r                  OK
+LD (IX+d), r                OK
+LD (IY+d), r                OK
+LD (HL), n                  OK
+LD (IX+d), n                OK
+LD (IY+d), n                OK
+LD A, (BC)                  OK
+LD A, (DE)                  OK
+LD A, (nn)                  OK
+LD (BC), A                  OK
+LD (DE), A                  OK
+LD (nn), A                  OK
+LD A, I                     OK
+LD A, R                     OK
+LD I,A                      OK
+LD R, A                     OK
+
+16-Bit Load Group
+
+LD dd, nn                   OK
+LD IX, nn                   OK
+LD IY, nn                   OK
+LD HL, (nn)                 OK
+LD dd, (nn)                 OK
+LD IX, (nn)                 OK
+LD IY, (nn)                 OK
+LD (nn), HL                 OK
+LD (nn), dd                 OK
+LD (nn), IX                 OK
+LD (nn), IY                 OK
+LD SP, HL                   OK
+LD SP, IX                   OK
+LD SP, IY                   OK
+PUSH qq                     OK
+PUSH IX                     OK
+PUSH IY                     OK
+POP qq                      OK
+POP IX                      OK
+POP IY                      OK
+
+Exchange, Block Transfer, and Search Group
+
+EX DE, HL                   OK
+EX AF, AF′                  OK
+EXX                         OK
+EX (SP), HL                 OK
+EX (SP), IX                 OK
+EX (SP), IY                 OK
+LDI                         OK
+LDIR                        OK
+LDD                         OK
+LDDR                        OK
+CPI                         OK
+CPIR                        OK
+CPD                         OK
+CPDR                        OK
+
+8-Bit Arithmetic Group
+
+ADD A, r
+ADD A, n
+ADD A, (HL)                 OK
+ADD A, (IX + d)
+ADD A, (IY + d)
+ADC A, s
+SUB s
+SBC A, s
+AND s
+OR s
+XOR s
+CP s
+INC r
+INC (HL)                    OK
+INC (IX+d)
+INC (IY+d)
+DEC m
+
+General-Purpose Arithmetic and CPU Control Groups
+
+DAA                         OK
+CPL                         OK
+NEG                         OK
+CCF                         OK
+SCF                         OK
+NOP                         OK
+HALT                        OK
+DI                          OK
+EI                          OK
+IM 0                        OK
+IM 1                        OK
+IM 2                        OK
+
+16-Bit Arithmetic Group
+
+ADD HL, ss
+ADC HL, ss
+SBC HL, ss
+ADD IX, pp
+ADD IY, rr
+INC ss
+INC IX                      OK
+INC IY                      OK
+DEC ss
+DEC IX                      OK
+DEC IY                      OK
+
+Rotate and Shift Group
+
+RLCA                        OK
+RLA                         OK
+RRCA                        OK
+RRA                         OK
+RLC r
+RLC (HL)                    OK
+RLC (IX+d)
+RLC (IY+d)
+RL m
+RRC m
+RR m
+SLA m
+SRA m
+SRL m
+RLD                         OK
+RRD                         OK
+
+Bit Set, Reset, and Test Group
+
+BIT b, r
+BIT b, (HL)
+BIT b, (IX+d)
+BIT b, (IY+d)
+SET b, r
+SET b, (HL)
+SET b, (IX+d)
+SET b, (IY+d)
+RES b, m
+
+Jump Group
+
+JP nn
+JP cc, nn
+JR e
+JR C, e
+JR NC, e
+JR Z, e
+JR NZ, e
+JP (HL)                     OK
+JP (IX)                     OK
+JP (IY)                     OK
+DJNZ, e
+
+Call and Return Group
+
+CALL nn
+CALL cc, nn
+RET                         OK
+RET cc
+RETI                        OK
+RETN                        OK
+RST p
+
+Input and Output Group
+
+IN A, (n)
+IN r (C)
+INI                         OK
+INIR                        OK
+IND                         OK
+INDR                        OK
+OUT (n), A
+OUT (C), r
+OUTI                        OK
+OTIR                        OK
+OUTD                        OK
+OTDR                        OK
+
+*/
+
 ////////////////////////////////////////////////////////////////////////////////
 int proc_ld (char *op1, char *op2){
 
@@ -431,7 +618,7 @@ ld_hl_nnad:
                     goto w_dst16;
                 }
                 else
-                if (index1 >= 0){
+                if (index1 >= 0){                   // LD dd,(nn)
 
                     bufwrite[nbufwrite++] = 0xED;
                     bufwrite[nbufwrite++] = 0b01001011 | (index1 << 4);
@@ -561,6 +748,10 @@ const char *opcodesimple[]={
         "RLD",
         "RRD",
 
+        "JP (HL)"
+        "JP (IX)"
+        "JP (IY)"
+
         "RET",
         "RETI",
         "RETN",
@@ -642,6 +833,10 @@ const uint8_t opcodesimplecode[]={
         0xED,0x6F,  //rld
         0xED,0x67,  //rrd
 
+        0x00,0xE9,  //jp (hl)
+        0xDD,0xE9,  //jp (ix)
+        0xFD,0xE9,  //jp (iy)
+
         0x00,0xC9,  //ret
         0xED,0x4D,  //reti
         0xED,0x45,  //retn
@@ -708,7 +903,7 @@ int procline (uint8_t *rom, const char *l){
         return proc_ld(op1,op2);
     }
     else
-    if (!strcmp(cmd,"PUSH")){
+    if (!strcmp(cmd,"PUSH")){       //push qq
 
         if (!op1) return -1;
         if (op2) return -1;
@@ -722,7 +917,7 @@ int procline (uint8_t *rom, const char *l){
             return -1;
     }
     else
-    if (!strcmp(cmd,"POP")){
+    if (!strcmp(cmd,"POP")){        //pop qq
 
         if (!op1) return -1;
         if (op2) return -1;
