@@ -1,0 +1,209 @@
+
+                            ASM     TST-A   RUN     TST-R
+8-Bit Load Group
+
+LD r, r'                    OK              OK
+LD r,n                      OK              OK
+LD r, (HL)                  OK              OK
+LD r, (IX+d)                OK              OK
+LD r, (IY+d)                OK              OK
+LD (HL), r                  OK              OK
+LD (IX+d), r                OK              OK
+LD (IY+d), r                OK              OK
+LD (HL), n                  OK              OK
+LD (IX+d), n                OK              OK
+LD (IY+d), n                OK              OK
+LD A, (BC)                  OK              OK
+LD A, (DE)                  OK              OK
+LD A, (nn)                  OK              OK
+LD (BC), A                  OK              OK
+LD (DE), A                  OK              OK
+LD (nn), A                  OK              OK
+LD A, I                     OK              OK
+LD A, R                     OK              OK
+LD I,A                      OK              OK
+LD R, A                     OK              OK
+
+16-Bit Load Group
+
+LD dd, nn                   OK              OK
+LD IX, nn                   OK              OK
+LD IY, nn                   OK              OK
+LD HL, (nn)                 OK              OK
+LD dd, (nn)                 OK              OK
+LD IX, (nn)                 OK              OK
+LD IY, (nn)                 OK              OK
+LD (nn), HL                 OK              OK
+LD (nn), dd                 OK              OK
+LD (nn), IX                 OK              OK
+LD (nn), IY                 OK              OK
+LD SP, HL                   OK              OK
+LD SP, IX                   OK              OK
+LD SP, IY                   OK              OK
+PUSH qq                     OK              OK
+PUSH IX                     OK              OK
+PUSH IY                     OK              OK
+POP qq                      OK              OK
+POP IX                      OK              OK
+POP IY                      OK              OK
+
+Exchange, Block Transfer, and Search Group
+
+EX DE, HL                   OK              OK
+EX AF, AF′                  OK              OK
+EXX                         OK              OK
+EX (SP), HL                 OK              OK
+EX (SP), IX                 OK              OK
+EX (SP), IY                 OK              OK
+LDI                         OK              OK
+LDIR                        OK              OK
+LDD                         OK              OK
+LDDR                        OK              OK
+CPI                         OK              OK
+CPIR                        OK              OK
+CPD                         OK              OK
+CPDR                        OK              OK
+
+8-Bit Arithmetic Group
+
+ADD A, r                                    OK
+ADD A, n                                    OK
+ADD A, (HL)                 OK              OK
+ADD A, (IX + d)                             OK
+ADD A, (IY + d)                             OK
+ADC A, s
+SUB s
+SBC A, s
+AND s
+OR s
+XOR s
+CP s
+INC r
+INC (HL)                    OK
+INC (IX+d)
+INC (IY+d)
+DEC m
+
+General-Purpose Arithmetic and CPU Control Groups
+
+DAA                         OK
+CPL                         OK
+NEG                         OK
+CCF                         OK
+SCF                         OK
+NOP                         OK
+HALT                        OK
+DI                          OK
+EI                          OK
+IM 0                        OK
+IM 1                        OK
+IM 2                        OK
+
+16-Bit Arithmetic Group
+
+ADD HL, ss
+ADC HL, ss
+SBC HL, ss
+ADD IX, pp
+ADD IY, rr
+INC ss
+INC IX                      OK
+INC IY                      OK
+DEC ss
+DEC IX                      OK
+DEC IY                      OK
+
+Rotate and Shift Group
+
+RLCA                        OK
+RLA                         OK
+RRCA                        OK
+RRA                         OK
+RLC r
+RLC (HL)                    OK
+RLC (IX+d)
+RLC (IY+d)
+RL m
+RRC m
+RR m
+SLA m
+SRA m
+SRL m
+RLD                         OK
+RRD                         OK
+
+Bit Set, Reset, and Test Group
+
+BIT b, r
+BIT b, (HL)
+BIT b, (IX+d)
+BIT b, (IY+d)
+SET b, r
+SET b, (HL)
+SET b, (IX+d)
+SET b, (IY+d)
+RES b, m
+
+Jump Group
+
+JP nn
+JP cc, nn
+JR e
+JR C, e
+JR NC, e
+JR Z, e
+JR NZ, e
+JP (HL)                     OK
+JP (IX)                     OK
+JP (IY)                     OK
+DJNZ, e
+
+Call and Return Group
+
+CALL nn
+CALL cc, nn
+RET                         OK
+RET cc
+RETI                        OK
+RETN                        OK
+RST p
+
+Input and Output Group
+
+IN A, (n)
+IN r (C)
+INI                         OK
+INIR                        OK
+IND                         OK
+INDR                        OK
+OUT (n), A
+OUT (C), r
+OUTI                        OK
+OTIR                        OK
+OUTD                        OK
+OTDR                        OK
+
+
+
+DAA ref table
+--------------------------------------------------------------------------------
+|           | C Flag  | HEX value in | H Flag | HEX value in | Number  | C flag|
+| Operation | Before  | upper digit  | Before | lower digit  | added   | After |
+|           | DAA     | (bit 7-4)    | DAA    | (bit 3-0)    | to byte | DAA   |
+|------------------------------------------------------------------------------|
+|           |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
+|   ADD     |    0    |     0-8      |   0    |     A-F      |   06    |   0   |
+|           |    0    |     0-9      |   1    |     0-3      |   06    |   0   |
+|   ADC     |    0    |     A-F      |   0    |     0-9      |   60    |   1   |
+|           |    0    |     9-F      |   0    |     A-F      |   66    |   1   |
+|   INC     |    0    |     A-F      |   1    |     0-3      |   66    |   1   |
+|           |    1    |     0-2      |   0    |     0-9      |   60    |   1   |
+|           |    1    |     0-2      |   0    |     A-F      |   66    |   1   |
+|           |    1    |     0-3      |   1    |     0-3      |   66    |   1   |
+|------------------------------------------------------------------------------|
+|   SUB     |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
+|   SBC     |    0    |     0-8      |   1    |     6-F      |   FA    |   0   |
+|   DEC     |    1    |     7-F      |   0    |     0-9      |   A0    |   1   |
+|   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
+|------------------------------------------------------------------------------|
+
