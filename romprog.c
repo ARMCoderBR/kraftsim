@@ -23,6 +23,14 @@ uint8_t nbufwrite = 0;
 const char *src[]={
         "org 0x0000",
         "nop",
+        "add a,(hl)",
+        "adc a,(ix+4)",
+        "sub b",
+        "sbc a,(iy-4)",
+        "and 32",
+        "or c",
+        "xor 33",
+        "cp d",
         "ld sp,0x4000",
         "ld a,1",
         "ld b,a",
@@ -197,6 +205,9 @@ const char *reg16[] = {"BC","DE","HL","SP",NULL};
 const char *reg16a[] = {"BC","DE","HL","AF",NULL};
 
 int get_index(char *s, const char *table[]){
+
+    if (!s)
+        return -1;
 
     int i = 0;
 
@@ -500,8 +511,8 @@ int proc_add (char *op1, char *op2){
     int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (index1 == 0x07){    // ADD A,...
 
@@ -519,14 +530,14 @@ int proc_add (char *op1, char *op2){
         }
 
         if (!strncmp(op2,"(IX",3)){             // ADD A,(IX+d)
-            if (parse_ixy_d(op1+3,&dst)<0)
+            if (parse_ixy_d(op2+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto add_a_ixiy_d;
         }
         else
         if (!strncmp(op2,"(IY",3)){             // ADD A,(IY+d)
-            if (parse_ixy_d(op1+3,&dst)<0)
+            if (parse_ixy_d(op2+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
 add_a_ixiy_d:
@@ -548,8 +559,8 @@ int proc_adc (char *op1, char *op2){
     int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (index1 == 0x07){    // ADC A,...
 
@@ -567,14 +578,14 @@ int proc_adc (char *op1, char *op2){
         }
 
         if (!strncmp(op2,"(IX",3)){             // ADC A,(IX+d)
-            if (parse_ixy_d(op1+3,&dst)<0)
+            if (parse_ixy_d(op2+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto adc_a_ixiy_d;
         }
         else
         if (!strncmp(op2,"(IY",3)){             // ADC A,(IY+d)
-            if (parse_ixy_d(op1+3,&dst)<0)
+            if (parse_ixy_d(op2+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
 adc_a_ixiy_d:
@@ -593,11 +604,11 @@ adc_a_ixiy_d:
 int proc_sub (char *op1, char *op2){
 
     int index1 = get_index(op1,reg8);
-    int index2 = get_index(op2,reg8);
+    //int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (op2 == NULL){    // SUB ...
 
@@ -607,21 +618,21 @@ int proc_sub (char *op1, char *op2){
             return 0;
         }
 
-        if (parse_immediate8(op2, &imm) >= 0){  // SUB n
+        if (parse_immediate8(op1, &imm) >= 0){  // SUB n
 
             bufwrite[nbufwrite++] = 0xD6;
             bufwrite[nbufwrite++] = imm;
             return 0;
         }
 
-        if (!strncmp(op2,"(IX",3)){             // SUB (IX+d)
+        if (!strncmp(op1,"(IX",3)){             // SUB (IX+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto adc_a_ixiy_d;
         }
         else
-        if (!strncmp(op2,"(IY",3)){             // SUB (IY+d)
+        if (!strncmp(op1,"(IY",3)){             // SUB (IY+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
@@ -644,8 +655,8 @@ int proc_sbc (char *op1, char *op2){
     int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (index1 == 7){    // SBC A,...
 
@@ -663,14 +674,14 @@ int proc_sbc (char *op1, char *op2){
         }
 
         if (!strncmp(op2,"(IX",3)){             // SBC A,(IX+d)
-            if (parse_ixy_d(op1+3,&dst)<0)
+            if (parse_ixy_d(op2+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto sbc_a_ixiy_d;
         }
         else
         if (!strncmp(op2,"(IY",3)){             // SBC A,(IY+d)
-            if (parse_ixy_d(op1+3,&dst)<0)
+            if (parse_ixy_d(op2+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
 sbc_a_ixiy_d:
@@ -689,11 +700,11 @@ sbc_a_ixiy_d:
 int proc_and (char *op1, char *op2){
 
     int index1 = get_index(op1,reg8);
-    int index2 = get_index(op2,reg8);
+    //int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (op2 == NULL){    // AND ...
 
@@ -703,21 +714,21 @@ int proc_and (char *op1, char *op2){
             return 0;
         }
 
-        if (parse_immediate8(op2, &imm) >= 0){  // AND n
+        if (parse_immediate8(op1, &imm) >= 0){  // AND n
 
             bufwrite[nbufwrite++] = 0xE6;
             bufwrite[nbufwrite++] = imm;
             return 0;
         }
 
-        if (!strncmp(op2,"(IX",3)){             // AND (IX+d)
+        if (!strncmp(op1,"(IX",3)){             // AND (IX+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto and_a_ixiy_d;
         }
         else
-        if (!strncmp(op2,"(IY",3)){             // AND (IY+d)
+        if (!strncmp(op1,"(IY",3)){             // AND (IY+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
@@ -737,11 +748,11 @@ and_a_ixiy_d:
 int proc_or (char *op1, char *op2){
 
     int index1 = get_index(op1,reg8);
-    int index2 = get_index(op2,reg8);
+    //int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (op2 == NULL){    // OR ...
 
@@ -751,21 +762,21 @@ int proc_or (char *op1, char *op2){
             return 0;
         }
 
-        if (parse_immediate8(op2, &imm) >= 0){  // OR n
+        if (parse_immediate8(op1, &imm) >= 0){  // OR n
 
             bufwrite[nbufwrite++] = 0xF6;
             bufwrite[nbufwrite++] = imm;
             return 0;
         }
 
-        if (!strncmp(op2,"(IX",3)){             // OR (IX+d)
+        if (!strncmp(op1,"(IX",3)){             // OR (IX+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto or_a_ixiy_d;
         }
         else
-        if (!strncmp(op2,"(IY",3)){             // OR (IY+d)
+        if (!strncmp(op1,"(IY",3)){             // OR (IY+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
@@ -785,11 +796,11 @@ or_a_ixiy_d:
 int proc_xor (char *op1, char *op2){
 
     int index1 = get_index(op1,reg8);
-    int index2 = get_index(op2,reg8);
+    //int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (op2 == NULL){    // XOR ...
 
@@ -799,21 +810,21 @@ int proc_xor (char *op1, char *op2){
             return 0;
         }
 
-        if (parse_immediate8(op2, &imm) >= 0){  // XOR n
+        if (parse_immediate8(op1, &imm) >= 0){  // XOR n
 
             bufwrite[nbufwrite++] = 0xEE;
             bufwrite[nbufwrite++] = imm;
             return 0;
         }
 
-        if (!strncmp(op2,"(IX",3)){             // XOR (IX+d)
+        if (!strncmp(op1,"(IX",3)){             // XOR (IX+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto xor_a_ixiy_d;
         }
         else
-        if (!strncmp(op2,"(IY",3)){             // XOR (IY+d)
+        if (!strncmp(op1,"(IY",3)){             // XOR (IY+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
@@ -833,11 +844,11 @@ xor_a_ixiy_d:
 int proc_cp (char *op1, char *op2){
 
     int index1 = get_index(op1,reg8);
-    int index2 = get_index(op2,reg8);
+    //int index2 = get_index(op2,reg8);
     uint8_t dst;
     uint8_t imm;
-    uint16_t dst16;
-    uint16_t imm16;
+
+    nbufwrite = 0;
 
     if (op2 == NULL){    // XOR ...
 
@@ -847,21 +858,21 @@ int proc_cp (char *op1, char *op2){
             return 0;
         }
 
-        if (parse_immediate8(op2, &imm) >= 0){  // CP n
+        if (parse_immediate8(op1, &imm) >= 0){  // CP n
 
             bufwrite[nbufwrite++] = 0xFE;
             bufwrite[nbufwrite++] = imm;
             return 0;
         }
 
-        if (!strncmp(op2,"(IX",3)){             // CP (IX+d)
+        if (!strncmp(op1,"(IX",3)){             // CP (IX+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xDD;
             goto xor_a_ixiy_d;
         }
         else
-        if (!strncmp(op2,"(IY",3)){             // CP (IY+d)
+        if (!strncmp(op1,"(IY",3)){             // CP (IY+d)
             if (parse_ixy_d(op1+3,&dst)<0)
                 return -1;
             bufwrite[nbufwrite++] = 0xFD;
@@ -1126,6 +1137,11 @@ int procline (uint8_t *rom, const char *l){
     if (!strcmp(cmd,"SUB")){
 
         return proc_sub(op1,op2);
+    }
+    else
+    if (!strcmp(cmd,"SBC")){
+
+        return proc_sbc(op1,op2);
     }
     else
     if (!strcmp(cmd,"AND")){
