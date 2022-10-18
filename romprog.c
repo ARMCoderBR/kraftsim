@@ -985,8 +985,17 @@ const char *opcodesimple[]={
         "LD SP,IX",
         "LD SP,IY",
 
+        "PUSH BC",
+        "PUSH DE",
+        "PUSH HL",
+        "PUSH AF",
         "PUSH IX",
         "PUSH IY",
+
+        "POP BC",
+        "POP DE",
+        "POP HL",
+        "POP AF",
         "POP IX",
         "POP IY",
 
@@ -1078,8 +1087,17 @@ const uint8_t opcodesimplecode[]={
         0xDD,0xF9,  //ld sp,ix
         0xFD,0xF9,  //ld sp,iy
 
+        0x00,0xC5,  //push bc
+        0x00,0xD5,  //push de
+        0x00,0xE5,  //push hl
+        0x00,0xF5,  //push af
         0xDD,0xE5,  //push ix
         0xFD,0xE5,  //push iy
+
+        0x00,0xC1,  //pop bc
+        0x00,0xD1,  //pop de
+        0x00,0xE1,  //pop hl
+        0x00,0xF1,  //pop af
         0xDD,0xE1,  //pop ix
         0xFD,0xE1,  //pop iy
 
@@ -1254,34 +1272,6 @@ int procline (uint8_t *rom, const char *l){
     if (!strcmp(cmd,"DEC")){
 
         return proc_dec(op1,op2);
-    }
-    else
-    if (!strcmp(cmd,"PUSH")){       //push qq
-
-        if (!op1) return -1;
-        if (op2) return -1;
-        int index = get_index(op1,reg16a);
-        if (index >= 0){
-            bufwrite[0] = 0b11000101 | (index << 4);
-            nbufwrite = 1;
-            return 0;
-        }
-        else
-            return -1;
-    }
-    else
-    if (!strcmp(cmd,"POP")){        //pop qq
-
-        if (!op1) return -1;
-        if (op2) return -1;
-        int index = get_index(op1,reg16a);
-        if (index >= 0){
-            bufwrite[0] = 0b11000001 | (index << 4);
-            nbufwrite = 1;
-            return 0;
-        }
-        else
-            return -1;
     }
 
     return 0;
