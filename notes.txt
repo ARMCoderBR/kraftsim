@@ -71,17 +71,41 @@ ADD A, n                    OK              OK
 ADD A, (HL)                 OK              OK
 ADD A, (IX + d)             OK              OK
 ADD A, (IY + d)             OK              OK
-ADC A, r
-ADC A, n
+ADC A, r                    OK
+ADC A, n                    OK
 ADC A, (HL)                 OK
-ADC A, (IX+d)
-ADC A, (IY+d)
-SUB s
-SBC A, s
-AND s
-OR s
-XOR s
-CP s
+ADC A, (IX+d)               OK
+ADC A, (IY+d)               OK
+SUB r                       OK
+SUB n                       OK
+SUB (HL)                    OK
+SUB (IX+d)                  OK
+SUB (IY+d)                  OK
+SBC A, r                    OK
+SBC A, n                    OK
+SBC A, (HL)                 OK
+SBC A, (IX+d)               OK
+SBC A, (IY+d)               OK
+AND r                       OK
+AND n                       OK
+AND (HL)                    OK
+AND (IX+d)                  OK
+AND (IY+d)                  OK
+OR r                        OK
+OR n                        OK
+OR (HL)                     OK
+OR (IX+d)                   OK
+OR (IY+d)                   OK
+XOR r                       OK
+XOR n                       OK
+XOR (HL)                    OK
+XOR (IX+d)                  OK
+XOR (IY+d)                  OK
+CP r                        OK
+CP n                        OK
+CP (HL)                     OK
+CP (IX+d)                   OK
+CP (IY+d)                   OK
 INC r
 INC (HL)                    OK
 INC (IX+d)
