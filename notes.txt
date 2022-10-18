@@ -106,11 +106,14 @@ CP n                        OK
 CP (HL)                     OK
 CP (IX+d)                   OK
 CP (IY+d)                   OK
-INC r
+INC r                       OK
 INC (HL)                    OK
-INC (IX+d)
-INC (IY+d)
-DEC m
+INC (IX+d)                  OK
+INC (IY+d)                  OK
+DEC r                       OK
+DEC (HL)                    OK
+DEC (IX+d)                  OK
+DEC (IY+d)                  OK
 
 General-Purpose Arithmetic and CPU Control Groups
 

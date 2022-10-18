@@ -889,6 +889,86 @@ xor_a_ixiy_d:
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+int proc_inc (char *op1, char *op2){
+
+    int index1 = get_index(op1,reg8);
+    //int index2 = get_index(op2,reg8);
+    uint8_t dst;
+
+    nbufwrite = 0;
+
+    if (op2 == NULL){    // INC ...
+
+        if (index1 >= 0){                       // INC r
+
+            bufwrite[nbufwrite++] = 0b00000100 | (index1 << 3);
+            return 0;
+        }
+
+        if (!strncmp(op1,"(IX",3)){             // INC (IX+d)
+            if (parse_ixy_d(op1+3,&dst)<0)
+                return -1;
+            bufwrite[nbufwrite++] = 0xDD;
+            goto inc_ixiy_d;
+        }
+        else
+        if (!strncmp(op1,"(IY",3)){             // INC (IY+d)
+            if (parse_ixy_d(op1+3,&dst)<0)
+                return -1;
+            bufwrite[nbufwrite++] = 0xFD;
+inc_ixiy_d:
+            bufwrite[nbufwrite++] = 0x34;
+            bufwrite[nbufwrite++] = dst;
+            return 0;
+        }
+
+        return -1;
+    }
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int proc_dec (char *op1, char *op2){
+
+    int index1 = get_index(op1,reg8);
+    //int index2 = get_index(op2,reg8);
+    uint8_t dst;
+
+    nbufwrite = 0;
+
+    if (op2 == NULL){    // DEC ...
+
+        if (index1 >= 0){                       // DEC r
+
+            bufwrite[nbufwrite++] = 0b00000101 | (index1 << 3);
+            return 0;
+        }
+
+        if (!strncmp(op1,"(IX",3)){             // DEC (IX+d)
+            if (parse_ixy_d(op1+3,&dst)<0)
+                return -1;
+            bufwrite[nbufwrite++] = 0xDD;
+            goto inc_ixiy_d;
+        }
+        else
+        if (!strncmp(op1,"(IY",3)){             // DEC (IY+d)
+            if (parse_ixy_d(op1+3,&dst)<0)
+                return -1;
+            bufwrite[nbufwrite++] = 0xFD;
+inc_ixiy_d:
+            bufwrite[nbufwrite++] = 0x35;
+            bufwrite[nbufwrite++] = dst;
+            return 0;
+        }
+
+        return -1;
+    }
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 const char *opcodesimple[]={
 
         "LD A,(BC)",
@@ -935,6 +1015,7 @@ const char *opcodesimple[]={
         "XOR (HL)",
         "CP (HL)",
         "INC (HL)",
+        "DEC (HL)",
 
         "DAA",
         "CPL",
@@ -1027,6 +1108,7 @@ const uint8_t opcodesimplecode[]={
         0x00,0xAE,  //xor (hl)
         0x00,0xBE,  //cp (hl)
         0x00,0x34,  //inc (hl)
+        0x00,0x35,  //dec (hl)
 
         0x00,0x27,  //daa
         0x00,0x2F,  //cpl
@@ -1162,6 +1244,16 @@ int procline (uint8_t *rom, const char *l){
     if (!strcmp(cmd,"CP")){
 
         return proc_cp(op1,op2);
+    }
+    else
+    if (!strcmp(cmd,"INC")){
+
+        return proc_inc(op1,op2);
+    }
+    else
+    if (!strcmp(cmd,"DEC")){
+
+        return proc_dec(op1,op2);
     }
     else
     if (!strcmp(cmd,"PUSH")){       //push qq
