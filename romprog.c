@@ -260,7 +260,6 @@ int parse_ixy_d(char *op, uint8_t *dst){
     return -1;
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 int proc_ld (char *op1, char *op2){
 
@@ -491,6 +490,62 @@ w_dst16:
         }
     }
 
+    return 0;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+int proc_add (char *op1, char *op2){
+
+    int index1 = get_index(op1,reg8);
+    int index2 = get_index(op2,reg8);
+    uint8_t dst;
+    uint8_t imm;
+    uint16_t dst16;
+    uint16_t imm16;
+
+    if (index1 == 0x07){    // ADD A,...
+
+        if (index2 >= 0){                       // ADD A,r
+
+            bufwrite[nbufwrite++] = 0b10000000 | index2;
+            return 0;
+        }
+
+        if (parse_immediate8(op2, &imm) >= 0){  // ADD A,n
+
+            bufwrite[nbufwrite++] = 0xC6;
+            bufwrite[nbufwrite++] = imm;
+            return 0;
+        }
+
+        if (!strncmp(op2,"(IX",3)){             // ADD A,(IX+d)
+            if (parse_ixy_d(op1+3,&dst)<0)
+                return -1;
+            bufwrite[nbufwrite++] = 0xDD;
+            goto add_a_ixiy_d;
+        }
+        else
+        if (!strncmp(op2,"(IY",3)){             // ADD A,(IY+d)
+            if (parse_ixy_d(op1+3,&dst)<0)
+                return -1;
+            bufwrite[nbufwrite++] = 0xFD;
+add_a_ixiy_d:
+            bufwrite[nbufwrite++] = 0x86;
+            bufwrite[nbufwrite++] = dst;
+            return 0;
+        }
+    }
+
+
+
+
+
+
+
+        return -1;
+    }
 
     return 0;
 }
@@ -534,6 +589,7 @@ const char *opcodesimple[]={
         "CPDR",
 
         "ADD A,(HL)",
+        "ADC A,(HL)",
         "INC (HL)",
 
         "DAA",
@@ -619,6 +675,7 @@ const uint8_t opcodesimplecode[]={
         0xED,0xB9,  //cpdr
 
         0x00,0x86,  //add a,(hl)
+        0x00,0x8E,  //adc a,(hl)
         0x00,0x34,  //inc (hl)
 
         0x00,0x27,  //daa
@@ -715,6 +772,11 @@ int procline (uint8_t *rom, const char *l){
     if (!strcmp(cmd,"LD")){
 
         return proc_ld(op1,op2);
+    }
+    else
+    if (!strcmp(cmd,"ADD")){
+
+        return proc_add(op1,op2);
     }
     else
     if (!strcmp(cmd,"PUSH")){       //push qq

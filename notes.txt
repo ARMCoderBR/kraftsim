@@ -66,12 +66,16 @@ CPDR                        OK              OK
 
 8-Bit Arithmetic Group
 
-ADD A, r                                    OK
-ADD A, n                                    OK
+ADD A, r                    OK              OK
+ADD A, n                    OK              OK
 ADD A, (HL)                 OK              OK
-ADD A, (IX + d)                             OK
-ADD A, (IY + d)                             OK
-ADC A, s
+ADD A, (IX + d)             OK              OK
+ADD A, (IY + d)             OK              OK
+ADC A, r
+ADC A, n
+ADC A, (HL)                 OK
+ADC A, (IX+d)
+ADC A, (IY+d)
 SUB s
 SBC A, s
 AND s
