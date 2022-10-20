@@ -19,6 +19,8 @@ uint16_t pc;
 uint8_t bufwrite[5];
 uint8_t nbufwrite = 0;
 
+// z80asm test.asm -o - | xxd -ps -c 16
+
 ////////////////////////////////////////////////////////////////////////////////
 const char *src[]={
         "org 0x0000",

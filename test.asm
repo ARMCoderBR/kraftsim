@@ -1,0 +1,15 @@
+org 0x2000
+
+ld sp,0x4000
+ld hl,0x2000
+ld (hl),0
+halt
+
+ds 0x2100 - $,0xFF
+
+org 0x2100
+
+ld hl,0x2000
+inc (hl)
+halt
+
