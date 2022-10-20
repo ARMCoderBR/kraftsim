@@ -217,14 +217,19 @@ const uint8_t *z80_get_orig(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void z80_add_acc (z80_t *z, uint8_t arg, uint8_t add_cy){
+void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 
     if (add_cy)
         if (z->_f & FLG_C)
             arg++;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_N|FLG_C);
-    uint8_t sum = z->_a + arg;
+    uint16_t sum = z->_a + arg;
+
+    if (sum & 0xFF00){
+        z->_f |= FLG_C;
+        sum &= 0xFF;
+    }
 
     if (sum & 0x80)
         z->_f |= FLG_S;
@@ -242,6 +247,29 @@ void z80_add_acc (z80_t *z, uint8_t arg, uint8_t add_cy){
     }
 
     z->_a = sum;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
+
+    uint8_t borrow = 0;
+    if (z->_a < arg)
+        borrow = 1;
+
+    if (sub_cy)
+        if (z->_f & FLG_C)
+            arg++;
+
+    arg ^= 0xFF; arg++;         // Neg
+
+    z80_add_acc (z, arg, 0);    // Soma com o negativo
+
+    z->_f |= FLG_N;             // Indica op. subtração
+
+    if (borrow)
+        z->_f |= FLG_C;
+    else
+        z->_f &= ~FLG_C;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -644,6 +672,30 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    if (z->opcode == 0x96){                             // SUB (HL) / SUB IX+d) / SUB (IY+d)
+
+        uint8_t arg;
+        const uint8_t *parg = z80_get_phl_orig(z);
+        if (parg != NULL)
+            arg = *parg;
+        else
+            arg = 0xff;
+        z80_sub_acc(z, arg, 0);
+        goto endxy;
+    }
+
+    if (z->opcode == 0x9E){                             // SBC A,(HL) / SBC A,(IX+d) / SBC A,(IY+d)
+
+        uint8_t arg;
+        const uint8_t *parg = z80_get_phl_orig(z);
+        if (parg != NULL)
+            arg = *parg;
+        else
+            arg = 0xff;
+        z80_sub_acc(z, arg, 1);
+        goto endxy;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -821,6 +873,56 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+
+
+    if ((z->opcode & 0b11110000) == 0b10010000){        // SUB r / SBC A,r
+
+        uint8_t arg;
+        switch(z->opcode & 0b00000111){
+
+            case 0b00000000:
+                arg = z->_b;
+                break;
+            case 0b00000001:
+                arg = z->_c;
+                break;
+            case 0b00000010:
+                arg = z->_d;
+                break;
+            case 0b00000011:
+                arg = z->_e;
+                break;
+            case 0b00000100:
+                arg = z->_h;
+                break;
+            case 0b00000101:
+                arg = z->_l;
+                break;
+//            case 0b00000110:
+//                break;
+            case 0b00000111:
+                arg = z->_a;
+                break;
+        }
+
+        z80_sub_acc(z, arg, z->opcode & 0x08 ? 1:0);    // Seleciona SUB ou SBC
+        return;
+    }
+
+    if (z->opcode == 0xD6){                             // SUB n
+
+        uint8_t arg = z80_fetch(z);
+        z80_sub_acc(z, arg, 0);
+        return;
+    }
+
+    if (z->opcode == 0xDE){                             // SBC A,n
+
+        uint8_t arg = z80_fetch(z);
+        z80_sub_acc(z, arg, 1);
+        return;
+    }
+
     if (z->opcode == 0xEB){                             // EX DE,HL
 
         uint16_t temp = z->hl;
@@ -901,9 +1003,9 @@ void z80_dump(z80_t *z){
 #define FLG_C 0x01
 
     if (z->_f & FLG_S)
-        printf("SN ");
+        printf("NEG ");
     else
-        printf("SP ");
+        printf("POS ");
 
     if (z->_f & FLG_Z)
         printf("Z  ");
@@ -911,22 +1013,22 @@ void z80_dump(z80_t *z){
         printf("NZ ");
 
     if (z->_f & FLG_H)
-        printf("HC ");
+        printf("H  ");
     else
-        printf(".  ");
+        printf("NH ");
 
     if (z->_f & FLG_PV)
-        printf("PV ");
+        printf("PE OV ");
     else
-        printf(".  ");
+        printf("PO NV ");
 
     if (z->_f & FLG_N)
-        printf("SB ");
+        printf("SUB ");
     else
-        printf("AD ");
+        printf("ADD ");
 
     if (z->_f & FLG_C)
-        printf("C  ");
+        printf("CY ");
     else
         printf("NC ");
 
