@@ -431,34 +431,35 @@ void z80_exec_ed(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_step(z80_t *z){
 
+rescan:
     z->opcode = z80_fetch(z);
 
     if (z->opcode == 0xDD){                             //DD Prefix (IX)
 
         z->code_prefix |= CODE_PREFIX_DD;
         z->code_prefix &= ~CODE_PREFIX_FD;
-        return;
+        goto rescan;
     }
 
     if (z->opcode == 0xFD){                             //FD Prefix (IY)
 
         z->code_prefix |= CODE_PREFIX_FD;
         z->code_prefix &= ~CODE_PREFIX_DD;
-        return;
+        goto rescan;
     }
 
     if (z->opcode == 0xCB){                             //CB Prefix (bit ops)
 
         z->code_prefix |= CODE_PREFIX_CB;
         z->code_prefix &= ~CODE_PREFIX_ED;
-        return;
+        goto rescan;
     }
 
     if (z->opcode == 0xED){                             //ED Prefix (specials)
 
         z->code_prefix |= CODE_PREFIX_ED;
         z->code_prefix &= ~CODE_PREFIX_CB;
-        return;
+        goto rescan;
     }
 
     z80_refresh_up(z);
@@ -522,10 +523,10 @@ endxy:  z->code_prefix = 0;
         argh <<= 8;
         argh |= argl;
 
-        if (z->code_prefix == 0xDD)
+        if (z->code_prefix & CODE_PREFIX_DD)
             z->ix = argh;
         else
-        if (z->code_prefix == 0xFD)
+        if (z->code_prefix & CODE_PREFIX_FD)
             z->iy = argh;
         else
             z->hl = argh;
@@ -672,7 +673,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
-    if (z->opcode == 0x96){                             // SUB (HL) / SUB IX+d) / SUB (IY+d)
+    if (z->opcode == 0x96){                             // SUB (HL) / SUB (IX+d) / SUB (IY+d)
 
         uint8_t arg;
         const uint8_t *parg = z80_get_phl_orig(z);
@@ -992,8 +993,8 @@ endxy:  z->code_prefix = 0;
 
 void z80_dump(z80_t *z){
 
-    printf("\nPC:%04X  SP:%04X  BC:%04x  DE:%04X  HL:%04X  AF:%04X   FLAGS:",
-            z->pc,z->sp,z->bc,z->de,z->hl,z->af);
+    printf("\nPC:%04X  SP:%04X  BC:%04x  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X   FLAGS:",
+            z->pc,z->sp,z->bc,z->de,z->hl,z->ix,z->iy,z->af);
 
 #define FLG_S 0x80
 #define FLG_Z 0x40

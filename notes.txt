@@ -2,8 +2,8 @@
                             ASM     TST-A   RUN     TST-R
 8-Bit Load Group
 
-LD r, r'                    OK              OK
-LD r,n                      OK              OK
+LD r, r'                    OK              OK      OK
+LD r,n                      OK              OK      OK
 LD r, (HL)                  OK              OK
 LD r, (IX+d)                OK              OK
 LD r, (IY+d)                OK              OK
@@ -76,11 +76,11 @@ ADC A, n                    OK              OK
 ADC A, (HL)                 OK              OK
 ADC A, (IX+d)               OK              OK
 ADC A, (IY+d)               OK              OK
-SUB r                       OK
-SUB n                       OK
-SUB (HL)                    OK
-SUB (IX+d)                  OK
-SUB (IY+d)                  OK
+SUB r                       OK              OK
+SUB n                       OK              OK
+SUB (HL)                    OK              OK
+SUB (IX+d)                  OK              OK
+SUB (IY+d)                  OK              OK
 SBC A, r                    OK
 SBC A, n                    OK
 SBC A, (HL)                 OK
