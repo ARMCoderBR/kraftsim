@@ -697,6 +697,30 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    if (z->opcode == 0x23){                             // INC HL / INC IX / INC IY
+
+        if (z->code_prefix & CODE_PREFIX_DD)
+            z->ix++;
+        else
+        if (z->code_prefix & CODE_PREFIX_FD)
+            z->iy++;
+        else
+            z->hl++;
+        goto endxy;
+    }
+
+    if (z->opcode == 0x2B){                             // DEC HL / DEC IX / DEC IY
+
+        if (z->code_prefix & CODE_PREFIX_DD)
+            z->ix--;
+        else
+        if (z->code_prefix & CODE_PREFIX_FD)
+            z->iy--;
+        else
+            z->hl--;
+        goto endxy;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -987,6 +1011,34 @@ endxy:  z->code_prefix = 0;
         }
         return;
     }
+
+    if ((z->opcode & 0b11000111) == 0b00000011){        // INC ss / DEC ss
+
+        switch(z->opcode){
+            case 0b00000011:
+                z->bc++;
+                break;
+            case 0b00010011:
+                z->de++;
+                break;
+            case 0b00110011:
+                z->sp++;
+                break;
+            case 0b00001011:
+                z->bc--;
+                break;
+            case 0b00011011:
+                z->de--;
+                break;
+            case 0b00111011:
+                z->sp--;
+                break;
+        }
+        return;
+    }
+
+
+
 
     printf("Unk. Opcode\n");
 }

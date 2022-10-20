@@ -5,19 +5,16 @@ ld hl,data
 ld ix,data2
 ld iy,data3
 
-ld a,(hl)
-inc hl
-ld b,(hl)
-inc hl
-ld c,(hl)
-inc hl
-ld d,(hl)
-inc hl
-ld e,(hl)
-inc hl
-ld h,(hl)
-ld hl,data
-ld l,(hl)
+ld a,(ix+0)
+ld b,(ix+1)
+inc ix
+ld c,(ix-1)
+
+ld d,(iy+0)
+ld e,(iy+1)
+inc iy
+ld h,(iy-1)
+
 halt
 
 data:
@@ -28,6 +25,7 @@ data2:
 
 data3:
     db 0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7
+
 ;ld sp,0x4000
 ;ld hl,0x2000
 ;ld (hl),0
@@ -45,4 +43,4 @@ data3:
 ;ld a,-128
 ;sub 1
 ;sub 1
-halt
+;halt

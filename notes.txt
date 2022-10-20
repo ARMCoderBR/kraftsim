@@ -4,9 +4,9 @@
 
 LD r, r'                    OK              OK      OK
 LD r,n                      OK              OK      OK
-LD r, (HL)                  OK              OK
-LD r, (IX+d)                OK              OK
-LD r, (IY+d)                OK              OK
+LD r, (HL)                  OK              OK      OK
+LD r, (IX+d)                OK              OK      OK
+LD r, (IY+d)                OK              OK      OK
 LD (HL), r                  OK              OK
 LD (IX+d), r                OK              OK
 LD (IY+d), r                OK              OK
@@ -137,12 +137,12 @@ ADC HL, ss
 SBC HL, ss
 ADD IX, pp
 ADD IY, rr
-INC ss
-INC IX                      OK
-INC IY                      OK
-DEC ss
-DEC IX                      OK
-DEC IY                      OK
+INC ss                                      OK      OK
+INC IX                      OK              OK      OK
+INC IY                      OK              OK      OK
+DEC ss                                      OK      OK
+DEC IX                      OK              OK      OK
+DEC IY                      OK              OK      OK
 
 Rotate and Shift Group
 
