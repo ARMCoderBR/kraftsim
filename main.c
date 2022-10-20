@@ -14,6 +14,7 @@
 #define RAMBASE 8192
 
 #include "z80.h"
+#include "romprog.h"
 
 int main (int argc, char *argv[]){
 
@@ -30,12 +31,15 @@ int main (int argc, char *argv[]){
         return -1;
     }
 
+    printf("\n=== RUN ===\n\n");
+
     z80_initialize(&z,rom,ROMSZ,ram,RAMBASE,RAMSZ);
 
     z80_reset(&z);
 
-    for (;;){
+    for (;!z.halted;){
 
+        z80_dump(&z);
         z80_step(&z);
     }
 

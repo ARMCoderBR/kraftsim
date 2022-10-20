@@ -6,6 +6,8 @@
  */
 
 #include <stddef.h>
+#include <stdio.h>
+
 #include "z80.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +67,9 @@ void z80_refresh_up(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t z80_fetch(z80_t *z){
 
-    return z80_read(z,z->pc++);
+    uint8_t b = z80_read(z,z->pc++);
+    printf("%02X ",b);
+    return b;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -452,8 +456,11 @@ void z80_step(z80_t *z){
         if (porig)
             arg = *porig;
         *z80_get_dest(z) = arg;
+
+endxy:  z->code_prefix = 0;
+        return;
     }
-    else
+
     if ( ((z->opcode & 0b11111000) == 0b01110000) &&
          ((z->opcode & 0b00000111) != 0b00000110) ){    // LD (HL),r / LD (IX+d),r / LD (IY+d),r
 
@@ -462,8 +469,9 @@ void z80_step(z80_t *z){
 
             *pdest = *z80_get_orig(z);
         }
+        goto endxy;
     }
-    else
+
     if (z->opcode == 0x36){                             // LD (HL),n / LD (IX+d),n / LD (IY+d),n
 
         uint8_t *pdest = z80_get_dest(z);
@@ -472,8 +480,9 @@ void z80_step(z80_t *z){
 
             *pdest = arg;
         }
+        goto endxy;
     }
-    else
+
     if (z->opcode == 0x21){                             // LD HL,nn / LD IX,nn / LD IY,nn
 
         uint16_t argl = z80_fetch(z);
@@ -488,8 +497,10 @@ void z80_step(z80_t *z){
             z->iy = argh;
         else
             z->hl = argh;
+
+        goto endxy;
     }
-    else
+
     if (z->opcode == 0x2A){                             // LD HL,(nn) / LD IX,(nn) / LD IY,(nn)
 
         uint16_t addrl = z80_fetch(z);
@@ -509,8 +520,10 @@ void z80_step(z80_t *z){
             z->iy = arg;
         else
             z->hl = arg;
+
+        goto endxy;
     }
-    else
+
     if (z->opcode == 0x22){                             // LD (nn),HL / LD (nn),IX / LD (nn),IY
 
         uint16_t addrl = z80_fetch(z);
@@ -529,8 +542,10 @@ void z80_step(z80_t *z){
 
         z80_write(z, addrh++, arg & 0x0F);
         z80_write(z, addrh, arg >> 8);
+
+        goto endxy;
     }
-    else
+
     if (z->opcode == 0xF9){                             // LD SP,HL / LD SP,IX / LD SP,IY
 
         uint16_t arg;
@@ -543,8 +558,10 @@ void z80_step(z80_t *z){
             arg = z->hl;
 
         z->sp = arg;
+
+        goto endxy;
     }
-    else
+
     if (z->opcode == 0xE5){                             // PUSH HL / PUSH IX / PUSH IY
 
         uint16_t arg;
@@ -557,6 +574,8 @@ void z80_step(z80_t *z){
             arg = z->hl;
 
         z80_push(z, arg);
+
+        goto endxy;
     }
     else
     if (z->opcode == 0xE1){                             // POP HL / POP IX / POP IY
@@ -570,6 +589,8 @@ void z80_step(z80_t *z){
             z->iy = arg;
         else
             z->hl = arg;
+
+        goto endxy;
     }
     else
     if (z->opcode == 0xE3){                             // EX (SP),HL / EX (SP),IX / EX (SP),IY
@@ -592,6 +613,7 @@ void z80_step(z80_t *z){
         }
 
         z80_push(z, arg2);
+        goto endxy;
     }
     else
     if (z->opcode == 0x86){                             // ADD A,(HL) / ADD A,(IX+d) / ADD A,(IY+d)
@@ -603,6 +625,7 @@ void z80_step(z80_t *z){
         else
             arg = 0xff;
         z80_add_acc(z, arg);
+        goto endxy;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -610,8 +633,7 @@ void z80_step(z80_t *z){
     ////////////////////////////////////////////////////////////////////////////
     if (z->code_prefix){    // Elimina códigos DD e FD inválidos
 
-        z->code_prefix = 0;
-        return;
+        goto endxy;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -619,6 +641,7 @@ void z80_step(z80_t *z){
     if (z->opcode == 0x76){   //HALT
 
         --z->pc;
+        z->halted = 1;
     }
     else
     if ((z->opcode & 0b11000000) == 0b01000000){         // LD r,r' - só registrador, sem acesso a memória
@@ -815,4 +838,49 @@ void z80_step(z80_t *z){
                 break;
         }
     }
+}
+
+void z80_dump(z80_t *z){
+
+    printf("\nPC:%04X  SP:%04X  BC:%04x  DE:%04X  HL:%04X  AF:%04X   FLAGS:",
+            z->pc,z->sp,z->bc,z->de,z->hl,z->af);
+
+#define FLG_S 0x80
+#define FLG_Z 0x40
+#define FLG_H 0x10
+#define FLG_PV 0x04
+#define FLG_N 0x02
+#define FLG_C 0x01
+
+    if (z->_f & FLG_S)
+        printf("SN ");
+    else
+        printf("SP ");
+
+    if (z->_f & FLG_Z)
+        printf("Z  ");
+    else
+        printf("NZ ");
+
+    if (z->_f & FLG_H)
+        printf("HC ");
+    else
+        printf(".  ");
+
+    if (z->_f & FLG_PV)
+        printf("PV ");
+    else
+        printf(".  ");
+
+    if (z->_f & FLG_N)
+        printf("SB ");
+    else
+        printf("AD ");
+
+    if (z->_f & FLG_C)
+        printf("C  ");
+    else
+        printf("NC ");
+
+    printf("\n");
 }

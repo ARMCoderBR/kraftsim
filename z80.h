@@ -55,6 +55,8 @@ typedef struct {
     uint8_t opcode;
     uint8_t code_prefix;
 
+    uint8_t halted;
+
     const uint8_t *rom;
     uint8_t *ram;
     uint16_t romsz;
@@ -92,6 +94,6 @@ typedef struct {
 void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz);
 void z80_reset (z80_t *z);
 void z80_step(z80_t *z);
-
+void z80_dump(z80_t *z);
 
 #endif /* Z80_H_ */

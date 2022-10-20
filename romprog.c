@@ -23,7 +23,13 @@ uint8_t nbufwrite = 0;
 const char *src[]={
         "org 0x0000",
         "nop",
+        "ld sp,0x4000",
+        "ld a,1",
+        "ld hl,0x2000",
+        "halt",
+        "inc (hl)",
         "add a,(hl)",
+        "halt",
         "adc a,(ix+4)",
         "sub b",
         "sbc a,(iy-4)",
@@ -31,7 +37,6 @@ const char *src[]={
         "or c",
         "xor 33",
         "cp d",
-        "ld sp,0x4000",
         "ld a,1",
         "ld b,a",
         "ld a,(hl)",
@@ -1304,5 +1309,5 @@ int romprog(uint8_t *rom, uint16_t size){
         line++;
     }
 
-    return -1;
+    return 0;
 }
