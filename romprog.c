@@ -17,16 +17,56 @@
 
 // z80asm test.asm -o - | xxd -ps -c 16 > test.hex
 
+int dechex8(char *buf){
 
+    char h = toupper(buf[0]);
+    char l = toupper(buf[1]);
+
+    if (!isxdigit(h)||(!isxdigit(l))) return -1;
+
+    int b = 0;
+    if (isdigit(h))
+        b = (h - '0') * 16;
+    else
+        b = (10 + h - 'A') * 16;
+
+    if (isdigit(l))
+        b += (l - '0');
+    else
+        b += (10 + l - 'A');
+
+    return b;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
-int procline (uint8_t *rom, char *buf, int pc){
+int proclinehex (uint8_t *rom, char *buf, int pc){
 
     int len = strlen(buf);
-    if (len & 1)
+
+    if (!len) return 0;
+    if (buf[len-1] == '\n')
+        --len;
+
+    if (!len) return 0;
+
+    if (len & 1){
+        printf("Invalid line len\n");
         return -1;
+    }
 
+    int i,j;
+    for (i = 0,j = 0; i < len; i+=2, j++){
 
+        int b = dechex8(buf+i);
+        if (b < 0) {
+
+            printf("Error parsing Hex\n");
+            return -1;
+        }
+        rom[pc+j] = b & 0xff;
+    }
+
+    return j;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,13 +81,18 @@ int romprog(uint8_t *rom, uint16_t size, char *fname){
         return -1;
     }
 
-    pc = 0;
+    int pc = 0;
 
     while (!feof(f)){
 
         if (fgets(buf, sizeof(buf), f)){
 
-            int len = procline(rom,buf,pc);
+            int len = strlen(buf);
+            if (buf[len-1] == '\n')
+                buf[len-1] = 0;
+
+            printf("Programming %04x Data:%s\n",pc, buf);
+            len = proclinehex(rom,buf,pc);
 
             if (len <= 0) break;
             pc += len;

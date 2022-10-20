@@ -23,11 +23,10 @@ int main (int argc, char *argv[]){
     z80_t z;
 
     memset(rom,0xff,ROMSZ);
-    // TODO: programar a rom aqui
 
-    if (romprog(rom,ROMSZ) < 0){
+    if (romprog(rom,ROMSZ,"../test.hex") < 0){
 
-        printf("Error assembling!\n");
+        printf("Error loading ROM!\n");
         return -1;
     }
 
