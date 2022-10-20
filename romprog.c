@@ -26,7 +26,6 @@ const char *src[]={
         "ld sp,0x4000",
         "ld a,1",
         "ld hl,0x2000",
-        "halt",
         "inc (hl)",
         "add a,(hl)",
         "halt",

@@ -71,11 +71,11 @@ ADD A, n                    OK              OK
 ADD A, (HL)                 OK              OK
 ADD A, (IX + d)             OK              OK
 ADD A, (IY + d)             OK              OK
-ADC A, r                    OK
-ADC A, n                    OK
-ADC A, (HL)                 OK
-ADC A, (IX+d)               OK
-ADC A, (IY+d)               OK
+ADC A, r                    OK              OK
+ADC A, n                    OK              OK
+ADC A, (HL)                 OK              OK
+ADC A, (IX+d)               OK              OK
+ADC A, (IY+d)               OK              OK
 SUB r                       OK
 SUB n                       OK
 SUB (HL)                    OK
@@ -122,8 +122,8 @@ CPL                         OK
 NEG                         OK
 CCF                         OK
 SCF                         OK
-NOP                         OK
-HALT                        OK
+NOP                         OK      OK      OK      OK
+HALT                        OK      OK      OK      OK
 DI                          OK
 EI                          OK
 IM 0                        OK

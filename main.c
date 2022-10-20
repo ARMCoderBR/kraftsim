@@ -37,10 +37,12 @@ int main (int argc, char *argv[]){
 
     z80_reset(&z);
 
+    z80_dump(&z);
+
     for (;!z.halted;){
 
-        z80_dump(&z);
         z80_step(&z);
+        z80_dump(&z);
     }
 
     return 0;
