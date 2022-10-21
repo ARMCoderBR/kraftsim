@@ -55,14 +55,14 @@ EXX                         OK              OK      OK
 EX (SP), HL                 OK              OK      OK
 EX (SP), IX                 OK              OK      OK
 EX (SP), IY                 OK              OK      OK
-LDI                         OK              OK
-LDIR                        OK              OK
-LDD                         OK              OK
-LDDR                        OK              OK
-CPI                         OK              OK
-CPIR                        OK              OK
-CPD                         OK              OK
-CPDR                        OK              OK
+LDI                         OK              OK      OK
+LDIR                        OK              OK      OK
+LDD                         OK              OK      OK
+LDDR                        OK              OK      OK
+CPI                         OK              OK      OK
+CPIR                        OK              OK      OK
+CPD                         OK              OK      OK
+CPDR                        OK              OK      OK
 
 8-Bit Arithmetic Group
 
