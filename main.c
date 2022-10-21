@@ -24,7 +24,7 @@ int main (int argc, char *argv[]){
 
     memset(rom,0xff,ROMSZ);
 
-    if (romprog(rom,ROMSZ,"../test.hex") < 0){
+    if (romprog(rom,ROMSZ,"test.hex") < 0){
 
         printf("Error loading ROM!\n");
         return -1;
@@ -43,6 +43,8 @@ int main (int argc, char *argv[]){
         z80_step(&z);
         z80_dump(&z);
     }
+
+    z80_dump_mem(&z, RAMBASE,32);
 
     return 0;
 }

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "romprog.h"
 
@@ -73,6 +74,9 @@ int proclinehex (uint8_t *rom, char *buf, int pc){
 int romprog(uint8_t *rom, uint16_t size, char *fname){
 
     char buf[128];
+
+    system("z80asm ../test.asm -o - | xxd -ps -c 16 > test.hex");
+
 
     FILE *f = fopen (fname,"r");
     if (!f){

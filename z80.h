@@ -95,5 +95,6 @@ void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, 
 void z80_reset (z80_t *z);
 void z80_step(z80_t *z);
 void z80_dump(z80_t *z);
+void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size);
 
 #endif /* Z80_H_ */
