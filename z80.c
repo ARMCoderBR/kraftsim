@@ -388,7 +388,7 @@ void z80_exec_ed(z80_t *z){
         z->_f &= ~(FLG_H|FLG_N|FLG_PV);
         if (z->bc){
             z->_f |= FLG_PV;
-            if (opcode == 0x10)
+            if (opcode & 0x10)
                 z->pc -= 2;
         }
     }
@@ -416,7 +416,7 @@ void z80_exec_ed(z80_t *z){
 
         if (z->_a < arg)
             z->_f |= FLG_S;
-        else
+
         if (z->_a == arg)
             z->_f |= FLG_Z;
         else{

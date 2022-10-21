@@ -50,11 +50,11 @@ POP IY                      OK              OK      OK
 Exchange, Block Transfer, and Search Group
 
 EX DE, HL                   OK              OK      OK
-EX AF, AF′                  OK              OK
-EXX                         OK              OK
-EX (SP), HL                 OK              OK
-EX (SP), IX                 OK              OK
-EX (SP), IY                 OK              OK
+EX AF, AF′                  OK              OK      OK
+EXX                         OK              OK      OK
+EX (SP), HL                 OK              OK      OK
+EX (SP), IX                 OK              OK      OK
+EX (SP), IY                 OK              OK      OK
 LDI                         OK              OK
 LDIR                        OK              OK
 LDD                         OK              OK

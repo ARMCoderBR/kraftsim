@@ -1,12 +1,11 @@
 ; z80asm test.asm -o - | xxd -ps -c 16 > test.hex
 org 0x0000
 
-ld sp,0x2020
-ld de,0x2122
-push de
-pop af
-ex af,af'
-ex af,af'
+ld hl,data
+ld bc,8
+ld a,0x0a
+cpir
+
 halt
 
 data:
