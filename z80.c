@@ -145,7 +145,7 @@ void z80_push(z80_t *z, uint16_t val){
     --z->sp;
     z80_write(z,z->sp,val>>8);
     --z->sp;
-    z80_write(z,z->sp,val&0x0F);
+    z80_write(z,z->sp,val&0xFF);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -370,7 +370,7 @@ void z80_exec_ed(z80_t *z){
                 break;
         }
 
-        z80_write(z, addrh++, arg & 0x0F);
+        z80_write(z, addrh++, arg & 0xFF);
         z80_write(z, addrh, arg >> 8);
     }
     else
@@ -573,7 +573,7 @@ endxy:  z->code_prefix = 0;
         else
             arg = z->hl;
 
-        z80_write(z, addrh++, arg & 0x0F);
+        z80_write(z, addrh++, arg & 0xFF);
         z80_write(z, addrh, arg >> 8);
 
         goto endxy;

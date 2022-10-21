@@ -7,49 +7,49 @@ LD r,n                      OK              OK      OK
 LD r, (HL)                  OK              OK      OK
 LD r, (IX+d)                OK              OK      OK
 LD r, (IY+d)                OK              OK      OK
-LD (HL), r                  OK              OK
-LD (IX+d), r                OK              OK
-LD (IY+d), r                OK              OK
-LD (HL), n                  OK              OK
-LD (IX+d), n                OK              OK
-LD (IY+d), n                OK              OK
-LD A, (BC)                  OK              OK
-LD A, (DE)                  OK              OK
-LD A, (nn)                  OK              OK
-LD (BC), A                  OK              OK
-LD (DE), A                  OK              OK
-LD (nn), A                  OK              OK
-LD A, I                     OK              OK
-LD A, R                     OK              OK
-LD I,A                      OK              OK
-LD R, A                     OK              OK
+LD (HL), r                  OK              OK      OK
+LD (IX+d), r                OK              OK      OK
+LD (IY+d), r                OK              OK      OK
+LD (HL), n                  OK              OK      OK
+LD (IX+d), n                OK              OK      OK
+LD (IY+d), n                OK              OK      OK
+LD A, (BC)                  OK              OK      OK
+LD A, (DE)                  OK              OK      OK
+LD A, (nn)                  OK              OK      OK
+LD (BC), A                  OK              OK      OK
+LD (DE), A                  OK              OK      OK
+LD (nn), A                  OK              OK      OK
+LD A, I                     OK              OK      OK
+LD A, R                     OK              OK      OK
+LD I,A                      OK              OK      OK
+LD R, A                     OK              OK      OK
 
 16-Bit Load Group
 
-LD dd, nn                   OK              OK
-LD IX, nn                   OK              OK
-LD IY, nn                   OK              OK
-LD HL, (nn)                 OK              OK
-LD dd, (nn)                 OK              OK
-LD IX, (nn)                 OK              OK
-LD IY, (nn)                 OK              OK
-LD (nn), HL                 OK              OK
-LD (nn), dd                 OK              OK
-LD (nn), IX                 OK              OK
-LD (nn), IY                 OK              OK
-LD SP, HL                   OK              OK
-LD SP, IX                   OK              OK
-LD SP, IY                   OK              OK
-PUSH qq                     OK              OK
-PUSH IX                     OK              OK
-PUSH IY                     OK              OK
-POP qq                      OK              OK
-POP IX                      OK              OK
-POP IY                      OK              OK
+LD dd, nn                   OK              OK      OK
+LD IX, nn                   OK              OK      OK
+LD IY, nn                   OK              OK      OK
+LD HL, (nn)                 OK              OK      OK
+LD dd, (nn)                 OK              OK      OK
+LD IX, (nn)                 OK              OK      OK
+LD IY, (nn)                 OK              OK      OK
+LD (nn), HL                 OK              OK      OK
+LD (nn), dd                 OK              OK      OK
+LD (nn), IX                 OK              OK      OK
+LD (nn), IY                 OK              OK      OK
+LD SP, HL                   OK              OK      OK
+LD SP, IX                   OK              OK      OK
+LD SP, IY                   OK              OK      OK
+PUSH qq                     OK              OK      OK
+PUSH IX                     OK              OK      OK
+PUSH IY                     OK              OK      OK
+POP qq                      OK              OK      OK
+POP IX                      OK              OK      OK
+POP IY                      OK              OK      OK
 
 Exchange, Block Transfer, and Search Group
 
-EX DE, HL                   OK              OK
+EX DE, HL                   OK              OK      OK
 EX AF, AF′                  OK              OK
 EXX                         OK              OK
 EX (SP), HL                 OK              OK
