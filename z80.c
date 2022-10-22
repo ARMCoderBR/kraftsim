@@ -1047,8 +1047,23 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    if (z->opcode == 0x37){                             // SCF
 
+        z->_f &= ~(FLG_H|FLG_N);
+        z->_f |= FLG_C;
+        return;
+    }
 
+    if (z->opcode == 0x3F){                             // CCF
+
+        z->_f &= ~(FLG_H|FLG_N);
+
+        if (z->_f & FLG_C)
+            z->_f |= FLG_H;
+
+        z->_f ^= FLG_C;
+        return;
+    }
 
     printf("Unk. Opcode\n");
 }
