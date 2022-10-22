@@ -1,10 +1,33 @@
 ; z80asm test.asm -o - | xxd -ps -c 16 > test.hex
 org 0x0000
 
-ld hl,data+7
-ld bc,8
-ld a,0x81
-cpdr
+ld a,-120
+ld b,1
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
+sub b
 
 halt
 

@@ -252,24 +252,34 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
 
-    uint8_t borrow = 0;
-    if (z->_a < arg)
-        borrow = 1;
-
     if (sub_cy)
         if (z->_f & FLG_C)
             arg++;
 
-    arg ^= 0xFF; arg++;         // Neg
-
-    z80_add_acc (z, arg, 0);    // Soma com o negativo
-
+    z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_C);
     z->_f |= FLG_N;             // Indica op. subtração
 
-    if (borrow)
+    if (z->_a < arg)
         z->_f |= FLG_C;
-    else
-        z->_f &= ~FLG_C;
+
+    if ((z->_a & 0x0F) < (arg & 0x0F))
+        z->_f |= FLG_H;
+
+    int8_t diff = z->_a - arg;
+
+    if ((z->_a ^ arg) & 0x80){
+
+        if (((z->_a ^ diff) & 0x80))
+            z->_f |= FLG_PV;
+    }
+
+    if (diff & 0x80)
+        z->_f |= FLG_S;
+
+    if (!diff)
+        z->_f |= FLG_Z;
+
+    z->_a = diff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
