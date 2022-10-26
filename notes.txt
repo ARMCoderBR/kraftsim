@@ -86,11 +86,11 @@ SBC A, n                    OK              OK      OK
 SBC A, (HL)                 OK              OK      OK
 SBC A, (IX+d)               OK              OK      OK
 SBC A, (IY+d)               OK              OK      OK
-AND r                       OK
-AND n                       OK
-AND (HL)                    OK
-AND (IX+d)                  OK
-AND (IY+d)                  OK
+AND r                       OK              OK      OK
+AND n                       OK              OK
+AND (HL)                    OK              OK      OK
+AND (IX+d)                  OK              OK      OK
+AND (IY+d)                  OK              OK      OK
 OR r                        OK
 OR n                        OK
 OR (HL)                     OK
