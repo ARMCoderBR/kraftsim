@@ -1,23 +1,14 @@
 ; z80asm test.asm -o - | xxd -ps -c 16 > test.hex
 org 0x0000
 
-ld a,0xff
-ld b,0x7f
-and b
-ld c,0xbf
-and c
-ld d,0xdf
-and d
-ld e,0xef
-and e
-ld h,0xf7
-and h
-ld l,0xfb
-and l
-ld iy,data
-and (iy+6)
-ld a,0xff
-and 0x55
+ld a,0x3
+ld b,0x3
+cp b
+cp 2
+cp 4
+ld hl,data
+cp (hl)
+
 halt
 
 data:
