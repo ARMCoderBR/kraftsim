@@ -87,7 +87,7 @@ SBC A, (HL)                 OK              OK      OK
 SBC A, (IX+d)               OK              OK      OK
 SBC A, (IY+d)               OK              OK      OK
 AND r                       OK              OK      OK
-AND n                       OK              OK
+AND n                       OK              OK      OK
 AND (HL)                    OK              OK      OK
 AND (IX+d)                  OK              OK      OK
 AND (IY+d)                  OK              OK      OK
