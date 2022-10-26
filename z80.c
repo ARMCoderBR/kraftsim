@@ -217,7 +217,7 @@ const uint8_t *z80_get_orig(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void z80_update_flags_logic(z80_t *z){
+void z80_update_flags_logic(z80_t *z, int flg_h){
 
     uint8_t a = z->_a;
     uint8_t f = z->_f;
@@ -250,6 +250,11 @@ void z80_update_flags_logic(z80_t *z){
         f |= FLG_PV;
     else
         f &= ~FLG_PV;
+
+    if (flg_h)
+        f |= FLG_H;
+    else
+        f &= ~FLG_H;
 
     f &= ~(FLG_N|FLG_C);
 
@@ -760,7 +765,33 @@ endxy:  z->code_prefix = 0;
         else
             arg = 0xff;
         z->_a &= arg;
-        z80_update_flags_logic(z);
+        z80_update_flags_logic(z,1);
+        goto endxy;
+    }
+
+    if (z->opcode == 0xB6){                             // OR (HL) / OR (IX+d) / OR (IY+d)
+
+        uint8_t arg;
+        const uint8_t *parg = z80_get_phl_orig(z);
+        if (parg != NULL)
+            arg = *parg;
+        else
+            arg = 0xff;
+        z->_a |= arg;
+        z80_update_flags_logic(z,0);
+        goto endxy;
+    }
+
+    if (z->opcode == 0xAE){                             // XOR (HL) / XOR (IX+d) / XOR (IY+d)
+
+        uint8_t arg;
+        const uint8_t *parg = z80_get_phl_orig(z);
+        if (parg != NULL)
+            arg = *parg;
+        else
+            arg = 0xff;
+        z->_a ^= arg;
+        z80_update_flags_logic(z,0);
         goto endxy;
     }
 
@@ -1044,7 +1075,7 @@ endxy:  z->code_prefix = 0;
         }
 
         z->_a &= arg;
-        z80_update_flags_logic(z);
+        z80_update_flags_logic(z,1);
         return;
     }
 
@@ -1052,18 +1083,95 @@ endxy:  z->code_prefix = 0;
 
         uint8_t arg = z80_fetch(z);
         z->_a &= arg;
-        z80_update_flags_logic(z);
+        z80_update_flags_logic(z,1);
         return;
     }
 
+    if ((z->opcode & 0b11111000) == 0b10110000){        // OR r
 
+        uint8_t arg;
+        switch(z->opcode & 0b00000111){
 
+            case 0b00000000:
+                arg = z->_b;
+                break;
+            case 0b00000001:
+                arg = z->_c;
+                break;
+            case 0b00000010:
+                arg = z->_d;
+                break;
+            case 0b00000011:
+                arg = z->_e;
+                break;
+            case 0b00000100:
+                arg = z->_h;
+                break;
+            case 0b00000101:
+                arg = z->_l;
+                break;
+//            case 0b00000110:
+//                break;
+            case 0b00000111:
+                arg = z->_a;
+                break;
+        }
 
+        z->_a |= arg;
+        z80_update_flags_logic(z,0);
+        return;
+    }
 
+    if (z->opcode == 0xF6){                             // OR n
 
+        uint8_t arg = z80_fetch(z);
+        z->_a |= arg;
+        z80_update_flags_logic(z,0);
+        return;
+    }
 
+    if ((z->opcode & 0b11111000) == 0b10101000){        // XOR r
 
+        uint8_t arg;
+        switch(z->opcode & 0b00000111){
 
+            case 0b00000000:
+                arg = z->_b;
+                break;
+            case 0b00000001:
+                arg = z->_c;
+                break;
+            case 0b00000010:
+                arg = z->_d;
+                break;
+            case 0b00000011:
+                arg = z->_e;
+                break;
+            case 0b00000100:
+                arg = z->_h;
+                break;
+            case 0b00000101:
+                arg = z->_l;
+                break;
+//            case 0b00000110:
+//                break;
+            case 0b00000111:
+                arg = z->_a;
+                break;
+        }
+
+        z->_a ^= arg;
+        z80_update_flags_logic(z,0);
+        return;
+    }
+
+    if (z->opcode == 0xEE){                             // XOR n
+
+        uint8_t arg = z80_fetch(z);
+        z->_a ^= arg;
+        z80_update_flags_logic(z,0);
+        return;
+    }
 
     if (z->opcode == 0xEB){                             // EX DE,HL
 

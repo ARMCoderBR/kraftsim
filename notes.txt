@@ -91,16 +91,16 @@ AND n                       OK              OK      OK
 AND (HL)                    OK              OK      OK
 AND (IX+d)                  OK              OK      OK
 AND (IY+d)                  OK              OK      OK
-OR r                        OK
-OR n                        OK
-OR (HL)                     OK
-OR (IX+d)                   OK
-OR (IY+d)                   OK
-XOR r                       OK
-XOR n                       OK
-XOR (HL)                    OK
-XOR (IX+d)                  OK
-XOR (IY+d)                  OK
+OR r                        OK              OK
+OR n                        OK              OK
+OR (HL)                     OK              OK
+OR (IX+d)                   OK              OK
+OR (IY+d)                   OK              OK
+XOR r                       OK              OK
+XOR n                       OK              OK
+XOR (HL)                    OK              OK
+XOR (IX+d)                  OK              OK
+XOR (IY+d)                  OK              OK
 CP r                        OK
 CP n                        OK
 CP (HL)                     OK
