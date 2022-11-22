@@ -73,13 +73,13 @@ uint8_t z80_fetch(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint8_t *z80_get_phl_dest(z80_t *z){
+uint8_t *z80_get_phl_dest_last(z80_t *z){
 
     uint16_t addr = z->hl;
 
     if (z->code_prefix & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
 
-        uint8_t ofs = z80_fetch(z);
+        uint8_t ofs = z->last_ofs;
 
         if (ofs < 128){
 
@@ -105,6 +105,42 @@ uint8_t *z80_get_phl_dest(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+uint8_t *z80_get_phl_dest(z80_t *z){
+
+    uint16_t addr = z->hl;
+
+    if (z->code_prefix & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
+
+        uint8_t ofs = z80_fetch(z);
+
+        z->last_ofs = ofs;
+
+        if (ofs < 128){
+
+            if (z->code_prefix & CODE_PREFIX_DD)
+                addr = z->ix + ofs;
+            else
+                addr = z->iy + ofs;
+        }
+        else{
+            ofs ^= 0xff;
+            ofs ++;
+            if (z->code_prefix & CODE_PREFIX_DD)
+                addr = z->ix - ofs;
+            else
+                addr = z->iy - ofs;
+        }
+    }
+    else
+        z->last_ofs = 0;
+
+    if ((addr >= z->rambase)&&(addr <= z->ramend))
+        return z->ram+(addr - z->rambase);
+
+    return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 const uint8_t *z80_get_phl_orig(z80_t *z){
 
     uint16_t addr = z->hl;
@@ -112,6 +148,8 @@ const uint8_t *z80_get_phl_orig(z80_t *z){
     if (z->code_prefix & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
 
         uint8_t ofs = z80_fetch(z);
+
+        z->last_ofs = ofs;
 
         if (ofs < 128){
 
@@ -129,6 +167,8 @@ const uint8_t *z80_get_phl_orig(z80_t *z){
                 addr = z->iy - ofs;
         }
     }
+    else
+        z->last_ofs = 0;
 
     if (addr < z->romsz)
         return z->rom+addr;
@@ -809,6 +849,35 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    if (z->opcode == 0x34){                             // INC (HL) / INC (IX+d) / INC (IY+d)
+
+        uint8_t arg;
+        const uint8_t *parg = z80_get_phl_orig(z);
+        uint8_t *parg2 = z80_get_phl_dest_last(z);
+
+        if (parg != NULL)
+            arg = *parg;
+        else
+            arg = 0xff;
+
+        arg++;
+
+        if (parg2)
+            *parg2 = arg;
+
+        z->_f = (arg & 0x28) | (z->_f & FLG_C);
+        if (arg & 0x80)
+            z->_f |= FLG_S;
+        if (!arg)
+            z->_f |= FLG_Z;
+        if (!(arg&0x0F))
+            z->_f |= FLG_H;
+        if (arg == 0x80)
+            z->_f |= FLG_PV;
+
+        goto endxy;
+    }
+
     if (z->opcode == 0x23){                             // INC HL / INC IX / INC IY
 
         if (z->code_prefix & CODE_PREFIX_DD)
@@ -1233,6 +1302,60 @@ endxy:  z->code_prefix = 0;
         z->_a = a;
         return;
     }
+
+    if ((z->opcode & 0b11000111) == 0b00000100){        // INC r
+
+        uint8_t arg;
+        switch(z->opcode & 0b00111000){
+
+            case 0b00000000:
+                arg = z->_b + 1;
+                z->_b = arg;
+                break;
+            case 0b00001000:
+                arg = z->_c + 1;
+                z->_c = arg;
+                break;
+            case 0b00010000:
+                arg = z->_d + 1;
+                z->_d = arg;
+                break;
+            case 0b00011000:
+                arg = z->_e + 1;
+                z->_e = arg;
+                break;
+            case 0b00100000:
+                arg = z->_h + 1;
+                z->_h = arg;
+                break;
+            case 0b00101000:
+                arg = z->_l + 1;
+                z->_l = arg;
+                break;
+//            case 0b00000110:
+//                break;
+            case 0b00111000:
+                arg = z->_a + 1;
+                z->_a = arg;
+                break;
+        }
+
+        z->_f = (arg & 0x28) | (z->_f & FLG_C);
+        if (arg & 0x80)
+            z->_f |= FLG_S;
+        if (!arg)
+            z->_f |= FLG_Z;
+        if (!(arg&0x0F))
+            z->_f |= FLG_H;
+        if (arg == 0x80)
+            z->_f |= FLG_PV;
+
+        return;
+    }
+
+
+
+
 
     if (z->opcode == 0xEB){                             // EX DE,HL
 

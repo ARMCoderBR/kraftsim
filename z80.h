@@ -64,6 +64,8 @@ typedef struct {
     uint16_t ramsz;
     uint16_t ramend;
 
+    uint8_t last_ofs;
+
 #define bc _bc.r16
 #define de _de.r16
 #define hl _hl.r16

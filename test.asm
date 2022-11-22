@@ -1,13 +1,31 @@
 ; z80asm test.asm -o - | xxd -ps -c 16 > test.hex
 org 0x0000
 
+ld hl,0x2000
+ld (hl),0x03
+ld ix,0x2000
+ld iy,0x2000
+ld b,0x03
+ld c,0x03
+ld d,0x03
+ld e,0x03
+ld h,0x03
+ld l,0x03
+ld (ix+1),0x03
+ld (iy+2),0x03
 ld a,0x3
-ld b,0x3
-cp b
-cp 2
-cp 4
-ld hl,data
-cp (hl)
+
+inc b
+inc c
+inc d
+inc e
+inc h
+inc l
+ld hl,0x2000
+inc (hl)
+inc (ix+1)
+inc (iy+2)
+inc a
 
 halt
 

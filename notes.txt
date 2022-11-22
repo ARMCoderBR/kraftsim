@@ -106,10 +106,10 @@ CP n                        OK              OK      OK
 CP (HL)                     OK              OK      OK
 CP (IX+d)                   OK              OK      OK
 CP (IY+d)                   OK              OK      OK
-INC r                       OK
-INC (HL)                    OK
-INC (IX+d)                  OK
-INC (IY+d)                  OK
+INC r                       OK              OK      OK
+INC (HL)                    OK              OK      OK
+INC (IX+d)                  OK              OK      OK
+INC (IY+d)                  OK              OK      OK
 DEC r                       OK
 DEC (HL)                    OK
 DEC (IX+d)                  OK
