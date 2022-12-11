@@ -110,10 +110,10 @@ INC r                       OK              OK      OK
 INC (HL)                    OK              OK      OK
 INC (IX+d)                  OK              OK      OK
 INC (IY+d)                  OK              OK      OK
-DEC r                       OK
-DEC (HL)                    OK
-DEC (IX+d)                  OK
-DEC (IY+d)                  OK
+DEC r                       OK              OK
+DEC (HL)                    OK              OK
+DEC (IX+d)                  OK              OK
+DEC (IY+d)                  OK              OK
 
 General-Purpose Arithmetic and CPU Control Groups
 

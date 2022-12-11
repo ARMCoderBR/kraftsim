@@ -878,6 +878,35 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    if (z->opcode == 0x35){                             // DEC (HL) / DEC (IX+d) / DEC (IY+d)
+
+        uint8_t arg;
+        const uint8_t *parg = z80_get_phl_orig(z);
+        uint8_t *parg2 = z80_get_phl_dest_last(z);
+
+        if (parg != NULL)
+            arg = *parg;
+        else
+            arg = 0xff;
+
+        arg--;
+
+        if (parg2)
+            *parg2 = arg;
+
+        z->_f = (arg & 0x28) | (z->_f & FLG_C);
+        if (arg & 0x80)
+            z->_f |= FLG_S;
+        if (!arg)
+            z->_f |= FLG_Z;
+        if ((arg&0x0F) == 0x0F)
+            z->_f |= FLG_H;
+        if (arg == 0x7F)
+            z->_f |= FLG_PV;
+
+        goto endxy;
+    }
+
     if (z->opcode == 0x23){                             // INC HL / INC IX / INC IY
 
         if (z->code_prefix & CODE_PREFIX_DD)
@@ -1353,7 +1382,55 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    if ((z->opcode & 0b11000111) == 0b00000101){        // DEC r
 
+        uint8_t arg;
+        switch(z->opcode & 0b00111000){
+
+            case 0b00000000:
+                arg = z->_b - 1;
+                z->_b = arg;
+                break;
+            case 0b00001000:
+                arg = z->_c - 1;
+                z->_c = arg;
+                break;
+            case 0b00010000:
+                arg = z->_d - 1;
+                z->_d = arg;
+                break;
+            case 0b00011000:
+                arg = z->_e - 1;
+                z->_e = arg;
+                break;
+            case 0b00100000:
+                arg = z->_h - 1;
+                z->_h = arg;
+                break;
+            case 0b00101000:
+                arg = z->_l - 1;
+                z->_l = arg;
+                break;
+//            case 0b00000110:
+//                break;
+            case 0b00111000:
+                arg = z->_a - 1;
+                z->_a = arg;
+                break;
+        }
+
+        z->_f = (arg & 0x28) | (z->_f & FLG_C);
+        if (arg & 0x80)
+            z->_f |= FLG_S;
+        if (!arg)
+            z->_f |= FLG_Z;
+        if ((arg&0x0F) == 0x0F)
+            z->_f |= FLG_H;
+        if (arg == 0x7F)
+            z->_f |= FLG_PV;
+
+        return;
+    }
 
 
 

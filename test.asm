@@ -15,17 +15,17 @@ ld (ix+1),0x03
 ld (iy+2),0x03
 ld a,0x3
 
-inc b
-inc c
-inc d
-inc e
-inc h
-inc l
+dec b
+dec c
+dec d
+dec e
+dec h
+dec l
 ld hl,0x2000
-inc (hl)
-inc (ix+1)
-inc (iy+2)
-inc a
+dec (hl)
+dec (ix+1)
+dec (iy+2)
+dec a
 
 halt
 
