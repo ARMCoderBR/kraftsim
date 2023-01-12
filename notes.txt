@@ -1,157 +1,157 @@
 
-                            ASM     TST-A   RUN     TST-R
+                            SUPPORT TESTED
 8-Bit Load Group
 
-LD r, r'                    OK              OK      OK
-LD r,n                      OK              OK      OK
-LD r, (HL)                  OK              OK      OK
-LD r, (IX+d)                OK              OK      OK
-LD r, (IY+d)                OK              OK      OK
-LD (HL), r                  OK              OK      OK
-LD (IX+d), r                OK              OK      OK
-LD (IY+d), r                OK              OK      OK
-LD (HL), n                  OK              OK      OK
-LD (IX+d), n                OK              OK      OK
-LD (IY+d), n                OK              OK      OK
-LD A, (BC)                  OK              OK      OK
-LD A, (DE)                  OK              OK      OK
-LD A, (nn)                  OK              OK      OK
-LD (BC), A                  OK              OK      OK
-LD (DE), A                  OK              OK      OK
-LD (nn), A                  OK              OK      OK
-LD A, I                     OK              OK      OK
-LD A, R                     OK              OK      OK
-LD I,A                      OK              OK      OK
-LD R, A                     OK              OK      OK
+LD r, r'                    OK      OK
+LD r,n                      OK      OK
+LD r, (HL)                  OK      OK
+LD r, (IX+d)                OK      OK
+LD r, (IY+d)                OK      OK
+LD (HL), r                  OK      OK
+LD (IX+d), r                OK      OK
+LD (IY+d), r                OK      OK
+LD (HL), n                  OK      OK
+LD (IX+d), n                OK      OK
+LD (IY+d), n                OK      OK
+LD A, (BC)                  OK      OK
+LD A, (DE)                  OK      OK
+LD A, (nn)                  OK      OK
+LD (BC), A                  OK      OK
+LD (DE), A                  OK      OK
+LD (nn), A                  OK      OK
+LD A, I                     OK      OK
+LD A, R                     OK      OK
+LD I,A                      OK      OK
+LD R, A                     OK      OK
 
 16-Bit Load Group
 
-LD dd, nn                   OK              OK      OK
-LD IX, nn                   OK              OK      OK
-LD IY, nn                   OK              OK      OK
-LD HL, (nn)                 OK              OK      OK
-LD dd, (nn)                 OK              OK      OK
-LD IX, (nn)                 OK              OK      OK
-LD IY, (nn)                 OK              OK      OK
-LD (nn), HL                 OK              OK      OK
-LD (nn), dd                 OK              OK      OK
-LD (nn), IX                 OK              OK      OK
-LD (nn), IY                 OK              OK      OK
-LD SP, HL                   OK              OK      OK
-LD SP, IX                   OK              OK      OK
-LD SP, IY                   OK              OK      OK
-PUSH qq                     OK              OK      OK
-PUSH IX                     OK              OK      OK
-PUSH IY                     OK              OK      OK
-POP qq                      OK              OK      OK
-POP IX                      OK              OK      OK
-POP IY                      OK              OK      OK
+LD dd, nn                   OK      OK
+LD IX, nn                   OK      OK
+LD IY, nn                   OK      OK
+LD HL, (nn)                 OK      OK
+LD dd, (nn)                 OK      OK
+LD IX, (nn)                 OK      OK
+LD IY, (nn)                 OK      OK
+LD (nn), HL                 OK      OK
+LD (nn), dd                 OK      OK
+LD (nn), IX                 OK      OK
+LD (nn), IY                 OK      OK
+LD SP, HL                   OK      OK
+LD SP, IX                   OK      OK
+LD SP, IY                   OK      OK
+PUSH qq                     OK      OK
+PUSH IX                     OK      OK
+PUSH IY                     OK      OK
+POP qq                      OK      OK
+POP IX                      OK      OK
+POP IY                      OK      OK
 
 Exchange, Block Transfer, and Search Group
 
-EX DE, HL                   OK              OK      OK
-EX AF, AF′                  OK              OK      OK
-EXX                         OK              OK      OK
-EX (SP), HL                 OK              OK      OK
-EX (SP), IX                 OK              OK      OK
-EX (SP), IY                 OK              OK      OK
-LDI                         OK              OK      OK
-LDIR                        OK              OK      OK
-LDD                         OK              OK      OK
-LDDR                        OK              OK      OK
-CPI                         OK              OK      OK
-CPIR                        OK              OK      OK
-CPD                         OK              OK      OK
-CPDR                        OK              OK      OK
+EX DE, HL                   OK      OK
+EX AF, AF′                  OK      OK
+EXX                         OK      OK
+EX (SP), HL                 OK      OK
+EX (SP), IX                 OK      OK
+EX (SP), IY                 OK      OK
+LDI                         OK      OK
+LDIR                        OK      OK
+LDD                         OK      OK
+LDDR                        OK      OK
+CPI                         OK      OK
+CPIR                        OK      OK
+CPD                         OK      OK
+CPDR                        OK      OK
 
 8-Bit Arithmetic Group
 
-ADD A, r                    OK              OK      OK
-ADD A, n                    OK              OK      OK
-ADD A, (HL)                 OK              OK      OK
-ADD A, (IX + d)             OK              OK      OK
-ADD A, (IY + d)             OK              OK      OK
-ADC A, r                    OK              OK      OK
-ADC A, n                    OK              OK      OK
-ADC A, (HL)                 OK              OK      OK
-ADC A, (IX+d)               OK              OK      OK
-ADC A, (IY+d)               OK              OK      OK
-SUB r                       OK              OK      OK
-SUB n                       OK              OK      OK
-SUB (HL)                    OK              OK      OK
-SUB (IX+d)                  OK              OK      OK
-SUB (IY+d)                  OK              OK      OK
-SBC A, r                    OK              OK      OK
-SBC A, n                    OK              OK      OK
-SBC A, (HL)                 OK              OK      OK
-SBC A, (IX+d)               OK              OK      OK
-SBC A, (IY+d)               OK              OK      OK
-AND r                       OK              OK      OK
-AND n                       OK              OK      OK
-AND (HL)                    OK              OK      OK
-AND (IX+d)                  OK              OK      OK
-AND (IY+d)                  OK              OK      OK
-OR r                        OK              OK      OK
-OR n                        OK              OK      OK
-OR (HL)                     OK              OK      OK
-OR (IX+d)                   OK              OK      OK
-OR (IY+d)                   OK              OK      OK
-XOR r                       OK              OK      OK
-XOR n                       OK              OK      OK
-XOR (HL)                    OK              OK      OK
-XOR (IX+d)                  OK              OK      OK
-XOR (IY+d)                  OK              OK      OK
-CP r                        OK              OK      OK
-CP n                        OK              OK      OK
-CP (HL)                     OK              OK      OK
-CP (IX+d)                   OK              OK      OK
-CP (IY+d)                   OK              OK      OK
-INC r                       OK              OK      OK
-INC (HL)                    OK              OK      OK
-INC (IX+d)                  OK              OK      OK
-INC (IY+d)                  OK              OK      OK
-DEC r                       OK              OK      OK
-DEC (HL)                    OK              OK      OK
-DEC (IX+d)                  OK              OK      OK
-DEC (IY+d)                  OK              OK      OK
+ADD A, r                    OK      OK
+ADD A, n                    OK      OK
+ADD A, (HL)                 OK      OK
+ADD A, (IX + d)             OK      OK
+ADD A, (IY + d)             OK      OK
+ADC A, r                    OK      OK
+ADC A, n                    OK      OK
+ADC A, (HL)                 OK      OK
+ADC A, (IX+d)               OK      OK
+ADC A, (IY+d)               OK      OK
+SUB r                       OK      OK
+SUB n                       OK      OK
+SUB (HL)                    OK      OK
+SUB (IX+d)                  OK      OK
+SUB (IY+d)                  OK      OK
+SBC A, r                    OK      OK
+SBC A, n                    OK      OK
+SBC A, (HL)                 OK      OK
+SBC A, (IX+d)               OK      OK
+SBC A, (IY+d)               OK      OK
+AND r                       OK      OK
+AND n                       OK      OK
+AND (HL)                    OK      OK
+AND (IX+d)                  OK      OK
+AND (IY+d)                  OK      OK
+OR r                        OK      OK
+OR n                        OK      OK
+OR (HL)                     OK      OK
+OR (IX+d)                   OK      OK
+OR (IY+d)                   OK      OK
+XOR r                       OK      OK
+XOR n                       OK      OK
+XOR (HL)                    OK      OK
+XOR (IX+d)                  OK      OK
+XOR (IY+d)                  OK      OK
+CP r                        OK      OK
+CP n                        OK      OK
+CP (HL)                     OK      OK
+CP (IX+d)                   OK      OK
+CP (IY+d)                   OK      OK
+INC r                       OK      OK
+INC (HL)                    OK      OK
+INC (IX+d)                  OK      OK
+INC (IY+d)                  OK      OK
+DEC r                       OK      OK
+DEC (HL)                    OK      OK
+DEC (IX+d)                  OK      OK
+DEC (IY+d)                  OK      OK
 
 General-Purpose Arithmetic and CPU Control Groups
 
-DAA                         OK
+DAA
 CPL                         OK
 NEG                         OK
-CCF                         OK              OK      OK
-SCF                         OK              OK      OK
-NOP                         OK      OK      OK      OK
-HALT                        OK      OK      OK      OK
-DI                          OK
-EI                          OK
-IM 0                        OK
-IM 1                        OK
-IM 2                        OK
+CCF                         OK      OK
+SCF                         OK      OK
+NOP                         OK      OK
+HALT                        OK      OK
+DI
+EI
+IM 0
+IM 1
+IM 2
 
 16-Bit Arithmetic Group
 
-ADD HL, ss
-ADC HL, ss
+ADD HL, ss                  OK
+ADC HL, ss                  OK
 SBC HL, ss
-ADD IX, pp
-ADD IY, rr
-INC ss                                      OK      OK
-INC IX                      OK              OK      OK
-INC IY                      OK              OK      OK
-DEC ss                                      OK      OK
-DEC IX                      OK              OK      OK
-DEC IY                      OK              OK      OK
+ADD IX, pp                  OK
+ADD IY, rr                  OK
+INC ss                      OK      OK
+INC IX                      OK      OK
+INC IY                      OK      OK
+DEC ss                      OK      OK
+DEC IX                      OK      OK
+DEC IY                      OK      OK
 
 Rotate and Shift Group
 
-RLCA                        OK
-RLA                         OK
-RRCA                        OK
-RRA                         OK
+RLCA
+RLA
+RRCA
+RRA
 RLC r
-RLC (HL)                    OK
+RLC (HL)
 RLC (IX+d)
 RLC (IY+d)
 RL m
@@ -160,8 +160,8 @@ RR m
 SLA m
 SRA m
 SRL m
-RLD                         OK
-RRD                         OK
+RLD
+RRD
 
 Bit Set, Reset, and Test Group
 
@@ -184,35 +184,35 @@ JR C, e
 JR NC, e
 JR Z, e
 JR NZ, e
-JP (HL)                     OK
-JP (IX)                     OK
-JP (IY)                     OK
+JP (HL)
+JP (IX)
+JP (IY)
 DJNZ, e
 
 Call and Return Group
 
 CALL nn
 CALL cc, nn
-RET                         OK
+RET
 RET cc
-RETI                        OK
-RETN                        OK
+RETI
+RETN
 RST p
 
 Input and Output Group
 
 IN A, (n)
 IN r (C)
-INI                         OK
-INIR                        OK
-IND                         OK
-INDR                        OK
+INI
+INIR
+IND
+INDR
 OUT (n), A
 OUT (C), r
-OUTI                        OK
-OTIR                        OK
-OUTD                        OK
-OTDR                        OK
+OUTI
+OTIR
+OUTD
+OTDR
 
 
 
