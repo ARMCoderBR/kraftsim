@@ -304,71 +304,72 @@ void z80_update_flags_logic(z80_t *z, int flg_h){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 
+    int16_t sum16 = (int16_t)arg;
+    int16_t acc16 = z->_a;
+    int ovf = 0;
+
+    sum16 += acc16;
     if (add_cy)
-        if (z->_f & FLG_C)
-            arg++;
+        sum16++;
+
+    if ((sum16 > 127) || (sum16 < -128)) ovf = 1;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_N|FLG_C);
-    uint16_t sum = z->_a + arg;
 
-    if (sum & 0xFF00){
+    if (sum16 & 0xFF00)
         z->_f |= FLG_C;
-        sum &= 0xFF;
-    }
 
-    if (sum & 0x80)
+    if (sum16 & 0x80)
         z->_f |= FLG_S;
 
-    if (!sum)
+    if (!(sum16 & 0xFF))
         z->_f |= FLG_Z;
 
-    if ((z->_a & 0x0F) + (arg & 0x0F) > 0x0F)
+    if ((z->_a & 0x0F) + (arg & 0x0F) + (add_cy?1:0) > 0x0F)
         z->_f |= FLG_H;
 
-    if (!((z->_a ^ arg) & 0x80)){
-
-        if (((z->_a ^ sum) & 0x80))
-            z->_f |= FLG_PV;
-    }
+    if (ovf)
+        z->_f |= FLG_PV;
 
     z->_f &= ~0x28;
-    z->_f |= (sum & 0x28);
-    z->_a = sum;
+    z->_f |= (sum16 & 0x28);
+    z->_a = sum16 & 0xFF;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
 
+    int16_t dif16 = -(int16_t)arg;
+    int16_t acc16 = z->_a;
+    int ovf = 0;
+
+    dif16 += acc16;
     if (sub_cy)
-        if (z->_f & FLG_C)
-            arg++;
+        dif16--;
+
+    if ((dif16 > 127) || (dif16 < -128)) ovf = 1;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_C);
     z->_f |= FLG_N;             // Indica op. subtração
 
-    if (z->_a < arg)
+    if (dif16 & 0xFF00)
         z->_f |= FLG_C;
 
-    if ((z->_a & 0x0F) < (arg & 0x0F))
-        z->_f |= FLG_H;
-
-    int8_t diff = z->_a - arg;
-
-    if ((z->_a ^ arg) & 0x80){
-
-        if (((z->_a ^ diff) & 0x80))
-            z->_f |= FLG_PV;
-    }
-
-    if (diff & 0x80)
+    if (dif16 & 0x80)
         z->_f |= FLG_S;
 
-    if (!diff)
+    if (!(dif16 & 0xFF))
         z->_f |= FLG_Z;
 
+    if ((z->_a & 0x0F) < (sub_cy?1:0)+(arg & 0x0F))
+        z->_f |= FLG_H;
+
+    if (ovf)
+        z->_f |= FLG_PV;
+
     z->_f &= ~0x28;
-    z->_f |= (diff & 0x28);
-    z->_a = diff;
+    z->_f |= (dif16 & 0x28);
+    z->_a = dif16 & 0xFF;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -561,6 +562,52 @@ void z80_exec_ed(z80_t *z){
     }
 
     if ((z->opcode & 0b11001111) == 0b01001010){        // ADC HL,ss
+
+        uint16_t arg1;
+
+        switch(z->opcode & 0b00110000){
+
+            case 0b00000000:
+                arg1 = z->bc;
+                break;
+            case 0b00010000:
+                arg1 = z->de;
+                break;
+            case 0b00100000:
+                arg1 = z->hl;
+                break;
+            case 0b00110000:
+                arg1 = z->sp;
+                break;
+        }
+
+        z->hl += arg1;
+        if (z->_f & FLG_C)
+            z->hl++;
+
+        arg1 = z->hl;
+
+        z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
+
+        if (!arg1)
+            z->_f |= FLG_C;
+
+        if (arg1 == 0x8000)
+            z->_f |= FLG_PV;
+
+        if (!(arg1 & 0xF000))
+            z->_f |= FLG_H;
+
+        if (!arg1)
+            z->_f |= FLG_Z;
+
+        if (arg1 & 0x8000)
+            z->_f |= FLG_S;
+
+        return;
+    }
+
+    if ((z->opcode & 0b11001111) == 0b01000010){        // SBC HL,ss
 
         uint16_t arg1;
 
@@ -1685,9 +1732,70 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    if (z->opcode == 0x07){                             // RLCA
+
+        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+
+        uint8_t acopy = z->_a;
+        z->_a <<= 1;
+
+        if (acopy & 0x80){
+            z->_f |= FLG_C;
+            z->_a |= 0x01;
+        }
+        return;
+    }
+
+    if (z->opcode == 0x17){                             // RLA
+
+        uint8_t cy = z->_f & FLG_C;
+        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+
+        if (z->_a & 0x80)
+            z->_f |= FLG_C;
+
+        z->_a <<= 1;
+
+        if (cy){
+            z->_a |= 0x01;
+        }
+        return;
+    }
+
+    if (z->opcode == 0x0F){                             // RRCA
+
+        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+
+        uint8_t acopy = z->_a;
+        z->_a >>= 1;
+
+        if (acopy & 0x01){
+            z->_f |= FLG_C;
+            z->_a |= 0x80;
+        }
+        return;
+    }
+
+    if (z->opcode == 0x1F){                             // RRA
+
+        uint8_t cy = z->_f & FLG_C;
+        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+
+        if (z->_a & 0x01)
+            z->_f |= FLG_C;
+
+        z->_a >>= 1;
+
+        if (cy){
+            z->_a |= 0x80;
+        }
+        return;
+    }
+
     printf("Unk. Opcode\n");
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void z80_dump(z80_t *z){
 
     printf("\nPC:%04X  SP:%04X  BC:%04x  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X   FLAGS:",

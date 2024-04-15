@@ -146,10 +146,10 @@ DEC IY                      OK      OK
 
 Rotate and Shift Group
 
-RLCA
-RLA
-RRCA
-RRA
+RLCA                        OK
+RLA                         OK
+RRCA                        OK
+RRA                         OK
 RLC r
 RLC (HL)
 RLC (IX+d)
