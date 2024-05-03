@@ -536,7 +536,7 @@ void z80_exec_ed(z80_t *z){
         return;
     }
 
-    if (z->opcode == 0x44){         //NEG                        // NEG
+    if (z->opcode == 0x44){                          //NEG
 
         z->_f &= ~(FLG_C|FLG_PV|FLG_H|FLG_Z|FLG_S);
         z->_f |= FLG_N;
