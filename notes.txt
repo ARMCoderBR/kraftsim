@@ -117,7 +117,7 @@ DEC (IY+d)                  OK      OK
 
 General-Purpose Arithmetic and CPU Control Groups
 
-DAA
+DAA                         OK
 CPL                         OK
 NEG                         OK
 CCF                         OK      OK

@@ -31,6 +31,9 @@ ld a,0x27
 ld b,0x55
 add a,b
 daa
+cpl
+neg
+
 
 halt
 

@@ -309,8 +309,6 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
     int16_t acc16 = z->_a;
     int ovf = 0;
 
-    z->next_daa_op = NEXT_DAA_UP;
-
     sum16 += acc16;
     if (add_cy)
         sum16++;
@@ -345,8 +343,6 @@ void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
     int16_t dif16 = -(int16_t)arg;
     int16_t acc16 = z->_a;
     int ovf = 0;
-
-    z->next_daa_op = NEXT_DAA_DOWN;
 
     dif16 += acc16;
     if (sub_cy)
@@ -542,8 +538,6 @@ void z80_exec_ed(z80_t *z){
 
     if (z->opcode == 0x44){         //NEG                        // NEG
 
-        z->next_daa_op = NEXT_DAA_DOWN;
-
         z->_f &= ~(FLG_C|FLG_PV|FLG_H|FLG_Z|FLG_S);
         z->_f |= FLG_N;
 
@@ -640,7 +634,8 @@ void z80_exec_ed(z80_t *z){
 
         arg1 = z->hl;
 
-        z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
+        z->_f &= ~(FLG_C|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
+        z->_f |= FLG_N;
 
         if (!arg1)
             z->_f |= FLG_C;
@@ -1605,7 +1600,6 @@ endxy:  z->code_prefix = 0;
             case 0b00111000:
                 arg = z->_a + 1;
                 z->_a = arg;
-                z->next_daa_op = NEXT_DAA_UP;
                 break;
         }
 
@@ -1618,7 +1612,7 @@ endxy:  z->code_prefix = 0;
             z->_f |= FLG_H;
         if (arg == 0x80)
             z->_f |= FLG_PV;
-
+        z->_f &= ~FLG_N;
         return;
     }
 
@@ -1657,7 +1651,6 @@ endxy:  z->code_prefix = 0;
             case 0b00111000:
                 arg = z->_a - 1;
                 z->_a = arg;
-                z->next_daa_op = NEXT_DAA_DOWN;
                 break;
         }
 
@@ -1670,7 +1663,7 @@ endxy:  z->code_prefix = 0;
             z->_f |= FLG_H;
         if (arg == 0x7F)
             z->_f |= FLG_PV;
-
+        z->_f |= FLG_N;
         return;
     }
 
@@ -1794,7 +1787,7 @@ endxy:  z->code_prefix = 0;
         uint8_t al = z->_a & 0x0f;
 
         typedef struct{
-            uint8_t next_daa_op;
+            uint8_t nf_before;
             uint8_t cf_before;
             uint8_t ah_min,ah_max;
             uint8_t hf_before;
@@ -1822,11 +1815,11 @@ endxy:  z->code_prefix = 0;
 
         for (int i = 0; i < 12; i++){
 
-            if ( (z->next_daa_op == daa_table[i].next_daa_op)
+            if ( (((z->_f & FLG_N)?1:0) == daa_table[i].nf_before)
             &&
-                 ( ((z->_f & FLG_C)?1:0) == daa_table[i].cf_before)
+                 (((z->_f & FLG_C)?1:0) == daa_table[i].cf_before)
             &&
-                 ( ((z->_f & FLG_H)?1:0) == daa_table[i].hf_before)
+                 (((z->_f & FLG_H)?1:0) == daa_table[i].hf_before)
             ){
                 if ( (ah >= daa_table[i].ah_min) && (ah <= daa_table[i].ah_max)
                 &&
