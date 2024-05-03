@@ -38,6 +38,8 @@ int main (int argc, char *argv[]){
 
     z80_dump(&z);
 
+    printf("\n=== LOOP ===\n\n");
+
     for (;!z.halted;){
 
         z80_step(&z);

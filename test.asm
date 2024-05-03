@@ -27,6 +27,11 @@ dec (ix+1)
 dec (iy+2)
 dec a
 
+ld a,0x27
+ld b,0x55
+add a,b
+daa
+
 halt
 
 data:
