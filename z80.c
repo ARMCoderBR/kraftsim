@@ -308,6 +308,8 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
     int16_t acc16 = z->_a;
     int ovf = 0;
 
+    z->next_daa_op = NEXT_DAA_UP;
+
     sum16 += acc16;
     if (add_cy)
         sum16++;
@@ -342,6 +344,8 @@ void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
     int16_t dif16 = -(int16_t)arg;
     int16_t acc16 = z->_a;
     int ovf = 0;
+
+    z->next_daa_op = NEXT_DAA_DOWN;
 
     dif16 += acc16;
     if (sub_cy)
@@ -537,6 +541,8 @@ void z80_exec_ed(z80_t *z){
 
     if (z->opcode == 0x44){         //NEG                        // NEG
 
+        z->next_daa_op = NEXT_DAA_DOWN;
+
         z->_f &= ~(FLG_C|FLG_PV|FLG_H|FLG_Z|FLG_S);
         z->_f |= FLG_N;
 
@@ -660,6 +666,7 @@ void z80_step(z80_t *z){
 rescan:
     z->opcode = z80_fetch(z);
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xDD){                             //DD Prefix (IX)
 
         z->code_prefix |= CODE_PREFIX_DD;
@@ -667,6 +674,7 @@ rescan:
         goto rescan;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xFD){                             //FD Prefix (IY)
 
         z->code_prefix |= CODE_PREFIX_FD;
@@ -674,6 +682,7 @@ rescan:
         goto rescan;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xCB){                             //CB Prefix (bit ops)
 
         z->code_prefix |= CODE_PREFIX_CB;
@@ -681,6 +690,7 @@ rescan:
         goto rescan;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xED){                             //ED Prefix (specials)
 
         z->code_prefix |= CODE_PREFIX_ED;
@@ -720,6 +730,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ( ((z->opcode & 0b11111000) == 0b01110000) &&
          ((z->opcode & 0b00000111) != 0b00000110) ){    // LD (HL),r / LD (IX+d),r / LD (IY+d),r
 
@@ -731,6 +742,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x36){                             // LD (HL),n / LD (IX+d),n / LD (IY+d),n
 
         uint8_t *pdest = z80_get_dest(z);
@@ -742,6 +754,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x21){                             // LD HL,nn / LD IX,nn / LD IY,nn
 
         uint16_t argl = z80_fetch(z);
@@ -760,6 +773,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x2A){                             // LD HL,(nn) / LD IX,(nn) / LD IY,(nn)
 
         uint16_t addrl = z80_fetch(z);
@@ -783,6 +797,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x22){                             // LD (nn),HL / LD (nn),IX / LD (nn),IY
 
         uint16_t addrl = z80_fetch(z);
@@ -805,6 +820,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xF9){                             // LD SP,HL / LD SP,IX / LD SP,IY
 
         uint16_t arg;
@@ -821,6 +837,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xE5){                             // PUSH HL / PUSH IX / PUSH IY
 
         uint16_t arg;
@@ -837,6 +854,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xE1){                             // POP HL / POP IX / POP IY
 
         uint16_t arg = z80_pop(z);
@@ -852,6 +870,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xE3){                             // EX (SP),HL / EX (SP),IX / EX (SP),IY
 
         uint16_t arg = z80_pop(z);
@@ -875,6 +894,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x86){                             // ADD A,(HL) / ADD A,(IX+d) / ADD A,(IY+d)
 
         uint8_t arg;
@@ -887,6 +907,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x8E){                             // ADC A,(HL) / ADC A,(IX+d) / ADC A,(IY+d)
 
         uint8_t arg;
@@ -899,6 +920,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x96){                             // SUB (HL) / SUB (IX+d) / SUB (IY+d)
 
         uint8_t arg;
@@ -911,6 +933,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x9E){                             // SBC A,(HL) / SBC A,(IX+d) / SBC A,(IY+d)
 
         uint8_t arg;
@@ -923,6 +946,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xA6){                             // AND (HL) / AND (IX+d) / AND (IY+d)
 
         uint8_t arg;
@@ -936,6 +960,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xB6){                             // OR (HL) / OR (IX+d) / OR (IY+d)
 
         uint8_t arg;
@@ -949,6 +974,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xAE){                             // XOR (HL) / XOR (IX+d) / XOR (IY+d)
 
         uint8_t arg;
@@ -962,6 +988,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xBE){                             // CP (HL) / CP (IX+d) / CP (IY+d)
 
         uint8_t arg;
@@ -976,6 +1003,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x34){                             // INC (HL) / INC (IX+d) / INC (IY+d)
 
         uint8_t arg;
@@ -1005,6 +1033,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x35){                             // DEC (HL) / DEC (IX+d) / DEC (IY+d)
 
         uint8_t arg;
@@ -1034,6 +1063,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x23){                             // INC HL / INC IX / INC IY
 
         if (z->code_prefix & CODE_PREFIX_DD)
@@ -1046,6 +1076,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x2B){                             // DEC HL / DEC IX / DEC IY
 
         if (z->code_prefix & CODE_PREFIX_DD)
@@ -1058,6 +1089,7 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11001111) == 0b00001001){        // ADD HL,ss / ADD IX,ss / ADD IY,ss
 
         uint16_t arg1, arg2;
@@ -1111,11 +1143,6 @@ endxy:  z->code_prefix = 0;
         goto endxy;
     }
 
-
-
-
-
-
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -1126,12 +1153,12 @@ endxy:  z->code_prefix = 0;
     }
 
     ////////////////////////////////////////////////////////////////////////////
-
     if (!z->opcode){   //NOP
 
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x76){   //HALT
 
         --z->pc;
@@ -1139,12 +1166,14 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11000000) == 0b01000000){         // LD r,r' - só registrador, sem acesso a memória
 
         *z80_get_dest(z) = *z80_get_orig(z);
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ( ((z->opcode & 0b11000111) == 0b00000110) &&
          ((z->opcode & 0b00111000) != 0b00110000) ){    // LD r,n
 
@@ -1152,18 +1181,21 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x0A){                             // LD A,(BC)
 
         z->_a = z80_read(z, z->bc);
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x1A){                             // LD A,(DE)
 
         z->_a = z80_read(z, z->de);
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x3A){                             // LD A,(nn)
 
         uint16_t addrl = z80_fetch(z);
@@ -1172,18 +1204,21 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x02){                             // LD (BC),A
 
         z80_write(z, z->bc, z->_a);
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x12){                             // LD (DE),A
 
         z80_write(z, z->de, z->_a);
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x32){                             // LD (nn),A
 
         uint16_t addrl = z80_fetch(z);
@@ -1192,6 +1227,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x08){                             // EX AF,AF'
 
         uint16_t temp = z->af;
@@ -1200,6 +1236,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xD9){                             // EXX
 
         uint16_t temp = z->bc;
@@ -1216,6 +1253,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11001111) == 0b00000001){        // LD dd,nn
 
         uint16_t argl = z80_fetch(z);
@@ -1245,6 +1283,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11110000) == 0b10000000){        // ADD A,r / ADC A,r
 
         uint8_t arg;
@@ -1279,6 +1318,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xC6){                             // ADD A,n
 
         uint8_t arg = z80_fetch(z);
@@ -1286,6 +1326,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xCE){                             // ADC A,n
 
         uint8_t arg = z80_fetch(z);
@@ -1293,6 +1334,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11110000) == 0b10010000){        // SUB r / SBC A,r
 
         uint8_t arg;
@@ -1327,6 +1369,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xD6){                             // SUB n
 
         uint8_t arg = z80_fetch(z);
@@ -1334,6 +1377,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xDE){                             // SBC A,n
 
         uint8_t arg = z80_fetch(z);
@@ -1341,6 +1385,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b10100000){        // AND r
 
         uint8_t arg;
@@ -1376,6 +1421,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xE6){                             // AND n
 
         uint8_t arg = z80_fetch(z);
@@ -1384,6 +1430,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b10110000){        // OR r
 
         uint8_t arg;
@@ -1419,6 +1466,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xF6){                             // OR n
 
         uint8_t arg = z80_fetch(z);
@@ -1427,6 +1475,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b10101000){        // XOR r
 
         uint8_t arg;
@@ -1462,6 +1511,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xEE){                             // XOR n
 
         uint8_t arg = z80_fetch(z);
@@ -1470,6 +1520,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b10111000){        // CP r
 
         uint8_t arg;
@@ -1508,6 +1559,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xFE){                             // CP n
 
         uint8_t arg = z80_fetch(z);
@@ -1517,6 +1569,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11000111) == 0b00000100){        // INC r
 
         uint8_t arg;
@@ -1551,6 +1604,7 @@ endxy:  z->code_prefix = 0;
             case 0b00111000:
                 arg = z->_a + 1;
                 z->_a = arg;
+                z->next_daa_op = NEXT_DAA_UP;
                 break;
         }
 
@@ -1567,6 +1621,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11000111) == 0b00000101){        // DEC r
 
         uint8_t arg;
@@ -1601,6 +1656,7 @@ endxy:  z->code_prefix = 0;
             case 0b00111000:
                 arg = z->_a - 1;
                 z->_a = arg;
+                z->next_daa_op = NEXT_DAA_DOWN;
                 break;
         }
 
@@ -1617,6 +1673,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0xEB){                             // EX DE,HL
 
         uint16_t temp = z->hl;
@@ -1625,6 +1682,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11001111) == 0b11000101){        // PUSH qq
 
         uint16_t arg;
@@ -1654,6 +1712,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11001111) == 0b11000001){        // POP qq
 
         uint16_t arg = z80_pop(z);
@@ -1681,6 +1740,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11000111) == 0b00000011){        // INC ss / DEC ss
 
         switch(z->opcode){
@@ -1706,6 +1766,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x37){                             // SCF
 
         z->_f &= ~(FLG_H|FLG_N);
@@ -1713,6 +1774,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x3F){                             // CCF
 
         z->_f &= ~(FLG_H|FLG_N);
@@ -1724,6 +1786,90 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    if (z->opcode == 0x27){                             // DAA
+/*
+    DAA ref table
+    --------------------------------------------------------------------------------
+    |           | C Flag  | HEX value in | H Flag | HEX value in | Number  | C flag|
+    | Operation | Before  | upper digit  | Before | lower digit  | added   | After |
+    |           | DAA     | (bit 7-4)    | DAA    | (bit 3-0)    | to byte | DAA   |
+    |------------------------------------------------------------------------------|
+    |           |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
+    |   ADD     |    0    |     0-8      |   0    |     A-F      |   06    |   0   |
+    |           |    0    |     0-9      |   1    |     0-3      |   06    |   0   |
+    |   ADC     |    0    |     A-F      |   0    |     0-9      |   60    |   1   |
+    |           |    0    |     9-F      |   0    |     A-F      |   66    |   1   |
+    |   INC     |    0    |     A-F      |   1    |     0-3      |   66    |   1   |
+    |           |    1    |     0-2      |   0    |     0-9      |   60    |   1   |
+    |           |    1    |     0-2      |   0    |     A-F      |   66    |   1   |
+    |           |    1    |     0-3      |   1    |     0-3      |   66    |   1   |
+    |------------------------------------------------------------------------------|
+    |   SUB     |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
+    |   SBC     |    0    |     0-8      |   1    |     6-F      |   FA    |   0   |
+    |   DEC     |    1    |     7-F      |   0    |     0-9      |   A0    |   1   |
+    |   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
+    |------------------------------------------------------------------------------|
+*/
+        uint8_t ah = z->_a >> 4;
+        uint8_t al = z->_a & 0x0f;
+
+        typedef struct{
+            uint8_t next_daa_op;
+            uint8_t cf_before;
+            uint8_t ah_min,ah_max;
+            uint8_t hf_before;
+            uint8_t al_min,al_max;
+            uint8_t byte_to_add;
+            uint8_t cf_after;
+        } daa_table_t;
+
+        const daa_table_t daa_table[] = {
+
+            { 0, 0, 0x00, 0x09, 0, 0x00, 0x09, 0},
+            { 0, 0, 0x00, 0x08, 0, 0x0a, 0x0f, 0},
+            { 0, 0, 0x00, 0x09, 1, 0x00, 0x03, 0},
+            { 0, 0, 0x0a, 0x0f, 0, 0x00, 0x09, 1},
+            { 0, 0, 0x09, 0x0f, 0, 0x0a, 0x0f, 1},
+            { 0, 0, 0x0a, 0x0f, 1, 0x00, 0x03, 1},
+            { 0, 1, 0x00, 0x02, 0, 0x00, 0x09, 1},
+            { 0, 1, 0x00, 0x02, 0, 0x0a, 0x0f, 1},
+            { 0, 1, 0x00, 0x03, 1, 0x00, 0x03, 1},
+            { 1, 0, 0x00, 0x09, 0, 0x00, 0x09, 0},
+            { 1, 0, 0x00, 0x08, 1, 0x06, 0x0f, 0},
+            { 1, 1, 0x07, 0x0f, 0, 0x00, 0x09, 1},
+            { 1, 1, 0x06, 0x0f, 1, 0x06, 0x0f, 1}
+        };
+
+        for (int i = 0; i < 12; i++){
+
+            if ( (z->next_daa_op == daa_table[i].next_daa_op)
+            &&
+                 ((z->_f & FLG_C) && daa_table[i].cf_before)
+            &&
+                 ((z->_f & FLG_H) && daa_table[i].hf_before)
+            ){
+                if ( (ah >= daa_table[i].ah_min) && (ah <= daa_table[i].ah_max)
+                &&
+                     (al >= daa_table[i].al_min) && (al <= daa_table[i].al_max)
+                ){
+                    z->_a += daa_table[i].byte_to_add;
+
+                    if (daa_table[i].cf_after)
+                        z->_f |= FLG_C;
+                    else
+                        z->_f &= ~FLG_C;
+
+                    // TODO: Acertar outros flags!!! Chega por hoje.
+                    break;
+                }
+            }
+        }
+
+        return;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x2F){                             // CPL
 
         z->_f |= (FLG_H|FLG_N);
@@ -1732,6 +1878,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x07){                             // RLCA
 
         z->_f &= ~(FLG_H|FLG_N|FLG_C);
@@ -1746,6 +1893,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x17){                             // RLA
 
         uint8_t cy = z->_f & FLG_C;
@@ -1762,6 +1910,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x0F){                             // RRCA
 
         z->_f &= ~(FLG_H|FLG_N|FLG_C);
@@ -1776,6 +1925,7 @@ endxy:  z->code_prefix = 0;
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x1F){                             // RRA
 
         uint8_t cy = z->_f & FLG_C;

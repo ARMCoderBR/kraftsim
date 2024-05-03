@@ -22,6 +22,9 @@
 #define CODE_PREFIX_CB 0x02
 #define CODE_PREFIX_ED 0x01
 
+#define NEXT_DAA_UP 0
+#define NEXT_DAA_DOWN 1
+
 typedef union {
         struct {
             uint8_t l;
@@ -55,6 +58,7 @@ typedef struct {
     uint8_t opcode;
     uint8_t code_prefix;
 
+    uint8_t next_daa_op;
     uint8_t halted;
 
     const uint8_t *rom;
