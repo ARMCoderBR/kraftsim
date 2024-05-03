@@ -1789,29 +1789,7 @@ endxy:  z->code_prefix = 0;
 
     ////////////////////////////////////////////////////////////////////////////
     if (z->opcode == 0x27){                             // DAA
-/*
-    DAA ref table
-    --------------------------------------------------------------------------------
-    |           | C Flag  | HEX value in | H Flag | HEX value in | Number  | C flag|
-    | Operation | Before  | upper digit  | Before | lower digit  | added   | After |
-    |           | DAA     | (bit 7-4)    | DAA    | (bit 3-0)    | to byte | DAA   |
-    |------------------------------------------------------------------------------|
-    |           |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
-    |   ADD     |    0    |     0-8      |   0    |     A-F      |   06    |   0   |
-    |           |    0    |     0-9      |   1    |     0-3      |   06    |   0   |
-    |   ADC     |    0    |     A-F      |   0    |     0-9      |   60    |   1   |
-    |           |    0    |     9-F      |   0    |     A-F      |   66    |   1   |
-    |   INC     |    0    |     A-F      |   1    |     0-3      |   66    |   1   |
-    |           |    1    |     0-2      |   0    |     0-9      |   60    |   1   |
-    |           |    1    |     0-2      |   0    |     A-F      |   66    |   1   |
-    |           |    1    |     0-3      |   1    |     0-3      |   66    |   1   |
-    |------------------------------------------------------------------------------|
-    |   SUB     |    0    |     0-9      |   0    |     0-9      |   00    |   0   |
-    |   SBC     |    0    |     0-8      |   1    |     6-F      |   FA    |   0   |
-    |   DEC     |    1    |     7-F      |   0    |     0-9      |   A0    |   1   |
-    |   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
-    |------------------------------------------------------------------------------|
-*/
+
         uint8_t ah = z->_a >> 4;
         uint8_t al = z->_a & 0x0f;
 
@@ -1856,17 +1834,23 @@ endxy:  z->code_prefix = 0;
                 ){
                     z->_a += daa_table[i].byte_to_add;
 
+                    int flg_h = 0;
+                    if ((z->_a >> 4) != ah)
+                        flg_h = 1;
+
+                    z80_update_flags_logic(z, flg_h);
+
                     if (daa_table[i].cf_after)
                         z->_f |= FLG_C;
                     else
                         z->_f &= ~FLG_C;
 
-                    // TODO: Acertar outros flags!!! Chega por hoje.
-                    break;
+                    return;
                 }
             }
         }
 
+        z80_update_flags_logic(z, 0);   // Se não processou o DAA, atualiza os flags assim mesmo.
         return;
     }
 
