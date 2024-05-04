@@ -547,11 +547,11 @@ void z80_exec_ed(z80_t *z){
         if (z->_a == 0x80)
             z->_f |= FLG_PV;
 
+        if (z->_a & 0x0F)   // Verifica se bits 0..3 são diferentes de zero
+            z->_f |= FLG_H; // (causam borrow do bit 4 após o NEG).
+
         z->_a ^= 0xFF;
         z->_a++;
-
-        if ((z->_a & 0x0F) == 0x0F)
-            z->_f |= FLG_H;
 
         if (z->_a & 0x80)
             z->_f |= FLG_S;
@@ -564,93 +564,96 @@ void z80_exec_ed(z80_t *z){
 
     if ((z->opcode & 0b11001111) == 0b01001010){        // ADC HL,ss
 
-        uint16_t arg1;
+        int32_t arg1, arg2;
+
+        arg1 = (int16_t)z->hl;
 
         switch(z->opcode & 0b00110000){
 
             case 0b00000000:
-                arg1 = z->bc;
+                arg2 = (int16_t)z->bc;
                 break;
             case 0b00010000:
-                arg1 = z->de;
+                arg2 = (int16_t)z->de;
                 break;
             case 0b00100000:
-                arg1 = z->hl;
+                arg2 = (int16_t)z->hl;
                 break;
             case 0b00110000:
-                arg1 = z->sp;
+                arg2 = (int16_t)z->sp;
                 break;
         }
 
-        z->hl += arg1;
-        if (z->_f & FLG_C)
-            z->hl++;
-
-        arg1 = z->hl;
-
         z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
 
-        if (!arg1)
-            z->_f |= FLG_C;
-
-        if (arg1 == 0x8000)
-            z->_f |= FLG_PV;
-
-        if (!(arg1 & 0xF000))
+        if (((arg1&0xFFF) + (arg2&0xFFF) + (z->_f & FLG_C ? 1:0)) & 0xF000)
             z->_f |= FLG_H;
 
-        if (!arg1)
+        arg1 += arg2;
+        if (z->_f & FLG_C)
+            arg1++;
+
+        z->hl = arg1 & 0xFFFF;
+
+        if (arg1 & 0xFFFF0000)
+            z->_f |= FLG_C;
+
+        if (!z->hl)
             z->_f |= FLG_Z;
 
         if (arg1 & 0x8000)
             z->_f |= FLG_S;
+
+        if ((arg1 > 32767) || (arg1 < -32768))
+            z->_f |= FLG_PV;
 
         return;
     }
 
     if ((z->opcode & 0b11001111) == 0b01000010){        // SBC HL,ss
 
-        uint16_t arg1;
+        int32_t arg1, arg2;
+
+        arg1 = (int16_t)z->hl;
 
         switch(z->opcode & 0b00110000){
 
             case 0b00000000:
-                arg1 = z->bc;
+                arg2 = (int16_t)z->bc;
                 break;
             case 0b00010000:
-                arg1 = z->de;
+                arg2 = (int16_t)z->de;
                 break;
             case 0b00100000:
-                arg1 = z->hl;
+                arg2 = (int16_t)z->hl;
                 break;
             case 0b00110000:
-                arg1 = z->sp;
+                arg2 = (int16_t)z->sp;
                 break;
         }
 
-        z->hl += arg1;
-        if (z->_f & FLG_C)
-            z->hl++;
+        z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
 
-        arg1 = z->hl;
-
-        z->_f &= ~(FLG_C|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
-        z->_f |= FLG_N;
-
-        if (!arg1)
-            z->_f |= FLG_C;
-
-        if (arg1 == 0x8000)
-            z->_f |= FLG_PV;
-
-        if (!(arg1 & 0xF000))
+        if (((arg1&0xFFF) - ((arg2&0xFFF) + (z->_f & FLG_C ? 1:0))) & 0xF000)
             z->_f |= FLG_H;
 
-        if (!arg1)
+        arg1 -= arg2;
+        if (z->_f & FLG_C)
+            arg1--;
+
+        z->hl = arg1 & 0xFFFF;
+
+        if (arg1 & 0xFFFF0000)
+            z->_f |= FLG_C;
+
+        if (!z->hl)
             z->_f |= FLG_Z;
 
         if (arg1 & 0x8000)
             z->_f |= FLG_S;
+
+        if ((arg1 > 32767) || (arg1 < -32768))
+            z->_f |= FLG_PV;
 
         return;
     }
@@ -1088,7 +1091,7 @@ endxy:  z->code_prefix = 0;
     ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11001111) == 0b00001001){        // ADD HL,ss / ADD IX,ss / ADD IY,ss
 
-        uint16_t arg1, arg2;
+        uint32_t arg1, arg2;
         if (z->code_prefix & CODE_PREFIX_DD)
             arg1 = z->ix;
         else
@@ -1119,13 +1122,14 @@ endxy:  z->code_prefix = 0;
                 break;
         }
 
-        arg1 += arg2;
-
         z->_f &= ~(FLG_N|FLG_H|FLG_C);
 
-        if (!(arg1 & 0xF000))
+        if (((arg1&0xFFF) + (arg2&0xFFF)) & 0xF000)
             z->_f |= FLG_H;
-        if (!arg1)
+
+        arg1 += arg2;
+
+        if (arg1 & 0xFFFF0000)
             z->_f |= FLG_C;
 
         if (z->code_prefix & CODE_PREFIX_DD)

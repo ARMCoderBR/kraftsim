@@ -1,6 +1,7 @@
 ; z80asm test.asm -o - | xxd -ps -c 16 > test.hex
 org 0x0000
 
+ld sp,0x4000
 ld hl,0x2000
 ld (hl),0x03
 ld ix,0x2000
@@ -33,8 +34,27 @@ add a,b
 daa
 cpl
 neg
-
-
+ld hl,0x8001
+ld bc,0x0002
+scf
+ccf
+adc hl,bc
+scf
+ld bc,0x0100
+sbc hl,bc
+ld hl,0
+push hl
+pop af
+ld hl,0x7fff
+ld bc,0x0001
+add hl,bc
+ld ix,1234
+add ix,bc
+ld iy,0x8678
+ld bc,0x8000
+add iy,bc
+ld bc,0x0a00
+add iy,bc
 halt
 
 data:
@@ -46,21 +66,3 @@ data2:
 data3:
     db 0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7
 
-;ld sp,0x4000
-;ld hl,0x2000
-;ld (hl),0
-;jp 0x0100
-
-;ds 0x0100 - $,0xFF
-
-;org 0x0100
-
-
-;ld a,0x7f
-;add a,1
-;ld a,0xFf
-;add a,1
-;ld a,-128
-;sub 1
-;sub 1
-;halt

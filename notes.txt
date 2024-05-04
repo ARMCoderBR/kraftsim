@@ -3,7 +3,7 @@
 8-Bit Load Group
 
 LD r, r'                    OK      OK
-LD r,n                      OK      OK
+LD r, n                     OK      OK
 LD r, (HL)                  OK      OK
 LD r, (IX+d)                OK      OK
 LD r, (IY+d)                OK      OK
@@ -21,7 +21,7 @@ LD (DE), A                  OK      OK
 LD (nn), A                  OK      OK
 LD A, I                     OK      OK
 LD A, R                     OK      OK
-LD I,A                      OK      OK
+LD I, A                     OK      OK
 LD R, A                     OK      OK
 
 16-Bit Load Group
@@ -117,9 +117,9 @@ DEC (IY+d)                  OK      OK
 
 General-Purpose Arithmetic and CPU Control Groups
 
-DAA                         OK
-CPL                         OK
-NEG                         OK
+DAA                         OK      OK
+CPL                         OK      OK
+NEG                         OK      OK
 CCF                         OK      OK
 SCF                         OK      OK
 NOP                         OK      OK
@@ -132,9 +132,9 @@ IM 2
 
 16-Bit Arithmetic Group
 
-ADD HL, ss                  OK
-ADC HL, ss                  OK
-SBC HL, ss
+ADD HL, ss                  OK      OK
+ADC HL, ss                  OK      OK
+SBC HL, ss                  OK      OK
 ADD IX, pp                  OK
 ADD IY, rr                  OK
 INC ss                      OK      OK
