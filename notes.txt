@@ -160,8 +160,8 @@ RR m                        OK
 SLA m                       OK
 SRA m                       OK
 SRL m                       OK
-RLD
-RRD
+RLD                         OK
+RRD                         OK
 
 Bit Set, Reset, and Test Group
 
