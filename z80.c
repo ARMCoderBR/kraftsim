@@ -258,6 +258,33 @@ const uint8_t *z80_get_orig(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+uint8_t *z80_get_reg_addr(z80_t *z){
+
+    uint8_t opc = z->opcode;
+
+    switch (opc & 0b00000111){
+
+        case 0b00000000:
+            return &z->_b;
+        case 0b00000001:
+            return &z->_c;
+        case 0b00000010:
+            return &z->_d;
+        case 0b00000011:
+            return &z->_e;
+        case 0b00000100:
+            return &z->_h;
+        case 0b00000101:
+            return &z->_l;
+        case 0b00000111:
+            return &z->_a;
+    }
+
+    // (hl)
+    return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void z80_update_flags_logic_reg(z80_t *z, int flg_h, uint8_t reg){
 
     uint8_t f = z->_f;
@@ -392,11 +419,13 @@ void z80_exec_cb(z80_t *z){
         z->opcode = z80_fetch(z);
     }
     else{
+
         operand_hxy_r = z80_get_phl_orig(z);
         operand_hxy_w = z80_get_phl_dest_last(z);
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// RLC m
     if (z->opcode  == 0b00000110){                     // RLC (HL) / RLC (IX+d) / RLC (IY+d)
 
         uint8_t arg = 0xff;
@@ -416,59 +445,19 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x80)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00000000){        // RLC r
 
         uint8_t arg,arg2;
-        switch(z->opcode & 0b00000111){
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg2 = z->_b; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg2 = z->_c; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg2 = z->_d; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg2 = z->_e; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg2 = z->_h; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg2 = z->_l; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg2 = z->_a; arg = arg2 << 1;
-                if (arg2 & 0x80)
-                    arg |= 0x01;
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 << 1;
+        if (arg2 & 0x80)
+            arg |= 0x01;
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg & 0xFF);
 
@@ -479,6 +468,7 @@ void z80_exec_cb(z80_t *z){
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// RL m
     if (z->opcode  == 0b00010110){                     // RL (HL) / RL (IX+d) / RL (IY+d)
 
         uint8_t arg = 0xff;
@@ -498,69 +488,30 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x80)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00010000){        // RL r
 
-        uint16_t arg;
-        switch(z->opcode & 0b00000111){
+        uint16_t arg, arg2;
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg = z->_b << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg = z->_c << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg = z->_d << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg = z->_e << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg = z->_h << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg = z->_l << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg = z->_a << 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x01;
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 << 1;
+        if (z->_f & FLG_C)
+            arg |= 0x01;
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg & 0xFF);
 
-        if (arg & 0x100)
+        if (arg2 & 0x80)
             z->_f |= FLG_C;
 
         return;
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// RRC m
     if (z->opcode  == 0b00001110){                     // RRC (HL) / RRC (IX+d) / RRC (IY+d)
 
         uint8_t arg = 0xff;
@@ -580,59 +531,19 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00001000){        // RRC r
 
         uint8_t arg,arg2;
-        switch(z->opcode & 0b00000111){
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg2 = z->_b; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg2 = z->_c; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg2 = z->_d; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg2 = z->_e; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg2 = z->_h; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg2 = z->_l; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg2 = z->_a; arg = arg2 >> 1;
-                if (arg2 & 0x01)
-                    arg |= 0x80;
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 >> 1;
+        if (arg2 & 0x01)
+            arg |= 0x80;
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg);
 
@@ -643,6 +554,7 @@ void z80_exec_cb(z80_t *z){
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// RR m
     if (z->opcode  == 0b00011110){                     // RR (HL) / RR (IX+d) / RR (IY+d)
 
         uint8_t arg = 0xff;
@@ -662,59 +574,19 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00011000){        // RR r
 
         uint8_t arg,arg2;
-        switch(z->opcode & 0b00000111){
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg2 = z->_b; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg2 = z->_c; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg2 = z->_d; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg2 = z->_e; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg2 = z->_h; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg2 = z->_l; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg2 = z->_a; arg = arg2 >> 1;
-                if (z->_f & FLG_C)
-                    arg |= 0x80;
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 >> 1;
+        if (z->_f & FLG_C)
+            arg |= 0x80;
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg);
 
@@ -725,6 +597,7 @@ void z80_exec_cb(z80_t *z){
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// SLA m
     if (z->opcode  == 0b00100110){                     // SLA (HL) / SLA (IX+d) / SLA (IY+d)
 
         uint8_t arg = 0xff;
@@ -742,45 +615,17 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x80)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00100000){        // SLA r
 
         uint8_t arg,arg2;
-        switch(z->opcode & 0b00000111){
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg2 = z->_b; arg = arg2 << 1;
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg2 = z->_c; arg = arg2 << 1;
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg2 = z->_d; arg = arg2 << 1;
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg2 = z->_e; arg = arg2 << 1;
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg2 = z->_h; arg = arg2 << 1;
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg2 = z->_l; arg = arg2 << 1;
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg2 = z->_a; arg = arg2 >> 1;
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 >> 1;
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg);
 
@@ -791,6 +636,7 @@ void z80_exec_cb(z80_t *z){
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// SRA m
     if (z->opcode  == 0b00101110){                     // SRA (HL) / SRA (IX+d) / SRA (IY+d)
 
         uint8_t arg = 0xff;
@@ -808,45 +654,17 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00101000){        // SRA r
 
         uint8_t arg,arg2;
-        switch(z->opcode & 0b00000111){
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg2 = z->_b; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg2 = z->_c; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg2 = z->_d; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg2 = z->_e; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg2 = z->_h; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg2 = z->_l; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg2 = z->_a; arg = arg2 >> 1; arg |= (arg2 & 0x80);
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 >> 1; arg |= (arg2 & 0x80);
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg);
 
@@ -857,6 +675,7 @@ void z80_exec_cb(z80_t *z){
     }
 
     ////////////////////////////////////////////////////////////////////////////
+    /// SRL m
     if (z->opcode  == 0b00111110){                     // SRL (HL) / SRL (IX+d) / SRL (IY+d)
 
         uint8_t arg = 0xff;
@@ -874,45 +693,17 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
+
+        return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
     if ((z->opcode & 0b11111000) == 0b00111000){        // SRL r
 
         uint8_t arg,arg2;
-        switch(z->opcode & 0b00000111){
+        uint8_t *reg = z80_get_reg_addr(z);
 
-            case 0b00000000:
-                arg2 = z->_b; arg = arg2 >> 1;
-                z->_b = arg;
-                break;
-            case 0b00000001:
-                arg2 = z->_c; arg = arg2 >> 1;
-                z->_c = arg;
-                break;
-            case 0b00000010:
-                arg2 = z->_d; arg = arg2 >> 1;
-                z->_d = arg;
-                break;
-            case 0b00000011:
-                arg2 = z->_e; arg = arg2 >> 1;
-                z->_e = arg;
-                break;
-            case 0b00000100:
-                arg2 = z->_h; arg = arg2 >> 1;
-                z->_h = arg;
-                break;
-            case 0b00000101:
-                arg2 = z->_l; arg = arg2 >> 1;
-                z->_l = arg;
-                break;
-//            case 0b00000110:
-//                break;
-            case 0b00000111:
-                arg2 = z->_a; arg = arg2 >> 1;
-                z->_a = arg;
-                break;
-        }
+        arg2 = *reg; arg = arg2 >> 1;
+        *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg);
 
@@ -921,9 +712,6 @@ void z80_exec_cb(z80_t *z){
 
         return;
     }
-
-
-
 
 }
 
