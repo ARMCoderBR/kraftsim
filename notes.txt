@@ -150,16 +150,16 @@ RLCA                        OK
 RLA                         OK
 RRCA                        OK
 RRA                         OK
-RLC r
-RLC (HL)
-RLC (IX+d)
-RLC (IY+d)
-RL m
-RRC m
-RR m
-SLA m
-SRA m
-SRL m
+RLC r                       OK
+RLC (HL)                    OK
+RLC (IX+d)                  OK
+RLC (IY+d)                  OK
+RL m                        OK
+RRC m                       OK
+RR m                        OK
+SLA m                       OK
+SRA m                       OK
+SRL m                       OK
 RLD
 RRD
 
