@@ -165,15 +165,15 @@ RRD                         OK
 
 Bit Set, Reset, and Test Group
 
-BIT b, r
-BIT b, (HL)
-BIT b, (IX+d)
-BIT b, (IY+d)
-SET b, r
-SET b, (HL)
-SET b, (IX+d)
-SET b, (IY+d)
-RES b, m
+BIT b, r                    OK      OK
+BIT b, (HL)                 OK
+BIT b, (IX+d)               OK
+BIT b, (IY+d)               OK
+SET b, r                    OK      OK
+SET b, (HL)                 OK
+SET b, (IX+d)               OK
+SET b, (IY+d)               OK
+RES b, m                    OK
 
 Jump Group
 

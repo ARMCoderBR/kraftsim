@@ -743,7 +743,7 @@ void z80_exec_cb(z80_t *z){
             if (operand_hxy_r != NULL)
                 arg = *operand_hxy_r;
 
-            if (z->opcode & 0x01000000)
+            if (z->opcode & 0b01000000)
                 arg |= mask;  // SET
             else
                 arg &= ~mask; // RES
@@ -755,7 +755,7 @@ void z80_exec_cb(z80_t *z){
 
         uint8_t *reg = z80_get_reg8_ptr(z);             // SET/RES b,r
 
-        if (z->opcode & 0x01000000)
+        if (z->opcode & 0b01000000)
             *reg |= mask;     // SET
         else
             *reg &= ~mask;    // RES
