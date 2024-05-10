@@ -2366,13 +2366,6 @@ void z80_dump(z80_t *z){
     printf("\nPC:%04X  SP:%04X  BC:%04x  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X   FLAGS:",
             z->pc,z->sp,z->bc,z->de,z->hl,z->ix,z->iy,z->af);
 
-#define FLG_S 0x80
-#define FLG_Z 0x40
-#define FLG_H 0x10
-#define FLG_PV 0x04
-#define FLG_N 0x02
-#define FLG_C 0x01
-
     if (z->_f & FLG_S)
         printf("NEG ");
     else
