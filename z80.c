@@ -447,7 +447,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x80)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -463,7 +462,6 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x80)
             z->_f |= FLG_C;
-
         return;
     }
 
@@ -490,7 +488,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x80)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -506,7 +503,6 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x80)
             z->_f |= FLG_C;
-
         return;
     }
 
@@ -533,7 +529,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x01)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -549,7 +544,6 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
-
         return;
     }
 
@@ -575,7 +569,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x01)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -591,7 +584,6 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
-
         return;
     }
 
@@ -616,7 +608,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x80)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -630,7 +621,6 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x80)
             z->_f |= FLG_C;
-
         return;
     }
 
@@ -655,7 +645,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x01)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -669,7 +658,6 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
-
         return;
     }
 
@@ -694,7 +682,6 @@ void z80_exec_cb(z80_t *z){
 
             if (arg2 & 0x01)
                 z->_f |= FLG_C;
-
             return;
         }
 
@@ -708,10 +695,72 @@ void z80_exec_cb(z80_t *z){
 
         if (arg2 & 0x01)
             z->_f |= FLG_C;
-
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    /// BIT b,m
+    if ((z->opcode & 0b11000000) == 0b01000000){
+
+        uint8_t mask = 0x01 << ((z->opcode >> 3) & 0x07);
+
+        if ((z->opcode & 0b00000111)  == 0b00000110){   // BIT b,(HL) / BIT b,(IX+d) / BIT b,(IY+d)
+
+            uint8_t arg = 0xff;
+            if (operand_hxy_r != NULL)
+                arg = *operand_hxy_r;
+
+            if (arg & mask)
+                z->_f &= ~FLG_Z;
+            else
+                z->_f |= FLG_Z;
+
+            z->_f |= FLG_H;
+            z->_f &= ~FLG_N;
+            return;
+        }
+
+        uint8_t *reg = z80_get_reg8_ptr(z);             // BIT b,r
+        if (*reg & mask)
+            z->_f &= ~FLG_Z;
+        else
+            z->_f |= FLG_Z;
+
+        z->_f |= FLG_H;
+        z->_f &= ~FLG_N;
+        return;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    /// SET b,m / RES b,m
+    if ((z->opcode & 0b10000000) == 0b10000000){
+
+        uint8_t mask = 0x01 << ((z->opcode >> 3) & 0x07);
+
+        if ((z->opcode & 0b00000111) == 0b00000110){   // SET/RES b,(HL) / SET/RES b,(IX+d) / SET/RES b,(IY+d)
+
+            uint8_t arg = 0xff;
+            if (operand_hxy_r != NULL)
+                arg = *operand_hxy_r;
+
+            if (z->opcode & 0x01000000)
+                arg |= mask;  // SET
+            else
+                arg &= ~mask; // RES
+
+            if (operand_hxy_w != NULL)
+                *operand_hxy_w = arg;
+            return;
+        }
+
+        uint8_t *reg = z80_get_reg8_ptr(z);             // SET/RES b,r
+
+        if (z->opcode & 0x01000000)
+            *reg |= mask;     // SET
+        else
+            *reg &= ~mask;    // RES
+        return;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

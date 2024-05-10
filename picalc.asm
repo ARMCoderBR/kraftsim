@@ -9,7 +9,9 @@ NBYTES:         equ NBITS>>3
 NBYTES1:        equ NBYTES-1
 
     org 0x0000
-    jp _main
+    ld sp,0x4000
+    call _main
+    halt
 
     seek 0x0008     ; Para SW Interrupt
     org 0x0008
@@ -256,11 +258,19 @@ inc_reg_int8_1:
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
 _main:
 
-    ld sp,0x4000
     ld hl,reg1
-    rst 08h
     ;call zero_reg
-    halt
+    ld b,4
+_loop:
+    rst 08h
+    djnz _loop
+
+    ld b,4
+_loop2:
+    dec b
+    ret z
+    jr _loop2
+    ret
 
 ;///////////////////////////////////////////////////////////////////////////////
     seek 0x2000
