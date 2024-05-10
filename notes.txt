@@ -177,27 +177,27 @@ RES b, m
 
 Jump Group
 
-JP nn
-JP cc, nn
-JR e
-JR C, e
-JR NC, e
-JR Z, e
-JR NZ, e
-JP (HL)
-JP (IX)
-JP (IY)
-DJNZ, e
+JP nn                       OK
+JP cc, nn                   OK
+JR e                        OK
+JR C, e                     OK
+JR NC, e                    OK
+JR Z, e                     OK
+JR NZ, e                    OK
+JP (HL)                     OK
+JP (IX)                     OK
+JP (IY)                     OK
+DJNZ, e                     OK
 
 Call and Return Group
 
-CALL nn
-CALL cc, nn
-RET
-RET cc
-RETI
-RETN
-RST p
+CALL nn                     OK
+CALL cc, nn                 OK
+RET                         OK
+RET cc                      OK
+RETI                        OK
+RETN                        OK
+RST p                       OK
 
 Input and Output Group
 
