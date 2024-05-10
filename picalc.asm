@@ -9,11 +9,18 @@ NBYTES:         equ NBITS>>3
 NBYTES1:        equ NBYTES-1
 
     org 0x0000
-
     jp _main
 
-    org 0x0066
+    seek 0x0008     ; Para SW Interrupt
+    org 0x0008
+    ret
 
+    seek 0x0038     ; Para HW Interrupt IM 1
+    org 0x0038
+    reti
+
+    seek 0x0066     ; Para NMI
+    org 0x0066
     retn
 
 pidigits: db '3.14159265358979323846264338327950288419716939937510'
@@ -250,9 +257,13 @@ inc_reg_int8_1:
 _main:
 
     ld sp,0x4000
+    ld hl,reg1
+    rst 08h
+    ;call zero_reg
     halt
 
 ;///////////////////////////////////////////////////////////////////////////////
+    seek 0x2000
     org 0x2000
 
 reg1:     ds NBYTES

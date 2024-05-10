@@ -556,7 +556,6 @@ void z80_exec_cb(z80_t *z){
     ////////////////////////////////////////////////////////////////////////////
     /// RR m
     if ((z->opcode & 0b11111000) == 0b00011000){
-
         if (z->opcode  == 0b00011110){                  // RR (HL) / RR (IX+d) / RR (IY+d)
 
             uint8_t arg = 0xff;
@@ -1114,8 +1113,8 @@ int z80_exec_jmp(z80_t *z){
     switch(z->opcode){
 
     case 0xC3:          // JP
-        nextPC = z80_fetch(z); nextPC <<= 8;
-        nextPC |= z80_fetch(z);
+        nextPC = z80_fetch(z);
+        nextPC |= (uint16_t)z80_fetch(z) << 8;
         z->pc = nextPC;
         break;
 
@@ -1127,8 +1126,8 @@ int z80_exec_jmp(z80_t *z){
     case 0b11101010:    // JP PE
     case 0b11110010:    // JP P
     case 0b11111010:    // JP M
-        nextPC = z80_fetch(z); nextPC <<= 8;
-        nextPC |= z80_fetch(z);
+        nextPC = z80_fetch(z);
+        nextPC |= (uint16_t)z80_fetch(z) << 8;
 
         if (z80_calc_conditional(z))
             z->pc = nextPC;
@@ -1194,8 +1193,8 @@ int z80_exec_call(z80_t *z){
     switch(z->opcode){
 
     case 0xCD:          // CALL
-        nextPC = z80_fetch(z); nextPC <<= 8;
-        nextPC |= z80_fetch(z);
+        nextPC = z80_fetch(z);
+        nextPC |= (uint16_t)z80_fetch(z) << 8;
         z80_push(z, z->pc);
         z->pc = nextPC;
         break;
@@ -1208,8 +1207,8 @@ int z80_exec_call(z80_t *z){
     case 0b11101100:    // CALL PE
     case 0b11110100:    // CALL P
     case 0b11111100:    // CALL M
-        nextPC = z80_fetch(z); nextPC <<= 8;
-        nextPC |= z80_fetch(z);
+        nextPC = z80_fetch(z);
+        nextPC |= (uint16_t)z80_fetch(z) << 8;
 
         if (z80_calc_conditional(z)){
 

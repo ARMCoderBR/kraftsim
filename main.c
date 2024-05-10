@@ -44,6 +44,7 @@ int main (int argc, char *argv[]){
 
         z80_step(&z);
         z80_dump(&z);
+        //getchar();
     }
 
     z80_dump_mem(&z, RAMBASE,32);

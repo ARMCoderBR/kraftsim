@@ -40,7 +40,7 @@ int dechex8(char *buf){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int proclinehex (uint8_t *rom, char *buf, int pc){
+int proclinehex (uint8_t *rom, uint16_t romsize, char *buf, int pc){
 
     int len = strlen(buf);
 
@@ -64,7 +64,9 @@ int proclinehex (uint8_t *rom, char *buf, int pc){
             printf("Error parsing Hex\n");
             return -1;
         }
-        rom[pc+j] = b & 0xff;
+
+        if ((pc+j) < romsize)
+            rom[pc+j] = b & 0xff;
     }
 
     return j;
@@ -97,7 +99,7 @@ int romprog(uint8_t *rom, uint16_t size, char *fname){
                 buf[len-1] = 0;
 
             printf("Programming %04x Data:%s\n",pc, buf);
-            len = proclinehex(rom,buf,pc);
+            len = proclinehex(rom, size, buf, pc);
 
             if (len <= 0) break;
             pc += len;
