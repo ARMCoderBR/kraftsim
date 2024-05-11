@@ -78,7 +78,7 @@ int romprog(uint8_t *rom, uint16_t size, char *fname){
     char buf[128];
 
     //system("z80asm ../test.asm -o - | xxd -ps -c 16 > test.hex");
-    system("z80asm ../picalc.asm -o - | xxd -ps -c 16 > test.hex");
+    if (system("z80asm ../picalc.asm -o - | xxd -ps -c 16 > test.hex")) exit (0);
 
 
     FILE *f = fopen (fname,"r");

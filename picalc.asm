@@ -251,6 +251,103 @@ inc_reg_int8_1:
     jr inc_reg_int8_0
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   load_reg_int
+;   void load_reg_int(uint8_t *reg, int val);
+;   Parâmetros:
+;     DE: reg
+;     HL: val
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+load_reg_int:
+
+;    for (int i = NBYTES_INT - 1; i >= 0; i--){
+;        reg[i] = val & 0xff;
+;        val >>= 8;
+;    }
+    ex de,hl
+    ld bc,NBYTES_INT
+    add hl,bc
+    dec hl
+    ld b,NBYTES_INT
+    ld a,e
+    ld (hl),a
+    dec hl
+    ld a,d
+    ld (hl),a
+    dec b
+    dec b
+    ld a,b
+    or a
+    ret z
+    dec hl
+    xor a
+load_reg_int_0:
+    ld (hl),a
+    dec hl
+    djnz load_reg_int_0
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   sub_reg2_from_reg1
+;   void sub_reg2_from_reg1(uint8_t *reg1, const uint8_t *reg2);
+;   Parâmetros:
+;     DE: reg1
+;     HL: reg2
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+
+sub_reg2_from_reg1:
+
+;    uint16_t cy = 0;
+;    int i;
+;    for (i = NBYTES1; i >= 0; i--){
+;        uint16_t diff = (uint16_t)reg1[i] - (uint16_t)reg2[i] - cy;
+;        if (diff & 0x8000)
+;            cy = 1;
+;        else
+;            cy = 0;
+;        reg1[i] = diff & 0xff;
+;    }
+
+    ld bc,NBYTES1
+    add hl,bc
+    ex de,hl
+    add hl,bc
+    ex de,hl
+    exx
+    ld bc,NBYTES1
+    inc bc
+    exx
+    sub a   ;zera CY
+
+sub_reg2_to_reg1_0:
+
+    ld b,(hl)
+    ld a,(de)
+    sbc a,b
+    ld (de),a
+
+    dec hl
+    dec de
+
+    exx                         ; Salva HL e DE, recupera contador em BC
+    ex af,af'                   ; Salva CY
+    dec bc
+    ld a,b
+    or c
+    ret z                       ; Fim do loop, tchau
+    ex af,af'                   ; Recupera CY
+    exx                         ; Salva contador em BC, recupera HL e DE
+    jr sub_reg2_to_reg1_0
+
+;///////////////////////////////////////////////////////////////////////////////
+;   sub_reg_from_acc
+;   void sub_reg_from_acc(const uint8_t *reg);
+
+    sub_reg2_from_reg1(acc, reg);
+}
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
 ;   Parâmetros: Nada
@@ -259,45 +356,12 @@ inc_reg_int8_1:
 _main:
 
     ld hl,reg1
-    ;call zero_reg
-    ld b,4
-_loop:
-    rst 08h
-    djnz _loop
+    call zero_reg
 
-    ld b,4
-_loop2:
-    dec b
-    jr z, _testbit
-    jr _loop2
-_testbit:
-    ld c,1
-    bit 0,c
-    bit 1,c
-    bit 2,c
-    bit 3,c
-    bit 4,c
-    bit 5,c
-    bit 6,c
-    bit 7,c
+    ld de,reg1
+    ld hl,21614
+    call load_reg_int
 
-    set 0,c
-    set 1,c
-    set 2,c
-    set 3,c
-    set 4,c
-    set 5,c
-    set 6,c
-    set 7,c
-
-    res 0,c
-    res 1,c
-    res 2,c
-    res 3,c
-    res 4,c
-    res 5,c
-    res 6,c
-    res 7,c
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
