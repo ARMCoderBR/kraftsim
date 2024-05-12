@@ -9,7 +9,7 @@ NBYTES:         equ NBITS>>3
 NBYTES1:        equ NBYTES-1
 
     org 0x0000
-    ld sp,0x4000
+    ld sp,0x2020
     call _main
     halt
 
@@ -409,9 +409,9 @@ shl_reg_1:
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
 _main:
 
-    ld bc,0x8000      ;423
-    ld de,reg1
-    call shl_reg
+;    ld bc,0x8000      ;423
+;    ld de,reg1
+;    call shl_reg
 
 ;    ld hl,reg1
 ;    call zero_reg
@@ -419,6 +419,18 @@ _main:
 ;    ld de,reg1
 ;    ld hl,21614
 ;    call load_reg_int
+
+    ld bc,0x1111
+    ld de,0x2222
+    ld hl,0x3333
+    ld ix,0x4444
+    ld iy,0x5555
+    push bc
+    push de
+    push hl
+    push ix
+    push iy
+    halt
 
     ret
 
