@@ -1877,11 +1877,17 @@ rescan:
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    if (
-         ((z->opcode & 0b11000000) == 0b01000000) &&
-          (z->opcode != 0x76) ){                        // LD r,r' - só registrador, sem acesso a memória
+    if ((z->opcode & 0b11000000) == 0b01000000){        // LD r,r' - só registrador, sem acesso a memória
 
-        *z80_get_dest(z,1) = *z80_get_orig(z,1);
+        if (z->opcode == 0x76) {                        // Caso especial 0x76: HALT
+
+            --z->pc;
+            z->halted = 1;
+        }
+        else{
+
+            *z80_get_dest(z,1) = *z80_get_orig(z,1);
+        }
         return;
     }
 
@@ -1959,14 +1965,6 @@ rescan:
     ////////////////////////////////////////////////////////////////////////////
     if (!z->opcode){   //NOP
 
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x76){   //HALT
-
-        --z->pc;
-        z->halted = 1;
         return;
     }
 
