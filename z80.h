@@ -34,8 +34,9 @@ typedef struct {
 
     uint16_t pc;
     uint16_t sp;
-    uint16_t ix;
-    uint16_t iy;
+
+    reg_t _ix;
+    reg_t _iy;
 
     reg_t _ir;
     reg_t _bc;
@@ -70,6 +71,8 @@ typedef struct {
 #define de _de.r16
 #define hl _hl.r16
 #define af _af.r16
+#define ix _ix.r16
+#define iy _iy.r16
 
 #define bca _bca.r16
 #define dea _dea.r16
@@ -90,6 +93,11 @@ typedef struct {
 
 #define _i _ir.r8.h
 #define _r _ir.r8.l
+
+#define _ixh _ix.r8.h
+#define _ixl _ix.r8.l
+#define _iyh _iy.r8.h
+#define _iyl _iy.r8.l
 
 } z80_t;
 

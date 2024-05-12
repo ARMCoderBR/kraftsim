@@ -343,9 +343,63 @@ sub_reg2_to_reg1_0:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   sub_reg_from_acc
 ;   void sub_reg_from_acc(const uint8_t *reg);
+;   Parâmetros:
+;     HL: reg
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
 
-    sub_reg2_from_reg1(acc, reg);
-}
+sub_reg_from_acc:
+
+    ld de,acc
+    call sub_reg2_from_reg1
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   shl_reg
+;   void shl_reg(uint8_t *reg, int places)
+;   Parâmetros:
+;     DE: reg
+;     BC: places
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+
+shl_reg:
+
+;    int i;
+;    if (places > NBITS)
+;        places = NBITS;
+;    int bytes = places >> 3;
+;    int bits = places & 0x07;
+;    int leftbytes = NBYTES - bytes;
+;    if (bytes > 0){
+;        if (leftbytes)
+;            memmove(&reg[0], &reg[bytes], leftbytes);
+;        memset(&reg[leftbytes],0,bytes);
+;    }
+;    if (places){
+;        for (i = 0; i < (leftbytes-1); i++){
+;            reg[i] <<= bits;
+;            uint8_t aux = reg[i+1] >> (8-bits);
+;            reg[i] |= aux;
+;        }
+;        reg[leftbytes - 1] <<= bits;
+;    }
+
+    ld a,NBYTES >> 8
+    sub b
+    jr c,shl_reg_0
+    jr nz,shl_reg_1
+
+    ld a,NBYTES & 255
+    sub c
+    jr nc, shl_reg_1
+
+shl_reg_0:
+    ld bc,NBYTES
+
+shl_reg_1:
+
+    ret
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   _main
@@ -355,12 +409,16 @@ sub_reg2_to_reg1_0:
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
 _main:
 
-    ld hl,reg1
-    call zero_reg
-
+    ld bc,0x8000      ;423
     ld de,reg1
-    ld hl,21614
-    call load_reg_int
+    call shl_reg
+
+;    ld hl,reg1
+;    call zero_reg
+
+;    ld de,reg1
+;    ld hl,21614
+;    call load_reg_int
 
     ret
 

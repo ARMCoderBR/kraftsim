@@ -215,7 +215,6 @@ OUTD
 OTDR
 
 
-
 DAA ref table
 --------------------------------------------------------------------------------
 |           | C Flag  | HEX value in | H Flag | HEX value in | Number  | C flag|
@@ -238,3 +237,72 @@ DAA ref table
 |   NEG     |    1    |     6-F      |   1    |     6-F      |   9A    |   1   |
 |------------------------------------------------------------------------------|
 
+--------- S u m m a r y  o f  U s e f u l  U n d o c u m e n t e d  Z - 8 0  O p c o d e s -----------
+http://www.z80.info/z80undoc.htm
+
+          DD24     INC HX     DD62  LD HX,D       DD8C  ADC A,HX
+          DD25     DEC HX     DD63  LD HX,E       DD8D  ADC A,LX
+          DD26 nn  LD HX,nn   DD64  LD HX,HX      DD94  SUB HX
+          DD2C     INC LX     DD65  LD HX,LX      DD95  SUB LX
+          DD2D     DEC LX     DD67  LD HX,A       DD9C  SBC A,HX
+          DD2E nn  LD LX,nn   DD68  LD LX,B       DD9D  SBC A,LX
+          DD44     LD B,HX    DD69  LD LX,C       DDA4  AND HX
+          DD45     LD B,LX    DD6A  LD LX,D       DDA5  AND LX
+          DD4C     LD C,HX    DD6B  LD LX,E       DDAC  XOR HX
+          DD4D     LD C,LX    DD6C  LD LX,HX      DDAD  XOR LX
+          DD54     LD D,HX    DD6D  LD LX,LX      DDB4  OR HX
+          DD55     LD D,LX    DD6F  LD LX,A       DDB5  OR LX
+          DD5C     LD E,LX    DD7C  LD A,HX       DDBC  CP HX
+          DD5D     LD E,LX    DD7D  LD A,LX       DDBD  CP LX
+          DD60     LD HX,B    DD84  ADD A,HX
+          DD61     LD HX,C    DD85  ADD A,LX
+
+          The corresponding instructions for  HY  and  LY  may  be
+          obtained by using FD in place of DD.
+
+                   CB30   SLL B            CB34   SLL H
+                   CB31   SLL C            CB35   SLL L
+                   CB32   SLL D            CB36   SLL (HL)
+                   CB33   SLL E            CB37   SLL A
+          
+          
+                     DDCBjj00-DDCBjj07   RLC r,(IX+jj)
+                     DDCBjj00-DDCBjj0F   RRC r,(IX+jj)
+                     DDCBjj10-DDCBjj17   RL r,(IX+jj)
+                     DDCBjj18-DDCBJJ1F   RR r,(IX+jj)
+                     DDCBjj20-DDCBjj27   SLA r,(IX+jj)
+                     DDCBjj28-DDCBjj2F   SRL r,(IX+jj)
+                     DDCBjj30-DDCBjj37   SLL r,(IX+jj)
+                     DDCBjj38-DDCBjj3F   SRL r,(IX+jj)
+          
+                     DDCBjj80-DDCBjj87   RES r,0,(IX+jj)
+                     DDCBjj88-DDCBjj8F   RES r,1,(IX+jj)
+                     DDCBjj90-DDCBjj97   RES r,2,(IX+jj)
+                     DDCBjj98-DDCBjj9F   RES r,3,(IX+jj)
+                     DDCBjjA0-DDCBjjA7   RES r,4,(IX+jj)
+                     DDCBjjA8-DDCBjjAF   RES r,5,(IX+jj)
+                     DDCBjjB0-DDCBjjB7   RES r,6,(IX+jj)
+                     DDCBjjB8-DDCBjjBF   RES r,7,(IX+jj)
+          
+                     DDCBjjC0-DDCBjjC7   SET r,0,(IX+jj)
+                     DDCBjjC8-DDCBjjCF   SET r,1,(IX+jj)
+                     DDCBjjD0-DDCBjjD7   SET r,2,(IX+jj)
+                     DDCBjjD8-DDCBjjDF   SET r,3,(IX+jj)
+                     DDCBjjE0-DDCBjjE7   SET r,4,(IX+jj)
+                     DDCBjjE8-DDCBjjEF   SET r,5,(IX+jj)
+                     DDCBjjF0-DDCBjjF7   SET r,6,(IX+jj)
+                     DDCBjjF8-DDCBjjFF   SET r,7,(IX+jj)
+
+          In the last 3 tables, the corresponding instructions for
+          (IY+jj) may be obtained by using FD in place of DD.  The
+          value of r is determined as follows:
+
+                     Last digit of opcode:    register r:
+                             0 or 8               B
+                             1 or 9               C
+                             2 or A               D
+                             3 or B               E
+                             4 or C               H
+                             5 or D               L
+                             6 or E            (blank)
+                             7 or F               A
