@@ -47,7 +47,7 @@ int main (int argc, char *argv[]){
         //getchar();
     }
 
-    z80_dump_mem(&z, RAMBASE,32);
+    z80_dump_mem(&z, RAMBASE,256);
 
     return 0;
 }

@@ -1,5 +1,9 @@
 ; z80asm picalc.asm -o - | xxd -ps -c 16 > test.hex
 
+ROMBASE:        equ 0
+ROMSZ:          equ 8192
+RAMBASE:        equ 8192
+RAMSZ:          equ 8192
 
 NBITS_INT:      equ 16
 NBITS_FRAC:     equ 3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
@@ -8,8 +12,9 @@ NBITS:          equ NBITS_INT+NBITS_FRAC
 NBYTES:         equ NBITS>>3
 NBYTES1:        equ NBYTES-1
 
-    org 0x0000
-    ld sp,0x2020
+    org ROMBASE
+
+    ld sp,RAMBASE+RAMSZ
     call _main
     halt
 
@@ -371,12 +376,12 @@ shl_reg:
 ;    int bytes = places >> 3;
 ;    int bits = places & 0x07;
 ;    int leftbytes = NBYTES - bytes;
-;    if (bytes > 0){
+;    if (bytes){
 ;        if (leftbytes)
 ;            memmove(&reg[0], &reg[bytes], leftbytes);
 ;        memset(&reg[leftbytes],0,bytes);
 ;    }
-;    if (places){
+;    if (bits){
 ;        for (i = 0; i < (leftbytes-1); i++){
 ;            reg[i] <<= bits;
 ;            uint8_t aux = reg[i+1] >> (8-bits);
@@ -385,19 +390,59 @@ shl_reg:
 ;        reg[leftbytes - 1] <<= bits;
 ;    }
 
-    ld a,NBYTES >> 8
+    ld a,NBITS >> 8
     sub b
     jr c,shl_reg_0
     jr nz,shl_reg_1
 
-    ld a,NBYTES & 255
+    ld a,NBITS & 255
     sub c
     jr nc, shl_reg_1
 
 shl_reg_0:
-    ld bc,NBYTES
+    ld bc,NBITS
 
 shl_reg_1:
+    ld a,c
+    and 0x07
+    db 0xdd
+    ld l,a    ; IXL = 'bits'
+    srl b
+    rr c
+    srl b
+    rr c
+    srl b
+    rr c        ; BC = 'bytes'
+    ld hl,NBYTES
+    xor a
+    sbc hl,bc   ; HL = 'leftbytes'
+
+    ld a,b
+    or c
+    jr z,shl_reg_2
+
+    ld b,h
+    ld c,l      ; BC = 'leftbytes'
+    ld h,d
+    ld l,e
+
+    ; TODO: acertar as coisas aqui, tá dando ruim
+
+
+
+
+
+shl_reg_2:
+
+    db 0xdd
+    ld a,l  //IXL
+    or a
+    ret z
+
+
+
+
+
 
     ret
 
@@ -409,17 +454,30 @@ shl_reg_1:
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
 _main:
 
-;    ld bc,0x8000      ;423
+;    ld hl,reg1
+;    call zero_reg
+
+;    ld bc,???
 ;    ld de,reg1
 ;    call shl_reg
 
-;    ld hl,reg1
-;    call zero_reg
 
 ;    ld de,reg1
 ;    ld hl,21614
 ;    call load_reg_int
 
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+    seek RAMBASE
+    org RAMBASE
+
+reg1:     ds NBYTES
+acc:      ds NBYTES
+
+    end
+
+    ; Código "lixo" para teste do simulador
     ld bc,0x1111
     ld de,0x2222
     ld hl,0x3333
@@ -430,13 +488,31 @@ _main:
     push hl
     push ix
     push iy
-    halt
 
-    ret
+    pop bc
+    pop de
+    pop hl
+    pop ix
+    pop iy
 
-;///////////////////////////////////////////////////////////////////////////////
-    seek 0x2000
-    org 0x2000
-
-reg1:     ds NBYTES
-acc:      ds NBYTES
+    ld hl,0x20f4
+    ld a,(hl)
+    ld b,a
+    ld c,a
+    ld d,a
+    ld e,a
+    ld h,a
+    ld l,a
+    ld ixh,a
+    ld ixl,a
+    ld iyh,a
+    ld iyl,a
+    ld a,0xAA
+    ld hl,0x20f4
+    ld (hl),a
+    dec hl
+    ld (hl),0x88
+    ld ix,0x2000
+    ld iy,0x2040
+    ld (ix+0),a
+    ld (iy+2),a
