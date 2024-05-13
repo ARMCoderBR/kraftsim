@@ -14,7 +14,8 @@ NBYTES1:        equ NBYTES-1
 
     org ROMBASE
 
-    ld sp,RAMBASE+RAMSZ
+    ;ld sp,RAMBASE+RAMSZ
+    ld sp,RAMBASE + 0x100
     call _main
     halt
 
@@ -390,6 +391,13 @@ shl_reg:
 ;        reg[leftbytes - 1] <<= bits;
 ;    }
 
+    ld ix,0xFFF8    ; Reserva 8 bytes
+    add ix,sp
+    ld sp,ix
+
+    ld (ix+0),e     ;IX+0, IX+1 = 'reg'
+    ld (ix+1),d
+
     ld a,NBITS >> 8
     sub b
     jr c,shl_reg_0
@@ -400,50 +408,140 @@ shl_reg:
     jr nc, shl_reg_1
 
 shl_reg_0:
+
     ld bc,NBITS
 
 shl_reg_1:
+
     ld a,c
     and 0x07
-    db 0xdd
-    ld l,a    ; IXL = 'bits'
+    ld (ix+2),a     ; IX+2 = 'bits'
     srl b
     rr c
     srl b
     rr c
     srl b
-    rr c        ; BC = 'bytes'
+    rr c            ; BC = 'bytes'
     ld hl,NBYTES
     xor a
-    sbc hl,bc   ; HL = 'leftbytes'
+    sbc hl,bc       ; HL = 'leftbytes'
+    ld (ix+4),l     ; IX+4, IX+5 = 'leftbytes'
+    ld (ix+5),h
 
     ld a,b
     or c
     jr z,shl_reg_2
 
-    ld b,h
-    ld c,l      ; BC = 'leftbytes'
+    ld a,h
+    or l
+    jr z,shl_reg_1a
+
+    ; Move bytes para a esquerda
+    push bc         ; Salva 'bytes'
+    push hl         ; Salva 'leftbytes'
+
     ld h,d
     ld l,e
+    add hl,bc       ; DE='reg' HL='reg[bytes]'
+    pop bc          ; Restaura 'leftbytes'
+    ldir
 
-    ; TODO: acertar as coisas aqui, tá dando ruim
+    pop bc          ; Restaura 'bytes'
 
+shl_reg_1a:
 
+    ; Zera bytes da direita
+    ; Aqui DE contém o primeiro byte a zerar (derivado do LDIR anterior, se ocorreu, ou o valor original).
+    ld h,d
+    ld l,e
+    xor a
 
+shl_reg_1b:
 
+    ld (hl),a
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,shl_reg_1b
 
 shl_reg_2:
 
-    db 0xdd
-    ld a,l  //IXL
+    ld a,(ix+2)     // 'bits'
     or a
-    ret z
+    jr z,shl_reg_end
 
+    ; Vai fazer o shift
+    ld c,(ix+4)
+    ld b,(ix+5)     ;'leftbytes'
 
+shl_reg_2a:
 
+    ld l,(ix+0)
+    ld h,(ix+1)     // HL = 'reg'
+    ld e,a          // 'bits'
+    neg
+    add a,8
+    ld d,a
+    ld a,(hl)
 
+shl_reg_2b:
 
+    sla a
+    dec e
+    jr nz,shl_reg_2b
 
+    ld e,a
+
+    inc hl
+    ld a,(hl)
+    dec hl
+
+shl_reg_2c:
+
+    srl a
+    dec d
+    jr nz,shl_reg_2c
+
+    or e
+    ld (hl),a
+    inc hl
+
+    dec bc
+    ld a,b
+    or c
+    jr nz,shl_reg_2a
+
+    ld a,(hl)
+    ld b,(IX+2)     // 'bits'
+
+shl_reg_2d:
+
+    sla a
+    djnz shl_reg_2d
+
+    ld (hl),a
+
+shl_reg_end:
+
+    ld hl,0x0008    ; Libera 8 bytes
+    add hl,sp
+    ld sp,hl
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+stack_test:
+
+    ld ix,0xFFF8    ; Reserva 8 bytes
+    add ix,sp
+    ld sp,ix
+
+    ld c,(ix+0)
+    ld b,(ix+1)
+    ;....
+    ld hl,0x0008    ; Libera 8 bytes
+    add hl,sp
+    ld sp,hl
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -454,6 +552,8 @@ shl_reg_2:
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
 _main:
 
+;    call stack_test
+
 ;    ld hl,reg1
 ;    call zero_reg
 
@@ -461,10 +561,12 @@ _main:
 ;    ld de,reg1
 ;    call shl_reg
 
-
-;    ld de,reg1
-;    ld hl,21614
-;    call load_reg_int
+    ld de,reg1
+    ld hl,1
+    call load_reg_int
+    ld de,reg1
+    ld bc,1
+    call shl_reg
 
     ret
 
@@ -472,8 +574,8 @@ _main:
     seek RAMBASE
     org RAMBASE
 
-reg1:     ds NBYTES
-acc:      ds NBYTES
+reg1:   ds NBYTES
+acc:    ds NBYTES
 
     end
 
