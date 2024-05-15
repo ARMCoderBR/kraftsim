@@ -67,6 +67,8 @@ typedef struct {
 
     uint8_t last_ofs;
 
+    uint8_t print;
+
 #define bc _bc.r16
 #define de _de.r16
 #define hl _hl.r16
@@ -104,7 +106,9 @@ typedef struct {
 void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz);
 void z80_reset (z80_t *z);
 void z80_step(z80_t *z);
-void z80_dump(z80_t *z);
+void z80_dump_regs(z80_t *z);
 void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size);
+void z80_print(z80_t *z);
+void z80_noprint(z80_t *z);
 
 #endif /* Z80_H_ */

@@ -15,7 +15,7 @@ NBYTES1:        equ NBYTES-1
     org ROMBASE
 
     ;ld sp,RAMBASE+RAMSZ
-    ld sp,RAMBASE + 0x100
+    ld sp,RAMBASE + RAMSZ
     call _main
     halt
 
@@ -244,7 +244,7 @@ inc_reg_int8_0:
 
     ld e,0
     jr nc, inc_reg_int8_1
-    inc e       // Aqui usa E como CY.
+    inc e       ; Aqui usa E como CY.
 
 inc_reg_int8_1:
 
@@ -467,7 +467,7 @@ shl_reg_1b:
 
 shl_reg_2:
 
-    ld a,(ix+2)     // 'bits'
+    ld a,(ix+2)     ; 'bits'
     or a
     jr z,shl_reg_end
 
@@ -475,11 +475,13 @@ shl_reg_2:
     ld c,(ix+4)
     ld b,(ix+5)     ;'leftbytes'
 
+    ld l,(ix+0)
+    ld h,(ix+1)     ; HL = 'reg'
+
 shl_reg_2a:
 
-    ld l,(ix+0)
-    ld h,(ix+1)     // HL = 'reg'
-    ld e,a          // 'bits'
+    ld a,(ix+2)     ; 'bits'
+    ld e,a          ; 'bits'
     neg
     add a,8
     ld d,a
@@ -513,7 +515,7 @@ shl_reg_2c:
     jr nz,shl_reg_2a
 
     ld a,(hl)
-    ld b,(IX+2)     // 'bits'
+    ld b,(IX+2)     ; 'bits'
 
 shl_reg_2d:
 

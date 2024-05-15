@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define ROMSZ 8192
 #define RAMSZ 8192
@@ -36,15 +37,86 @@ int main (int argc, char *argv[]){
 
     z80_reset(&z);
 
-    z80_dump(&z);
+    z80_print(&z);
 
     printf("\n=== LOOP ===\n\n");
 
+    char buf[80];
+
+    #define NBP 10
+    uint16_t bp[NBP] = {0};
+    int running = 0;
+
     for (;!z.halted;){
 
+        if (!running)
+            z80_dump_regs(&z);
+        else{
+
+            for (int i = 0; i < NBP; i++){
+
+                if (z.pc == bp[i]){
+
+                    running = 0;
+                    z80_print(&z);
+                    z80_dump_regs(&z);
+                    break;
+                }
+            }
+        }
+
         z80_step(&z);
-        z80_dump(&z);
-        getchar();
+
+        if (running)
+            continue;
+prompt:
+        buf[0] = '.';
+        printf("\n:");
+        fgets(buf,sizeof(buf),stdin);
+        switch (buf[0]){
+
+            case 'q':
+                exit(0);
+
+            case 'd':
+                z80_dump_mem(&z, RAMBASE,256);
+                goto prompt;
+
+            case 'b':
+                switch(buf[1]){
+
+                    case 'l':
+listbp:
+                        printf("\nBreakpoints\n");
+                        for (int i = 0; i < NBP; i++)
+                            printf("%d - %04x\n",i,bp[i]);
+                        break;
+                    case 'c':
+                        if ((buf[2] >= '0') && (buf[2] <= '9')){
+                            bp[buf[2]-'0'] = 0;
+                            goto listbp;
+                        }
+                        break;
+                    case 's':
+                        if ((buf[2] >= '0') && (buf[2] <= '9')){
+                            printf("Enter BP val hhhh:");
+                            char buf2[8];
+                            fgets(buf2,sizeof(buf2),stdin);
+                            int val;
+                            sscanf(buf2,"%04x",&val);
+                            bp[buf[2]-'0'] = val;
+                            goto listbp;
+                        }
+                        break;
+                }
+                goto prompt;
+
+            case 'r':
+                z80_noprint(&z);
+                running = 1;
+                continue;
+
+        }
     }
 
     z80_dump_mem(&z, RAMBASE,256);
