@@ -661,7 +661,7 @@ void z80_exec_cb(z80_t *z){
         uint8_t arg,arg2;                               // SLA r
         uint8_t *reg = z80_get_reg8_ptr(z,0);
 
-        arg2 = *reg; arg = arg2 >> 1;
+        arg2 = *reg; arg = arg2 << 1;
         *reg = arg;
 
         z80_update_flags_logic_reg(z, 0, arg);
