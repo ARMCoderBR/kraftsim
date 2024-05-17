@@ -78,8 +78,19 @@ prompt:
             case 'q':
                 exit(0);
 
+            case 'h':
+                printf("  # HELP #\n");
+                printf("  ENTER     ... Step\n");
+                printf("  d         ... Dump RAM\n");
+                printf("  bl        ... List BKPTs\n");
+                printf("  bcN (0-9) ... Clear BKPT N\n");
+                printf("  bsN (0-9) ... Set BKPT N\n");
+                printf("  r         ... RUN until BKPT or HALT\n");
+                printf("  q         ... Quit\n");
+                goto prompt;
+
             case 'd':
-                z80_dump_mem(&z, RAMBASE,256);
+                z80_dump_mem(&z, RAMBASE,512);
                 goto prompt;
 
             case 'b':
@@ -119,7 +130,7 @@ listbp:
         }
     }
 
-    z80_dump_mem(&z, RAMBASE,256);
+    z80_dump_mem(&z, RAMBASE,512);
 
     return 0;
 }

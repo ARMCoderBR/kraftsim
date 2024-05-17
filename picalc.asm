@@ -546,6 +546,105 @@ stack_test:
     ld sp,hl
     ret
 
+
+;///////////////////////////////////////////////////////////////////////////////
+;   shr_reg
+;   void shr_reg(uint8_t *reg, int places);
+;   Parâmetros:
+;     DE: reg
+;     BC: places
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;
+;    int i;
+;
+;    if (places > NBITS)
+;        places = NBITS;
+;
+;    int bytes = places >> 3;
+;    int bits = places & 0x07;
+;
+;    int rightbytes = NBYTES - bytes;
+;
+;    if (bytes){
+;
+;        if (rightbytes)
+;            memmove(&reg[bytes], &reg[0], rightbytes);
+;        memset(&reg[0],0,bytes);
+;    }
+;
+;    if (bits){
+;
+;        for (i = NBYTES1; i > bytes; i--){
+;
+;            reg[i] >>= bits;
+;            uint8_t aux = reg[i-1] << (8-bits);
+;            reg[i] |= aux;
+;        }
+;
+;        reg[bytes] >>= bits;
+;    }
+
+shr_reg:
+
+    ld ix,0xFFF8    ; Reserva 8 bytes
+    add ix,sp
+    ld sp,ix
+
+    ld (ix+0),e     ;IX+0, IX+1 = 'reg'
+    ld (ix+1),d
+
+    ld a,NBITS >> 8
+    sub b
+    jr c,shr_reg_0
+    jr nz,shr_reg_1
+
+    ld a,NBITS & 255
+    sub c
+    jr nc, shr_reg_1
+
+shr_reg_0:
+
+    ld bc,NBITS
+
+shr_reg_1:
+
+    ld a,c
+    and 0x07
+    ld (ix+2),a     ; IX+2 = 'bits'
+    srl b
+    rr c
+    srl b
+    rr c
+    srl b
+    rr c            ; BC = 'bytes'
+    ld hl,NBYTES
+    xor a
+    sbc hl,bc       ; HL = 'rightbytes'
+    ld (ix+4),l     ; IX+4, IX+5 = 'rightbytes'
+    ld (ix+5),h
+
+    ld a,b
+    or c
+    jr z,shr_reg_2
+
+    ld a,h
+    or l
+    jr z,shr_reg_1a
+
+
+shr_reg_1a:
+shr_reg_2:
+
+
+
+shr_reg_end:
+
+    ld hl,0x0008    ; Libera 8 bytes
+    add hl,sp
+    ld sp,hl
+    ret
+
 ;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
@@ -563,12 +662,20 @@ _main:
 ;    ld de,reg1
 ;    call shl_reg
 
-    ld de,reg1
-    ld hl,1
-    call load_reg_int
+    ld hl,reg1
+    call zero_reg
+    ld hl,reg1
+    ld bc,NBYTES
+    dec bc
+    add hl,bc
+    ld (hl),11h
+
+loop:
     ld de,reg1
     ld bc,1
     call shl_reg
+    jr loop
+
 
     ret
 
