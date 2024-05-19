@@ -454,10 +454,10 @@ shl_reg_1a:
     ; Aqui DE contém o primeiro byte a zerar (derivado do LDIR anterior, se ocorreu, ou o valor original).
     ld h,d
     ld l,e
-    xor a
 
 shl_reg_1b:
 
+    xor a
     ld (hl),a
     inc hl
     dec bc
@@ -670,13 +670,15 @@ _main:
     add hl,bc
     ld (hl),11h
 
-loop:
+;loop:
+;    ld de,reg1
+;    ld bc,1
+;    call shl_reg
+;    jr loop
+
     ld de,reg1
-    ld bc,1
+    ld bc,31
     call shl_reg
-    jr loop
-
-
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
