@@ -514,6 +514,7 @@ shl_reg_2c:
     or c
     jr nz,shl_reg_2a
 
+    ; Ajusta o último byte relevante
     ld a,(hl)
     ld b,(IX+2)     ; 'bits'
 
@@ -591,7 +592,7 @@ shr_reg:
     add ix,sp
     ld sp,ix
 
-    ld (ix+0),e     ;IX+0, IX+1 = 'reg'
+    ld (ix+0),e     ; IX+0, IX+1 = 'reg'
     ld (ix+1),d
 
     ld a,NBITS >> 8
@@ -618,25 +619,123 @@ shr_reg_1:
     rr c
     srl b
     rr c            ; BC = 'bytes'
+    ld (ix+6),c
+    ld (ix+7),b     ; IX+6, IX+7 = 'bytes'
+
     ld hl,NBYTES
     xor a
     sbc hl,bc       ; HL = 'rightbytes'
     ld (ix+4),l     ; IX+4, IX+5 = 'rightbytes'
     ld (ix+5),h
 
-    ld a,b
+    ld a,b          ; if (bytes)
     or c
     jr z,shr_reg_2
 
-    ld a,h
+    ld a,h          ; if (rightbytes)
     or l
     jr z,shr_reg_1a
 
+    ; Move bytes para a direita
+
+    ld hl,NBYTES1
+    add hl,de
+    ld d,h
+    ld e,l          ; DE = último byte do reg (destino)
+
+    xor a           ; BC = 'bytes'
+    sbc hl,bc       ; HL = origem
+    ld c,(ix+4)     ; 'rightbytes'
+    ld b,(ix+5)
+    lddr
 
 shr_reg_1a:
+
+    ; Zera bytes da esquerda
+
+    ld c,(ix+6)
+    ld b,(ix+7)     ; IX+6, IX+7 = 'bytes'
+    ld l,(ix+0)
+    ld h,(ix+1)     ; IX+0, IX+1 = 'reg'
+
+shr_reg_1b:
+
+    xor a
+    ld (hl),a
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,shr_reg_1b
+
 shr_reg_2:
 
+    ld a,(ix+2)     ; 'bits'
+    or a
+    jr z,shr_reg_end
 
+    ; Vai fazer o shift
+
+    ld hl,NBYTES1
+    ld c,(ix+6)
+    ld b,(ix+7)     ; IX+6, IX+7 = 'bytes'
+    xor a
+    sbc hl,bc
+    ld b,h
+    ld c,l          ; BC = número de bytes a processar
+
+    ld l,(ix+0)
+    ld h,(ix+1)     ; HL = 'reg'
+
+    ld de,NBYTES1
+    add hl,de
+
+shr_reg_2a:
+
+    ld a,(ix+2)     ; 'bits'
+    ld e,a          ; E = 'bits'
+    neg
+    add a,8
+    ld d,a          ; D = 8 - 'bits'
+    ld a,(hl)
+
+shr_reg_2b:
+
+    srl a
+    dec e
+    jr nz,shr_reg_2b
+
+    ld e,a
+
+    dec hl
+    ld a,(hl)
+    inc hl
+
+shr_reg_2c:
+
+    sla a
+    dec d
+    jr nz,shr_reg_2c
+
+    or e
+    ld (hl),a
+    dec hl
+
+    dec bc
+    ld a,b
+    or c
+    jr nz,shr_reg_2a
+
+    ; Ajusta o último byte relevante
+    ld a,(hl)
+    ld b,(IX+2)     ; 'bits'
+
+shr_reg_2d:
+
+    srl a
+    djnz shr_reg_2d
+
+    ld (hl),a
 
 shr_reg_end:
 
@@ -665,8 +764,8 @@ _main:
     ld hl,reg1
     call zero_reg
     ld hl,reg1
-    ld bc,NBYTES
-    dec bc
+    ld (hl),11h
+    ld bc,NBYTES1
     add hl,bc
     ld (hl),11h
 
@@ -676,10 +775,12 @@ _main:
 ;    call shl_reg
 ;    jr loop
 
+loop:
     ld de,reg1
-    ld bc,31
-    call shl_reg
-    ret
+    ld bc,1
+    call shr_reg
+    jr loop
+    ;ret
 
 ;///////////////////////////////////////////////////////////////////////////////
     seek RAMBASE
