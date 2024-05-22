@@ -93,6 +93,7 @@ prompt:
                 printf("  bcN (0-9) ... Clear BKPT N\n");
                 printf("  bsN (0-9) ... Set BKPT N\n");
                 printf("  r         ... RUN until BKPT or HALT\n");
+                printf("  rst       ... Reset CPU\n");
                 printf("  q         ... Quit\n");
                 goto prompt;
 
@@ -136,9 +137,19 @@ listbp:
                 goto prompt;
 
             case 'r':
-                z80_noprint(&z);
-                running = 1;
-                continue;
+                if (!isalpha(buf[1])){
+                    z80_noprint(&z);
+                    running = 1;
+                    continue;
+                }
+                else{
+                    if ((buf[1] == 's') && (buf[2] == 't')){
+                        z80_reset(&z);
+                        z80_print(&z);
+                        continue;
+                    }
+                }
+                break;
 
             case 's':
                 if (z.afterPC){

@@ -837,8 +837,8 @@ mul_reg2_by_reg1_2:
     push ix
     push iy
 
-    ld l,(ix+4)
-    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
     db 0xfd
     ld b,h
     db 0xfd
@@ -848,14 +848,13 @@ mul_reg2_by_reg1_2:
     pop ix
 
 ;                add_reg2_to_reg1(reg2, regmdiv);
-    ld e,(ix+0)
-    ld d,(ix+1)         ; IX+0, IX+1: reg1
-    ld l,(ix+2)
-    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call add_reg2_to_reg1
 
-    db 0xfd
-    pop hl
+    pop iy
     pop ix
     pop hl
     pop de
@@ -870,8 +869,7 @@ mul_reg2_by_reg1_2:
 
 mul_reg2_by_reg1_3:
 
-    db 0xfd
-    inc hl
+    inc iy
 
 mul_reg2_by_reg1_4:
 
@@ -906,8 +904,7 @@ mul_reg2_by_reg1_4:
     call shr_reg
 
 ;    places = 0;
-    db 0xfd
-    ld hl,0
+    ld iy,0
 
 ;    //Parte fracionária
 ;    for (int i = NBYTES_INT; i < NBYTES; i++){
@@ -934,12 +931,11 @@ mul_reg2_by_reg1_6:
     push de
     push hl
     push ix
-    db 0xfd
-    push hl
+    push iy
 
 ;                shr_reg(regmdiv,places);
-    ld l,(ix+4)
-    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
     db 0xfd
     ld b,h
     db 0xfd
@@ -949,30 +945,27 @@ mul_reg2_by_reg1_6:
     pop ix
 
 ;                add_reg2_to_reg1(reg2, regmdiv);
-    ld e,(ix+0)
-    ld d,(ix+1)         ; IX+0, IX+1: reg1
-    ld l,(ix+2)
-    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call add_reg2_to_reg1
 
-    db 0xfd
-    pop hl
+    pop iy
     pop ix
     pop hl
     pop de
     pop bc
 
 ;                places = 1;
-    db 0xfd
-    ld hl,1
+    ld iy,1
     jr mul_reg2_by_reg1_8
 ;            }
 ;            else
 ;                places++;
 mul_reg2_by_reg1_7:
 
-    db 0xfd
-    inc hl
+    inc iy
 
 mul_reg2_by_reg1_8:
 
