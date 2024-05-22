@@ -908,9 +908,11 @@ mul_reg2_by_reg1_4:
 
 ;    //Parte fracionária
 ;    for (int i = NBYTES_INT; i < NBYTES; i++){
-    ld bc, NBYTES - NBYTES_INT
     ld l,(ix+0)
     ld h,(ix+1)         ; IX+0, IX+1: reg1
+    ld bc,NBYTES_INT
+    add hl,bc
+    ld bc, NBYTES - NBYTES_INT
 
 mul_reg2_by_reg1_5:
 
@@ -1012,9 +1014,12 @@ _main:
     ld hl,reg1
     call zero_reg
     ld hl,reg1
-    ld bc,NBYTES_INT-1
+    ;ld bc,NBYTES_INT-1
+    ;add hl,bc
+    ;ld (hl),2
+    ld bc,NBYTES_INT
     add hl,bc
-    ld (hl),2
+    ld (hl),0x80
 
     ld hl,acc
     call zero_reg

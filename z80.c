@@ -390,7 +390,7 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
     int ovf = 0;
 
     sum16 += acc16;
-    if (add_cy)
+    if (add_cy && (z->_f & FLG_C))
         sum16++;
 
     if ((sum16 > 127) || (sum16 < -128)) ovf = 1;
@@ -425,7 +425,7 @@ void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
     int ovf = 0;
 
     dif16 += acc16;
-    if (sub_cy)
+    if (sub_cy && (z->_f & FLG_C))
         dif16--;
 
     if ((dif16 > 127) || (dif16 < -128)) ovf = 1;
