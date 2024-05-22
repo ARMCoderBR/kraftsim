@@ -31,26 +31,26 @@ NBYTES1:        equ NBYTES-1
     org 0x0066
     retn
 
-pidigits: db '3.14159265358979323846264338327950288419716939937510'
-          db '58209749445923078164062862089986280348253421170679'
-          db '82148086513282306647093844609550582231725359408128'
-          db '48111745028410270193852110555964462294895493038196'
-          db '44288109756659334461284756482337867831652712019091'
-          db '45648566923460348610454326648213393607260249141273'
-          db '72458700660631558817488152092096282925409171536436'
-          db '78925903600113305305488204665213841469519415116094'
-          db '33057270365759591953092186117381932611793105118548'
-          db '07446237996274956735188575272489122793818301194912'
-          db '98336733624406566430860213949463952247371907021798'
-          db '60943702770539217176293176752384674818467669405132'
-          db '00056812714526356082778577134275778960917363717872'
-          db '14684409012249534301465495853710507922796892589235'
-          db '42019956112129021960864034418159813629774771309960'
-          db '51870721134999999837297804995105973173281609631859'
-          db '50244594553469083026425223082533446850352619311881'
-          db '71010003137838752886587533208381420617177669147303'
-          db '59825349042875546873115956286388235378759375195778'
-          db '18577805321712268066130019278766111959092164201989'
+pidigits: db "3.14159265358979323846264338327950288419716939937510"
+          db "58209749445923078164062862089986280348253421170679"
+          db "82148086513282306647093844609550582231725359408128"
+          db "48111745028410270193852110555964462294895493038196"
+          db "44288109756659334461284756482337867831652712019091"
+          db "45648566923460348610454326648213393607260249141273"
+          db "72458700660631558817488152092096282925409171536436"
+          db "78925903600113305305488204665213841469519415116094"
+          db "33057270365759591953092186117381932611793105118548"
+          db "07446237996274956735188575272489122793818301194912"
+          db "98336733624406566430860213949463952247371907021798"
+          db "60943702770539217176293176752384674818467669405132"
+          db "00056812714526356082778577134275778960917363717872"
+          db "14684409012249534301465495853710507922796892589235"
+          db "42019956112129021960864034418159813629774771309960"
+          db "51870721134999999837297804995105973173281609631859"
+          db "50244594553469083026425223082533446850352619311881"
+          db "71010003137838752886587533208381420617177669147303"
+          db "59825349042875546873115956286388235378759375195778"
+          db "18577805321712268066130019278766111959092164201989"
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   zero_reg
@@ -745,6 +745,261 @@ shr_reg_end:
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   mul_reg2_by_reg1
+;void mul_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
+;   Parâmetros:
+;     HL: reg1
+;     DE: reg2
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+
+mul_reg2_by_reg1:
+
+    ld ix,0xFFF8-2*NBYTES    ; Reserva 8 bytes + 2 buffers
+    add ix,sp
+    ld sp,ix
+
+    ld (ix+0),l
+    ld (ix+1),h         ; IX+0, IX+1: reg1
+    ld (ix+2),e
+    ld (ix+3),d         ; IX+2, IX+3: reg2
+
+    db 0xdd
+    ld c,l
+    db 0xdd
+    ld b,h              ; Copia IX em BC
+    ld HL,8
+    add hl,bc
+    ld (ix+4),l
+    ld (ix+5),h         ; IX+4, IX+5: regmdiv
+
+    push hl
+
+;    memcpy(regmdiv, reg2, NBYTES);
+    ld e,l
+    ld d,h
+    ld l,(ix+2)
+    ld h,(ix+3)
+    ld bc,NBYTES
+    ldir
+
+    pop hl
+
+;    memcpy(regmdiv2, reg2, NBYTES);
+    ld bc,NBYTES
+    add hl,bc
+    ld (ix+6),l
+    ld (ix+7),h         ; IX+6, IX+7: regmdiv2
+
+    ld e,l
+    ld d,h
+    ld l,(ix+2)
+    ld h,(ix+3)
+    ;ld bc,NBYTES   ;BC já está com o valor correto
+    ldir
+
+;    zero_reg(reg2);
+    ld l,(ix+2)
+    ld h,(ix+3)
+    call zero_reg       ;Zera reg2
+
+;    int places = 0;
+    ld iy,0             ; IY = places
+
+;    // Parte inteira
+;    for (int i = NBYTES_INT-1; i>=0; i--){
+
+    ld bc,NBYTES_INT
+    ld l,(ix+0)
+    ld h,(ix+1)       ; IX+0, IX+1: reg1
+    add hl,bc
+    dec hl            ; HL: buffer a processar
+
+mul_reg2_by_reg1_1:
+
+;        int msk = 1;
+    ld d,1
+
+;        for (int j = 0; j < 8; j++){
+    ld e,8
+
+mul_reg2_by_reg1_2:
+
+;            if (reg1[i] & msk){
+    ld a,(hl)
+    and d
+    jr z, mul_reg2_by_reg1_3
+
+;                shl_reg(regmdiv,places);
+    push bc
+    push de
+    push hl
+    push ix
+    push iy
+
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
+    db 0xfd
+    ld b,h
+    db 0xfd
+    ld c,l              ; BC recebe IY = 'places'
+    push ix
+    call shl_reg
+    pop ix
+
+;                add_reg2_to_reg1(reg2, regmdiv);
+    ld e,(ix+0)
+    ld d,(ix+1)         ; IX+0, IX+1: reg1
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    call add_reg2_to_reg1
+
+    db 0xfd
+    pop hl
+    pop ix
+    pop hl
+    pop de
+    pop bc
+
+;                places = 1;
+    ld iy,1     ; IY = places
+;            }
+;            else
+;                places++;
+    jr mul_reg2_by_reg1_4
+
+mul_reg2_by_reg1_3:
+
+    db 0xfd
+    inc hl
+
+mul_reg2_by_reg1_4:
+
+;            msk <<= 1;
+    ld a,d
+    sla a
+    ld d,a
+
+;        }
+    dec e
+    jr nz,mul_reg2_by_reg1_2
+
+;    }
+    dec hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,mul_reg2_by_reg1_1
+
+;    memcpy(regmdiv, regmdiv2, NBYTES);
+    ld l,(ix+6)
+    ld h,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld bc,NBYTES
+    ldir
+
+;    shr_reg(regmdiv,1);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld bc,1
+    call shr_reg
+
+;    places = 0;
+    db 0xfd
+    ld hl,0
+
+;    //Parte fracionária
+;    for (int i = NBYTES_INT; i < NBYTES; i++){
+    ld bc, NBYTES - NBYTES_INT
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg1
+
+mul_reg2_by_reg1_5:
+
+;        int msk = 128;
+    ld d,128
+
+;        for (int j = 0; j < 8; j++){
+    ld e,8
+
+mul_reg2_by_reg1_6:
+
+;            if (reg1[i] & msk){
+    ld a,(hl)
+    and d
+    jr z,mul_reg2_by_reg1_7
+
+    push bc
+    push de
+    push hl
+    push ix
+    db 0xfd
+    push hl
+
+;                shr_reg(regmdiv,places);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
+    db 0xfd
+    ld b,h
+    db 0xfd
+    ld c,l              ; BC recebe IY = 'places'
+    push ix
+    call shr_reg
+    pop ix
+
+;                add_reg2_to_reg1(reg2, regmdiv);
+    ld e,(ix+0)
+    ld d,(ix+1)         ; IX+0, IX+1: reg1
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    call add_reg2_to_reg1
+
+    db 0xfd
+    pop hl
+    pop ix
+    pop hl
+    pop de
+    pop bc
+
+;                places = 1;
+    db 0xfd
+    ld hl,1
+    jr mul_reg2_by_reg1_8
+;            }
+;            else
+;                places++;
+mul_reg2_by_reg1_7:
+
+    db 0xfd
+    inc hl
+
+mul_reg2_by_reg1_8:
+
+;            msk >>= 1;
+    ld a,d
+    srl a
+    ld d,a
+
+;        }
+    dec e
+    jr z, mul_reg2_by_reg1_6
+
+;    }
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,mul_reg2_by_reg1_5
+
+mul_reg2_by_reg1_end:
+
+    ld hl,0x0008+2*NBYTES    ; Libera 8 bytes + 2 buffers
+    add hl,sp
+    ld sp,hl
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
 ;   Parâmetros: Nada
@@ -764,23 +1019,22 @@ _main:
     ld hl,reg1
     call zero_reg
     ld hl,reg1
-    ld (hl),11h
-    ld bc,NBYTES1
+    ld bc,NBYTES_INT-1
     add hl,bc
-    ld (hl),11h
+    ld (hl),2
 
-;loop:
-;    ld de,reg1
-;    ld bc,1
-;    call shl_reg
-;    jr loop
+    ld hl,acc
+    call zero_reg
+    ld hl,acc
+    ld bc,NBYTES_INT-1
+    add hl,bc
+    ld (hl),3
 
-loop:
-    ld de,reg1
-    ld bc,1
-    call shr_reg
-    jr loop
-    ;ret
+    ld de,acc
+    ld hl,reg1
+    call mul_reg2_by_reg1
+
+    ret
 
 ;///////////////////////////////////////////////////////////////////////////////
     seek RAMBASE
@@ -789,44 +1043,3 @@ loop:
 reg1:   ds NBYTES
 acc:    ds NBYTES
 
-    end
-
-    ; Código "lixo" para teste do simulador
-    ld bc,0x1111
-    ld de,0x2222
-    ld hl,0x3333
-    ld ix,0x4444
-    ld iy,0x5555
-    push bc
-    push de
-    push hl
-    push ix
-    push iy
-
-    pop bc
-    pop de
-    pop hl
-    pop ix
-    pop iy
-
-    ld hl,0x20f4
-    ld a,(hl)
-    ld b,a
-    ld c,a
-    ld d,a
-    ld e,a
-    ld h,a
-    ld l,a
-    ld ixh,a
-    ld ixl,a
-    ld iyh,a
-    ld iyl,a
-    ld a,0xAA
-    ld hl,0x20f4
-    ld (hl),a
-    dec hl
-    ld (hl),0x88
-    ld ix,0x2000
-    ld iy,0x2040
-    ld (ix+0),a
-    ld (iy+2),a

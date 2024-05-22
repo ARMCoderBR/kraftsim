@@ -84,6 +84,7 @@ uint8_t z80_fetch(z80_t *z){
     uint8_t b = z80_read(z,z->pc++);
     if (z->print)
         printf("%02X ",b);
+    z->afterPC = 0;
     return b;
 }
 
@@ -930,8 +931,10 @@ void z80_exec_ed(z80_t *z){
         z->_f &= ~(FLG_H|FLG_N|FLG_PV);
         if (z->bc){
             z->_f |= FLG_PV;
-            if (opcode & 0x10)
+            if (opcode & 0x10){
+                z->afterPC = z->pc;
                 z->pc -= 2;
+            }
         }
 
         return;
@@ -965,8 +968,10 @@ void z80_exec_ed(z80_t *z){
             z->_f |= FLG_Z;
         else{
             if (opcode & 0x10){
-                if (z->bc)
+                if (z->bc){
+                    z->afterPC = z->pc;
                     z->pc -= 2;
+                }
             }
         }
 
@@ -1284,15 +1289,16 @@ finish_jr:
 ////////////////////////////////////////////////////////////////////////////////
 int z80_exec_call(z80_t *z){
 
-    uint16_t nextPC;
+    uint16_t callPC;
 
     switch(z->opcode){
 
     case 0xCD:          // CALL
-        nextPC = z80_fetch(z);
-        nextPC |= (uint16_t)z80_fetch(z) << 8;
+        callPC = z80_fetch(z);
+        callPC |= (uint16_t)z80_fetch(z) << 8;
         z80_push(z, z->pc);
-        z->pc = nextPC;
+        z->afterPC = z->pc;
+        z->pc = callPC;
         break;
 
     case 0b11000100:    // CALL NZ
@@ -1303,13 +1309,14 @@ int z80_exec_call(z80_t *z){
     case 0b11101100:    // CALL PE
     case 0b11110100:    // CALL P
     case 0b11111100:    // CALL M
-        nextPC = z80_fetch(z);
-        nextPC |= (uint16_t)z80_fetch(z) << 8;
+        callPC = z80_fetch(z);
+        callPC |= (uint16_t)z80_fetch(z) << 8;
 
         if (z80_calc_conditional(z)){
 
             z80_push(z, z->pc);
-            z->pc = nextPC;
+            z->afterPC = z->pc;
+            z->pc = callPC;
         }
         break;
 
@@ -1338,6 +1345,7 @@ int z80_exec_call(z80_t *z){
     case 0b11110111:    // RST 30h
     case 0b11111111:    // RST 38h
         z80_push(z, z->pc);
+        z->afterPC = z->pc;
         z->pc = z->opcode & 0x38;
         break;
 

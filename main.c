@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define ROMSZ 8192
 #define RAMSZ 8192
@@ -44,7 +45,7 @@ int main (int argc, char *argv[]){
     char buf[80];
 
     #define NBP 10
-    uint16_t bp[NBP] = {0};
+    uint16_t bp[1+NBP] = {0};
     int running = 0;
 
     for (;!z.halted;){
@@ -53,9 +54,12 @@ int main (int argc, char *argv[]){
             z80_dump_regs(&z);
         else{
 
-            for (int i = 0; i < NBP; i++){
+            for (int i = 0; i < 1+NBP; i++){
 
                 if (z.pc == bp[i]){
+
+                    if (i == NBP)
+                        bp[NBP] = 0;
 
                     running = 0;
                     z80_print(&z);
@@ -67,10 +71,12 @@ int main (int argc, char *argv[]){
 
         z80_step(&z);
 
+        //printf("NextPC:%04x AfterPC:%04x\n",z.pc,z.afterPC);
+
         if (running)
             continue;
 prompt:
-        buf[0] = '.';
+        buf[0] = buf[1] = 0;
         printf("\n:");
         fgets(buf,sizeof(buf),stdin);
         switch (buf[0]){
@@ -80,7 +86,8 @@ prompt:
 
             case 'h':
                 printf("  # HELP #\n");
-                printf("  ENTER     ... Step\n");
+                printf("  ENTER     ... Step Into\n");
+                printf("  s         ... Step Over RAM\n");
                 printf("  d         ... Dump RAM\n");
                 printf("  bl        ... List BKPTs\n");
                 printf("  bcN (0-9) ... Clear BKPT N\n");
@@ -90,7 +97,13 @@ prompt:
                 goto prompt;
 
             case 'd':
-                z80_dump_mem(&z, RAMBASE,512);
+                if (!isxdigit(buf[1]))
+                    z80_dump_mem(&z, RAMBASE,512);
+                else{
+                    int val;
+                    sscanf(buf+1,"%04x",&val);
+                    z80_dump_mem(&z, val,512);
+                }
                 goto prompt;
 
             case 'b':
@@ -127,6 +140,14 @@ listbp:
                 running = 1;
                 continue;
 
+            case 's':
+                if (z.afterPC){
+                    bp[NBP] = z.afterPC;
+                    z80_noprint(&z);
+                    running = 1;
+                    continue;
+                }
+                break;
         }
     }
 
