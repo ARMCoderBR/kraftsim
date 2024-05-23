@@ -391,6 +391,7 @@ shl_reg:
 ;        reg[leftbytes - 1] <<= bits;
 ;    }
 
+    push ix
     ld ix,0xFFF8    ; Reserva 8 bytes
     add ix,sp
     ld sp,ix
@@ -530,11 +531,13 @@ shl_reg_end:
     ld hl,0x0008    ; Libera 8 bytes
     add hl,sp
     ld sp,hl
+    pop ix
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
 stack_test:
 
+    push ix
     ld ix,0xFFF8    ; Reserva 8 bytes
     add ix,sp
     ld sp,ix
@@ -545,6 +548,7 @@ stack_test:
     ld hl,0x0008    ; Libera 8 bytes
     add hl,sp
     ld sp,hl
+    pop ix
     ret
 
 
@@ -588,6 +592,7 @@ stack_test:
 
 shr_reg:
 
+    push ix
     ld ix,0xFFF8    ; Reserva 8 bytes
     add ix,sp
     ld sp,ix
@@ -742,6 +747,7 @@ shr_reg_end:
     ld hl,0x0008    ; Libera 8 bytes
     add hl,sp
     ld sp,hl
+    pop ix
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -755,6 +761,7 @@ shr_reg_end:
 
 mul_reg2_by_reg1:
 
+    push ix
     ld ix,0xFFF8-2*NBYTES    ; Reserva 8 bytes + 2 buffers
     add ix,sp
     ld sp,ix
@@ -932,7 +939,6 @@ mul_reg2_by_reg1_6:
     push bc
     push de
     push hl
-    push ix
     push iy
 
 ;                shr_reg(regmdiv,places);
@@ -942,9 +948,7 @@ mul_reg2_by_reg1_6:
     ld b,h
     db 0xfd
     ld c,l              ; BC recebe IY = 'places'
-    push ix
     call shr_reg
-    pop ix
 
 ;                add_reg2_to_reg1(reg2, regmdiv);
     ld e,(ix+2)
@@ -954,7 +958,6 @@ mul_reg2_by_reg1_6:
     call add_reg2_to_reg1
 
     pop iy
-    pop ix
     pop hl
     pop de
     pop bc
@@ -992,6 +995,7 @@ mul_reg2_by_reg1_end:
     ld hl,0x0008+2*NBYTES    ; Libera 8 bytes + 2 buffers
     add hl,sp
     ld sp,hl
+    pop ix
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////

@@ -385,19 +385,25 @@ void z80_update_flags_logic_acc(z80_t *z, int flg_h){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 
-    int16_t sum16 = (int16_t)arg;
-    int16_t acc16 = z->_a;
+    int16_t sum16 = (int16_t)arg; if (sum16 & 0x80) sum16 |= 0xFF00;
+    int16_t acc16 = (int16_t)z->_a; if (acc16 & 0x80) acc16 |= 0xFF00;
+    uint16_t usum16 = ((uint16_t)arg) & 0xff;
+    uint16_t uacc16 = z->_a;
     int ovf = 0;
 
     sum16 += acc16;
     if (add_cy && (z->_f & FLG_C))
         sum16++;
 
+    usum16 += uacc16;
+    if (add_cy && (z->_f & FLG_C))
+        usum16++;
+
     if ((sum16 > 127) || (sum16 < -128)) ovf = 1;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_N|FLG_C);
 
-    if (sum16 & 0xFF00)
+    if (usum16 & 0xFF00)
         z->_f |= FLG_C;
 
     if (sum16 & 0x80)
@@ -420,20 +426,26 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
 
-    int16_t dif16 = -(int16_t)arg;
-    int16_t acc16 = z->_a;
+    int16_t dif16 = -(int16_t)arg; if (dif16 & 0x80) dif16 |= 0xFF00;
+    int16_t acc16 = (int16_t)z->_a;  if (acc16 & 0x80) acc16 |= 0xFF00;
+    uint16_t udif16 = (-(uint16_t)arg) & 0xff;
+    uint16_t uacc16 = z->_a;
     int ovf = 0;
 
     dif16 += acc16;
     if (sub_cy && (z->_f & FLG_C))
         dif16--;
 
+    udif16 += uacc16;
+    if (sub_cy && (z->_f & FLG_C))
+        udif16--;
+
     if ((dif16 > 127) || (dif16 < -128)) ovf = 1;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_C);
     z->_f |= FLG_N;             // Indica op. subtração
 
-    if (dif16 & 0xFF00)
+    if (udif16 & 0xFF00)
         z->_f |= FLG_C;
 
     if (dif16 & 0x80)
