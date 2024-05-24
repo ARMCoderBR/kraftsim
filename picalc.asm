@@ -367,7 +367,7 @@ sub_reg_from_acc:
 ;     DE: reg
 ;     BC: places
 ;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Afeta: BC DE HL AF
 
 shl_reg:
 
@@ -551,7 +551,6 @@ stack_test:
     pop ix
     ret
 
-
 ;///////////////////////////////////////////////////////////////////////////////
 ;   shr_reg
 ;   void shr_reg(uint8_t *reg, int places);
@@ -559,7 +558,7 @@ stack_test:
 ;     DE: reg
 ;     BC: places
 ;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Afeta: BC DE HL AF
 ;
 ;    int i;
 ;
@@ -757,7 +756,7 @@ shr_reg_end:
 ;     HL: reg1
 ;     DE: reg2
 ;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
 
 mul_reg2_by_reg1:
 
@@ -988,7 +987,7 @@ mul_reg2_by_reg1_end:
 ;   Parâmetros:
 ;     HL: reg
 ;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
 
 mul_acc_by_reg:
 
@@ -1003,7 +1002,7 @@ mul_acc_by_reg:
 ;   Parâmetros:
 ;     DE: reg
 ;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
 
 mul_reg_10:
 
@@ -1090,11 +1089,86 @@ mul_reg_10:
 }
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   compare
+;int compare (const uint8_t *reg1, const uint8_t *reg2);
+;   Parâmetros:
+;     HL: reg1
+;     DE: reg2
+;   Retorna: Flags: Z:        reg1 = reg2
+;                   NZ e C:   reg1 < reg2
+;                   NC e NC:  reg1 > reg2
+;   Afeta: BC DE HL AF
+
+compare:
+
+;    for (int i = 0; i < NBYTES; i++){
+    ld bc,NBYTES
+
+compare_1:
+
+;        if (reg1[i] < reg2[i]) return -1;   // reg1 < reg2
+;        if (reg1[i] > reg2[i]) return 1;    // reg1 > reg2
+
+    ld a,(de)
+    cp (hl)
+    jr z,compare_2
+    ccf
+    ret
+
+compare_2:
+
+;    }
+    inc hl
+    inc de
+
+    dec bc
+    ld a,b
+    or c
+    jr nz,compare_1
+
+;    return 0;   // Iguais
+    xor a
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   iszero
+;int iszero (const uint8_t *reg);
+;   Parâmetros:
+;     HL: reg
+;   Retorna: Flags: Z:        reg = 0
+;                   NZ:       reg1 != 0
+;   Afeta: BC DE HL AF
+
+iszero:
+
+;    for (int i = 0; i < NBYTES; i++){
+    ld bc,NBYTES
+
+iszero_1:
+
+;        if (reg[i]) return 0;   // não é zero
+    ld a,(hl)
+    or a
+    ret nz
+
+;    }
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,iszero_1
+
+;    return 1;   // É zero
+    xor a
+    ret
+
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
 ;   Parâmetros: Nada
 ;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
 _main:
 
 ;    call stack_test
