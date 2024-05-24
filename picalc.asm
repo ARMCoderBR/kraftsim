@@ -1193,13 +1193,18 @@ _main:
     ld hl,acc
     call zero_reg
     ld hl,acc
+    call iszero
+
+    ld hl,acc
     ld bc,NBYTES_INT-1
     add hl,bc
     ld (hl),3
+    ld hl,acc
+    call iszero
 
     ld de,acc
     ld hl,reg1
-    call mul_reg2_by_reg1
+    call compare
 
     ret
 

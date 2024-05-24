@@ -426,17 +426,17 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
 
-    int16_t dif16 = -(int16_t)arg; if (dif16 & 0x80) dif16 |= 0xFF00;
+    int16_t dif16 = (int16_t)arg; if (dif16 & 0x80) dif16 |= 0xFF00;
     int16_t acc16 = (int16_t)z->_a;  if (acc16 & 0x80) acc16 |= 0xFF00;
-    uint16_t udif16 = (-(uint16_t)arg) & 0xff;
+    uint16_t udif16 = (uint16_t)arg & 0xff;
     uint16_t uacc16 = z->_a;
     int ovf = 0;
 
-    dif16 += acc16;
+    dif16 = acc16 - dif16;
     if (sub_cy && (z->_f & FLG_C))
         dif16--;
 
-    udif16 += uacc16;
+    udif16 = uacc16 - udif16;
     if (sub_cy && (z->_f & FLG_C))
         udif16--;
 
