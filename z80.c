@@ -2361,13 +2361,13 @@ void z80_step(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_dump_regs(z80_t *z){
 
-    printf("\nPC:%04X  SP:%04X  BC:%04x  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X   FLAGS:",
+    printf("\nPC:%04X  SP:%04X  BC:%04X  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X  F:",
             z->pc,z->sp,z->bc,z->de,z->hl,z->ix,z->iy,z->af);
 
     if (z->_f & FLG_S)
-        printf("NEG ");
+        printf("M ");
     else
-        printf("POS ");
+        printf("P ");
 
     if (z->_f & FLG_Z)
         printf("Z  ");
@@ -2375,9 +2375,9 @@ void z80_dump_regs(z80_t *z){
         printf("NZ ");
 
     if (z->_f & FLG_H)
-        printf("H  ");
+        printf("H ");
     else
-        printf("NH ");
+        printf("- ");
 
     if (z->_f & FLG_PV)
         printf("PE OV ");
@@ -2385,14 +2385,14 @@ void z80_dump_regs(z80_t *z){
         printf("PO NV ");
 
     if (z->_f & FLG_N)
-        printf("SUB ");
+        printf("N ");
     else
-        printf("ADD ");
+        printf("- ");
 
     if (z->_f & FLG_C)
-        printf("CY ");
+        printf("C ");
     else
-        printf("NC ");
+        printf("NC");
 
     printf("\n");
 }

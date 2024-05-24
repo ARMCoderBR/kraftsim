@@ -771,38 +771,34 @@ mul_reg2_by_reg1:
     ld (ix+2),e
     ld (ix+3),d         ; IX+2, IX+3: reg2
 
-    db 0xdd
-    ld c,l
-    db 0xdd
-    ld b,h              ; Copia IX em BC
+;    uint8_t regmdiv[NBYTES];
+    ld c,ixl
+    ld b,ixh            ; Copia IX em BC
     ld HL,8
     add hl,bc
     ld (ix+4),l
     ld (ix+5),h         ; IX+4, IX+5: regmdiv
 
-    push hl
-
-;    memcpy(regmdiv, reg2, NBYTES);
-    ld e,l
-    ld d,h
-    ld l,(ix+2)
-    ld h,(ix+3)
-    ld bc,NBYTES
-    ldir
-
-    pop hl
-
-;    memcpy(regmdiv2, reg2, NBYTES);
+;    uint8_t regmdiv2[NBYTES];
     ld bc,NBYTES
     add hl,bc
     ld (ix+6),l
     ld (ix+7),h         ; IX+6, IX+7: regmdiv2
 
-    ld e,l
-    ld d,h
+;    memcpy(regmdiv, reg2, NBYTES);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
     ld l,(ix+2)
-    ld h,(ix+3)
-    ;ld bc,NBYTES   ;BC já está com o valor correto
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld bc,NBYTES
+    ldir
+
+;    memcpy(regmdiv2, reg2, NBYTES);
+    ld e,(ix+6)
+    ld d,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld bc,NBYTES
     ldir
 
 ;    zero_reg(reg2);
@@ -841,18 +837,12 @@ mul_reg2_by_reg1_2:
     push bc
     push de
     push hl
-    push ix
-    push iy
 
     ld e,(ix+4)
     ld d,(ix+5)         ; IX+4, IX+5: regmdiv
-    db 0xfd
-    ld b,h
-    db 0xfd
-    ld c,l              ; BC recebe IY = 'places'
-    push ix
+    ld b,iyh
+    ld c,iyl            ; BC recebe IY = 'places'
     call shl_reg
-    pop ix
 
 ;                add_reg2_to_reg1(reg2, regmdiv);
     ld e,(ix+2)
@@ -861,8 +851,6 @@ mul_reg2_by_reg1_2:
     ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call add_reg2_to_reg1
 
-    pop iy
-    pop ix
     pop hl
     pop de
     pop bc
@@ -939,15 +927,12 @@ mul_reg2_by_reg1_6:
     push bc
     push de
     push hl
-    push iy
 
 ;                shr_reg(regmdiv,places);
     ld e,(ix+4)
     ld d,(ix+5)         ; IX+4, IX+5: regmdiv
-    db 0xfd
-    ld b,h
-    db 0xfd
-    ld c,l              ; BC recebe IY = 'places'
+    ld b,iyh
+    ld c,iyl            ; BC recebe IY = 'places'
     call shr_reg
 
 ;                add_reg2_to_reg1(reg2, regmdiv);
@@ -957,7 +942,6 @@ mul_reg2_by_reg1_6:
     ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call add_reg2_to_reg1
 
-    pop iy
     pop hl
     pop de
     pop bc
@@ -981,7 +965,7 @@ mul_reg2_by_reg1_8:
 
 ;        }
     dec e
-    jr z, mul_reg2_by_reg1_6
+    jr nz, mul_reg2_by_reg1_6
 
 ;    }
     inc hl
