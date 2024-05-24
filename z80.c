@@ -1019,8 +1019,10 @@ void z80_exec_ed(z80_t *z){
     if ((z->opcode & 0b11001111) == 0b01001010){        // ADC HL,ss
 
         int32_t arg1, arg2;
+        uint32_t uarg1, uarg2;
 
-        arg1 = (int16_t)z->hl;
+        arg1 = (int16_t)z->hl; if (arg1 & 0x8000) arg1 |= 0xFFFF0000;
+        uarg1 = z->hl;
 
         switch(z->opcode & 0b00110000){
 
@@ -1038,18 +1040,23 @@ void z80_exec_ed(z80_t *z){
                 break;
         }
 
+        uarg2 = (arg2 & 0xFFFF);
+        if (arg2 & 0x8000) arg2 |= 0xFFFF0000;
+
         z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
 
         if (((arg1&0xFFF) + (arg2&0xFFF) + (z->_f & FLG_C ? 1:0)) & 0xF000)
             z->_f |= FLG_H;
 
         arg1 += arg2;
-        if (z->_f & FLG_C)
-            arg1++;
+        uarg1 += uarg2;
+        if (z->_f & FLG_C){
+            arg1++; uarg1++;
+        }
 
         z->hl = arg1 & 0xFFFF;
 
-        if (arg1 & 0xFFFF0000)
+        if (uarg1 & 0xFFFF0000)
             z->_f |= FLG_C;
 
         if (!z->hl)
@@ -1067,8 +1074,10 @@ void z80_exec_ed(z80_t *z){
     if ((z->opcode & 0b11001111) == 0b01000010){        // SBC HL,ss
 
         int32_t arg1, arg2;
+        uint32_t uarg1, uarg2;
 
-        arg1 = (int16_t)z->hl;
+        arg1 = (int16_t)z->hl; if (arg1 & 0x8000) arg1 |= 0xFFFF0000;
+        uarg1 = z->hl;
 
         switch(z->opcode & 0b00110000){
 
@@ -1086,18 +1095,23 @@ void z80_exec_ed(z80_t *z){
                 break;
         }
 
+        uarg2 = (arg2 & 0xFFFF);
+        if (arg2 & 0x8000) arg2 |= 0xFFFF0000;
+
         z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
 
         if (((arg1&0xFFF) - ((arg2&0xFFF) + (z->_f & FLG_C ? 1:0))) & 0xF000)
             z->_f |= FLG_H;
 
         arg1 -= arg2;
-        if (z->_f & FLG_C)
-            arg1--;
+        uarg1 -= uarg2;
+        if (z->_f & FLG_C){
+            arg1--; uarg1--;
+        }
 
         z->hl = arg1 & 0xFFFF;
 
-        if (arg1 & 0xFFFF0000)
+        if (uarg1 & 0xFFFF0000)
             z->_f |= FLG_C;
 
         if (!z->hl)
