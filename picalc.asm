@@ -983,6 +983,113 @@ mul_reg2_by_reg1_end:
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   mul_acc_by_reg
+;void mul_acc_by_reg(const uint8_t *reg);
+;   Parâmetros:
+;     HL: reg
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+
+mul_acc_by_reg:
+
+;    mul_reg2_by_reg1(reg, acc);
+    ld de,acc
+    call mul_reg2_by_reg1
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   mul_reg_10
+;void mul_reg_10(uint8_t *reg);
+;   Parâmetros:
+;     DE: reg
+;   Retorna: Nada
+;   Afeta: BC DE HL AF BC' DE' HL' AF'
+
+mul_reg_10:
+
+    push ix
+    ld ix,0xFFF8-2*NBYTES    ; Reserva 8 bytes + 2 buffers
+    add ix,sp
+    ld sp,ix
+
+    ld (ix+0),e
+    ld (ix+1),d         ; IX+0, IX+1: reg
+
+;    uint8_t regmdiv[NBYTES];
+    ld c,ixl
+    ld b,ixh            ; Copia IX em BC
+    ld HL,8
+    add hl,bc
+    ld (ix+4),l
+    ld (ix+5),h         ; IX+4, IX+5: regmdiv
+
+;    uint8_t regmdiv2[NBYTES];
+    ld bc,NBYTES
+    add hl,bc
+    ld (ix+6),l
+    ld (ix+7),h         ; IX+6, IX+7: regmdiv2
+
+;    memcpy(regmdiv, reg, NBYTES);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg
+    ld bc,NBYTES
+    ldir
+
+;    memcpy(regmdiv2, acc, NBYTES); // salva acc
+    ld e,(ix+6)
+    ld d,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld hl,acc
+    ld bc,NBYTES
+    ldir
+
+;    shl_reg(reg, 1);
+    ld e,(ix+0)
+    ld d,(ix+1)         ; IX+0, IX+1: reg
+    ld bc,1
+    call shl_reg
+
+;    memcpy(acc, reg, NBYTES);
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg
+    ld de,acc
+    ld bc,NBYTES
+    ldir
+
+;    shl_reg(regmdiv, 3);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld bc,3
+    call shl_reg
+
+;    add_reg_to_acc(regmdiv);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call add_reg_to_acc
+
+;    memcpy(reg, acc, NBYTES);
+    ld e,(ix+0)
+    ld d,(ix+1)         ; IX+0, IX+1: reg
+    ld hl,acc
+    ld bc,NBYTES
+    ldir
+
+;    memcpy(acc, regmdiv2, NBYTES);
+    ld l,(ix+6)
+    ld h,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld de,acc
+    ld bc,NBYTES
+    ldir
+
+    ld hl,0x0008+2*NBYTES    ; Libera 8 bytes + 2 buffers
+    add hl,sp
+    ld sp,hl
+    pop ix
+    ret
+}
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
 ;   Parâmetros: Nada
