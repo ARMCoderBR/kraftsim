@@ -1023,7 +1023,7 @@ _main:
     ;ld (hl),2
     ld bc,NBYTES_INT
     add hl,bc
-    ld (hl),0x80
+    ld (hl),0x40
 
     ld hl,acc
     call zero_reg
