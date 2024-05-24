@@ -53,6 +53,27 @@ pidigits: db "3.14159265358979323846264338327950288419716939937510"
           db "18577805321712268066130019278766111959092164201989"
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   prints
+;   void prints(void);
+;   Parâmetros: HL: String
+;   Retorna: Nada
+;   Afeta: HL
+prints:
+
+    pop hl
+prints_1:
+    ld a,(hl)
+    or a
+    jr z,prints_2
+    out(0),a
+    inc hl
+    jr prints_1
+prints_2:
+    inc hl
+    push hl
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   zero_reg
 ;   void zero_reg(uint8_t *reg);
 ;   Parâmetros:
@@ -207,7 +228,7 @@ add_reg2_to_reg1_0:
 add_reg_to_acc:
 
     ld de,acc
-    jp add_reg2_to_reg1
+    jr add_reg2_to_reg1
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   inc_reg_int8
@@ -747,7 +768,7 @@ shr_reg_end:
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   mul_reg2_by_reg1
-;void mul_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
+;   void mul_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
 ;   Parâmetros:
 ;     HL: reg1
 ;     DE: reg2
@@ -978,7 +999,7 @@ mul_reg2_by_reg1_end:
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   mul_acc_by_reg
-;void mul_acc_by_reg(const uint8_t *reg);
+;   void mul_acc_by_reg(const uint8_t *reg);
 ;   Parâmetros:
 ;     HL: reg
 ;   Retorna: Nada
@@ -992,7 +1013,7 @@ mul_acc_by_reg:
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   mul_reg_10
-;void mul_reg_10(uint8_t *reg);
+;   void mul_reg_10(uint8_t *reg);
 ;   Parâmetros:
 ;     DE: reg
 ;   Retorna: Nada
@@ -1047,11 +1068,10 @@ mul_reg_10:
     ld sp,hl
     pop ix
     ret
-}
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   compare
-;int compare (const uint8_t *reg1, const uint8_t *reg2);
+;   int compare (const uint8_t *reg1, const uint8_t *reg2);
 ;   Parâmetros:
 ;     HL: reg1
 ;     DE: reg2
@@ -1092,7 +1112,7 @@ compare_2:
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   iszero
-;int iszero (const uint8_t *reg);
+;   int iszero (const uint8_t *reg);
 ;   Parâmetros:
 ;     HL: reg
 ;   Retorna: Flags: Z:        reg = 0
@@ -1123,7 +1143,7 @@ iszero_1:
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   div_reg2_by_reg1
-;int div_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
+;   int div_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
 ;   Parâmetros:
 ;     HL: reg1
 ;     DE: reg2
@@ -1191,6 +1211,9 @@ div_reg2_by_reg1_1:
 
 div_reg2_by_reg1_2:
 
+    ;call prints
+    ;db "Vai dividir\n",0
+
 ;    uint8_t regquot[NBYTES];
     ld bc,NBYTES
     ld l,(ix+6)
@@ -1220,53 +1243,222 @@ div_reg2_by_reg1_2:
     ld bc,NBYTES
     ldir
 
+    ;call prints
+    ;db "(1) ",0
+
 ;    for (;!iszero(reg2);){
 div_reg2_by_reg1_3:
+
+    ;call prints
+    ;db "(1_3) ",0
 
     ld l,(ix+2)
     ld h,(ix+3)         ; IX+2, IX+3: reg2
     call iszero
-    jr z, div_reg2_by_reg1_5
+    jp z, div_reg2_by_reg1_5
 
 ;        int res = compare (reg2, regmdiv);
-;        if (res == -1){ // reg2 < reg1
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call compare
+
+;        if (res == -1){ // reg2 < regmdiv
+    jp nc, div_reg2_by_reg1_4
+    jp z, div_reg2_by_reg1_4
+
 ;            int order = 0;
+    ld iy,0
+
 ;            for (;!iszero(reg2);){
+div_reg2_by_reg1_3a:
+
+    ;call prints
+    ;db "(1_3a) ",0
+
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    call iszero
+    jr z, div_reg2_by_reg1_3b
+
+    ;call prints
+    ;db "(1_3aa) ",0
+
 ;                if (compare(reg2, regmdiv) < 0){ //reg2 < regmdiv
+
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call compare
+    jr nc, div_reg2_by_reg1_3c
+    jr z, div_reg2_by_reg1_3c
+
+    ;call prints
+    ;db "shr_reg(regmdiv,1) ",0
+
 ;                    shr_reg(regmdiv, 1);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld bc,1
+    call shr_reg
+
 ;                    order++;
+    inc iy
 ;                    if (order >= NBITS_FRAC){
 ;                        memcpy(reg2, regquot, NBYTES);
 ;                        return 0;
 ;                    }
-;                    continue;
+    ld d,iyh
+    ld e,iyl
+    ex de,hl
+    ld de,NBITS_FRAC
+    xor a
+    sbc hl,de
+    jr nc, div_reg2_by_reg1_3b
+
+;                   continue;
+    ;call prints
+    ;db "(1_3a A) ",0
+    jr div_reg2_by_reg1_3a
 ;                }
+
+div_reg2_by_reg1_3c:
+
+    ;call prints
+    ;db "(1_3a C) ",0
+
 ;                sub_reg2_from_reg1(reg2, regmdiv);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+0, IX+1: regmdiv
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
+    call sub_reg2_from_reg1
+
 ;                set_bit_reg(regquot, NBITS_FRAC - order);
-;                continue;
+    ld hl,NBITS_FRAC
+    ld c,iyl
+    ld b,iyh
+    xor a
+    sbc hl,bc
+    ld c,l
+    ld b,h
+    ld l,(ix+8)
+    ld h,(ix+9)         ; IX+8, IX+9: regquot
+    call set_bit_reg
+
 ;            }
+    ;call prints
+    ;db "(1_3a B) ",0
+    jp div_reg2_by_reg1_3a
+
+div_reg2_by_reg1_3b:
+
+    ;call prints
+    ;db "(==1_3b) ",0
+
 ;            memcpy(reg2, regquot, NBYTES);
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
+    ld l,(ix+8)
+    ld h,(ix+9)         ; IX+8, IX+9: regquot
+    ld bc,NBYTES
+    ldir
+
 ;            return 0;
+    xor a
+    jp div_reg2_by_reg1_end
+
 ;        }
 ;        else{   // reg2 > reg1
+
+div_reg2_by_reg1_4:
+
 ;            int order = 0;
+    ld iy,0
+
 ;            for (;;){
+div_reg2_by_reg1_4a:
+
+    ;call prints
+    ;db "(1_4a) ",0
+
 ;                if (compare(reg2, regmdiv) < 0){ //acc < regmdiv
 ;                    break;
 ;                }
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call compare
+    jr c, div_reg2_by_reg1_4b
+
 ;                shl_reg(regmdiv, 1);
+    ld bc,1
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call shl_reg
+
 ;                if (compare(reg2, regmdiv) < 0){ //acc < regmdiv
 ;                    break;
 ;                }
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call compare
+    jr c, div_reg2_by_reg1_4b
+
+
 ;                order++;
+    inc iy
+
 ;            }
+    jr div_reg2_by_reg1_4a
+
+div_reg2_by_reg1_4b:
+
 ;            memcpy(regmdiv, regmdiv2, NBYTES);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld l,(ix+6)
+    ld h,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld bc,NBYTES
+    ldir
+
 ;            shl_reg(regmdiv, order);
+    ld c,iyl
+    ld b,iyh
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    call shl_reg
+
 ;            sub_reg2_from_reg1(reg2, regmdiv);
+    ld d,(ix+2)
+    ld e,(ix+3)         ; IX+2, IX+3: reg2
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regmdiv
+    call sub_reg2_from_reg1
+
 ;            set_bit_reg_int(regquot, order);
+    ld e,(ix+8)
+    ld d,(ix+9)         ; IX+8, IX+9: regquot
+    ld c,iyl
+    ld b,iyh
+    call set_bit_reg_int
+
 ;            memcpy(regmdiv, regmdiv2, NBYTES);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld l,(ix+6)
+    ld h,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld bc,NBYTES
+    ldir
+
 ;        }
 ;    }
+    jp div_reg2_by_reg1_3
 
 div_reg2_by_reg1_5:
 
@@ -1335,6 +1527,28 @@ _main:
 
     ld de,acc
     call mul_reg_10
+
+    ; dividendo
+    ld hl,acc
+    call zero_reg
+    ld hl,acc
+    ld bc,0
+    call set_bit_reg_int
+
+    ; divisor
+    ld hl,reg1
+    call zero_reg
+    ld hl,reg1
+    ld bc,0
+    call set_bit_reg_int
+    ld hl,reg1
+    ld bc,1
+    call set_bit_reg_int
+
+    ; resultado em acc
+    ld de,acc
+    ld hl,reg1
+    call div_reg2_by_reg1
 
     ret
 

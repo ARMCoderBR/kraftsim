@@ -18,6 +18,18 @@
 #include "z80.h"
 #include "romprog.h"
 
+
+////////////////////////////////////////////////////////////////////////////////
+OUT_CALLBACK_FND(new_out_callback){
+
+    if (port == 0){
+
+        printf("%c",value);
+        fflush(stdout);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
 
     uint8_t *rom = malloc(ROMSZ);
@@ -34,7 +46,7 @@ int main (int argc, char *argv[]){
 
     printf("\n=== RUN ===\n\n");
 
-    z80_initialize(&z,rom,ROMSZ,ram,RAMBASE,RAMSZ);
+    z80_initialize(&z,rom,ROMSZ,ram,RAMBASE,RAMSZ, new_out_callback);
 
     z80_reset(&z);
 

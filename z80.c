@@ -10,8 +10,12 @@
 
 #include "z80.h"
 
+
 ////////////////////////////////////////////////////////////////////////////////
-void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz){
+OUT_CALLBACK_FND(default_out_callback){}
+
+////////////////////////////////////////////////////////////////////////////////
+void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz, OUT_CALLBACK_FN(fc)){
 
     z->rom = rom;
     z->romsz = romsz;
@@ -19,6 +23,9 @@ void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, 
     z->rambase = rambase;
     z->ramsz = ramsz;
     z->ramend = rambase + ramsz - 1;
+    z->out_callback = default_out_callback;
+    if (fc != NULL)
+        z->out_callback = fc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2349,6 +2356,15 @@ _dec_r_flags:
         return;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    if (z->opcode == 0xD3){                             // OUT (n),A
+
+        uint8_t port = z80_fetch(z);
+        z->out_callback(port,z->_a);
+        return;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
     printf("Unk. Opcode\n");
 }
 

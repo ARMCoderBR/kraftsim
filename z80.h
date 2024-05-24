@@ -30,6 +30,10 @@ typedef union {
         uint16_t r16;
     } reg_t;
 
+
+#define OUT_CALLBACK_FND(f)  void f (uint8_t port, uint8_t value)
+#define OUT_CALLBACK_FN(f)  void (*f) (uint8_t port, uint8_t value)
+
 typedef struct {
 
     uint16_t afterPC;
@@ -102,9 +106,11 @@ typedef struct {
 #define _iyh _iy.r8.h
 #define _iyl _iy.r8.l
 
+OUT_CALLBACK_FN(out_callback);   //void (*out_callback) (uint8_t port, uint8_t value);
+
 } z80_t;
 
-void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz);
+void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz, OUT_CALLBACK_FN(fc));
 void z80_reset (z80_t *z);
 void z80_step(z80_t *z);
 void z80_dump_regs(z80_t *z);
