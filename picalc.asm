@@ -137,8 +137,7 @@ set_bit_reg_int:
 
     ;   int byte = NBYTES_INT - 1 - (place >> 3);
     push hl
-    ld hl,NBYTES_INT
-    dec hl
+    ld hl,NBYTES_INT-1
     jr set_bit_reg0
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -301,7 +300,6 @@ load_reg_int_0:
 ;     HL: reg2
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
-
 sub_reg2_from_reg1:
 
 ;    uint16_t cy = 0;
@@ -353,7 +351,6 @@ sub_reg2_to_reg1_0:
 ;     HL: reg
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF BC' DE' HL' AF'
-
 sub_reg_from_acc:
 
     ld de,acc
@@ -588,7 +585,6 @@ stack_test:
 ;
 ;        reg[bytes] >>= bits;
 ;    }
-
 shr_reg:
 
     push ix
@@ -757,7 +753,6 @@ shr_reg_end:
 ;     DE: reg2
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
-
 mul_reg2_by_reg1:
 
     push ix
@@ -988,7 +983,6 @@ mul_reg2_by_reg1_end:
 ;     HL: reg
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
-
 mul_acc_by_reg:
 
 ;    mul_reg2_by_reg1(reg, acc);
@@ -1003,7 +997,6 @@ mul_acc_by_reg:
 ;     DE: reg
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
-
 mul_reg_10:
 
     push ix
@@ -1049,7 +1042,7 @@ mul_reg_10:
     ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call add_reg2_to_reg1
 
-    ld hl,0x0008+NBYTES    ; Libera 8 bytes + 2 buffers
+    ld hl,0x0008+NBYTES    ; Libera 8 bytes + buffer
     add hl,sp
     ld sp,hl
     pop ix
@@ -1066,7 +1059,6 @@ mul_reg_10:
 ;                   NZ e C:   reg1 < reg2
 ;                   NC e NC:  reg1 > reg2
 ;   Afeta: BC DE HL AF
-
 compare:
 
 ;    for (int i = 0; i < NBYTES; i++){
@@ -1106,7 +1098,6 @@ compare_2:
 ;   Retorna: Flags: Z:        reg = 0
 ;                   NZ:       reg1 != 0
 ;   Afeta: BC DE HL AF
-
 iszero:
 
 ;    for (int i = 0; i < NBYTES; i++){
@@ -1130,6 +1121,174 @@ iszero_1:
     xor a
     ret
 
+;///////////////////////////////////////////////////////////////////////////////
+;   div_reg2_by_reg1
+;int div_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
+;   Parâmetros:
+;     HL: reg1
+;     DE: reg2
+;   Retorna: Flags: Z:        Divisão OK
+;                   NZ:       Divisão com erro
+;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+div_reg2_by_reg1:
+
+    push ix
+    ld ix,0xFFF6-3*NBYTES    ; Reserva 10 bytes + 3 buffers
+    add ix,sp
+    ld sp,ix
+
+    ld (ix+0),l
+    ld (ix+1),h         ; IX+0, IX+1: reg1
+    ld (ix+2),e
+    ld (ix+3),d         ; IX+2, IX+3: reg2
+
+;    uint8_t regmdiv[NBYTES];
+    ld c,ixl
+    ld b,ixh            ; Copia IX em BC
+    ld HL,10
+    add hl,bc
+    ld (ix+4),l
+    ld (ix+5),h         ; IX+4, IX+5: regmdiv
+
+;    uint8_t regmdiv2[NBYTES];
+    ld bc,NBYTES
+    add hl,bc
+    ld (ix+6),l
+    ld (ix+7),h         ; IX+6, IX+7: regmdiv2
+
+;    if (iszero(reg1)) return -1; // Divisão por zero
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg
+    call iszero
+    jr nz, div_reg2_by_reg1_1
+    ld a,0xff
+    jp div_reg2_by_reg1_end
+
+div_reg2_by_reg1_1:
+
+;    int res = compare (reg2, reg1);
+;    if (res == 0){   // iguais
+;        zero_reg(reg2);
+;        set_bit_reg_int(reg2, 0);    //1
+;        return 0;   //ok
+;    }
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg1
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
+    call compare
+    jr nz, div_reg2_by_reg1_2
+
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    call zero_reg
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    ld bc,0
+    call set_bit_reg_int
+    xor a
+    jp div_reg2_by_reg1_end
+
+div_reg2_by_reg1_2:
+
+;    uint8_t regquot[NBYTES];
+    ld bc,NBYTES
+    ld l,(ix+6)
+    ld h,(ix+7)         ; IX+6, IX+7: regmdiv2
+    add hl,bc
+    ld (ix+8),l
+    ld (ix+9),h         ; IX+8, IX+9: regquot
+
+;    zero_reg(regquot);
+    ;ld l,(ix+8)
+    ;ld h,(ix+9)         ; IX+8, IX+9: regquot
+    call zero_reg
+
+;    memcpy(regmdiv, reg1, NBYTES);
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regmdiv
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg1
+    ld bc,NBYTES
+    ldir
+
+;    memcpy(regmdiv2, reg1, NBYTES);
+    ld e,(ix+6)
+    ld d,(ix+7)         ; IX+6, IX+7: regmdiv2
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg1
+    ld bc,NBYTES
+    ldir
+
+;    for (;!iszero(reg2);){
+div_reg2_by_reg1_3:
+
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: reg2
+    call iszero
+    jr z, div_reg2_by_reg1_5
+
+;        int res = compare (reg2, regmdiv);
+;        if (res == -1){ // reg2 < reg1
+;            int order = 0;
+;            for (;!iszero(reg2);){
+;                if (compare(reg2, regmdiv) < 0){ //reg2 < regmdiv
+;                    shr_reg(regmdiv, 1);
+;                    order++;
+;                    if (order >= NBITS_FRAC){
+;                        memcpy(reg2, regquot, NBYTES);
+;                        return 0;
+;                    }
+;                    continue;
+;                }
+;                sub_reg2_from_reg1(reg2, regmdiv);
+;                set_bit_reg(regquot, NBITS_FRAC - order);
+;                continue;
+;            }
+;            memcpy(reg2, regquot, NBYTES);
+;            return 0;
+;        }
+;        else{   // reg2 > reg1
+;            int order = 0;
+;            for (;;){
+;                if (compare(reg2, regmdiv) < 0){ //acc < regmdiv
+;                    break;
+;                }
+;                shl_reg(regmdiv, 1);
+;                if (compare(reg2, regmdiv) < 0){ //acc < regmdiv
+;                    break;
+;                }
+;                order++;
+;            }
+;            memcpy(regmdiv, regmdiv2, NBYTES);
+;            shl_reg(regmdiv, order);
+;            sub_reg2_from_reg1(reg2, regmdiv);
+;            set_bit_reg_int(regquot, order);
+;            memcpy(regmdiv, regmdiv2, NBYTES);
+;        }
+;    }
+
+div_reg2_by_reg1_5:
+
+;    memcpy(reg2, regquot, NBYTES);
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
+    ld l,(ix+8)
+    ld h,(ix+9)         ; IX+8, IX+9: regquot
+    ld bc,NBYTES
+    ldir
+
+;    return 0;
+    xor a
+
+div_reg2_by_reg1_end:
+
+    ld hl,0x000A+3*NBYTES    ; Libera 10 bytes + 3 buffers
+    add hl,sp
+    ld sp,hl
+    pop ix
+    or a
+    ret
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   _main
