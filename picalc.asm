@@ -1442,8 +1442,8 @@ div_reg2_by_reg1_4b:
     call sub_reg2_from_reg1
 
 ;            set_bit_reg_int(regquot, order);
-    ld e,(ix+8)
-    ld d,(ix+9)         ; IX+8, IX+9: regquot
+    ld l,(ix+8)
+    ld h,(ix+9)         ; IX+8, IX+9: regquot
     ld c,iyl
     ld b,iyh
     call set_bit_reg_int
