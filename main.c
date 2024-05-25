@@ -68,7 +68,7 @@ int main (int argc, char *argv[]){
             z80_dump_regs(&z);
             printf("Step:%d\n",num_steps);
         }
-#if 0
+#if 1
         else{
             for (int i = 0; i < 1+NBP; i++){
 
@@ -80,18 +80,10 @@ int main (int argc, char *argv[]){
                     running = 0;
                     z80_print(&z);
                     z80_dump_regs(&z);
+                    printf("Step:%d\n",num_steps);
                     break;
                 }
             }
-        }
-#else
-        if (z.pc == bp[NBP]){
-
-            bp[NBP] = 0;
-            running = 0;
-            z80_print(&z);
-            z80_dump_regs(&z);
-            printf("Step:%d\n",num_steps);
         }
 #endif
 
@@ -109,6 +101,7 @@ prompt:
         switch (buf[0]){
 
             case 'q':
+                printf("\n==== NUM STEPS:%d ====\n",num_steps);
                 exit(0);
 
             case 'h':
@@ -117,8 +110,8 @@ prompt:
                 printf("  s         ... Step Over RAM\n");
                 printf("  d         ... Dump RAM\n");
                 printf("  bl        ... List BKPTs\n");
-                printf("  bcN (0-9) ... Clear BKPT N\n");
-                printf("  bsN (0-9) ... Set BKPT N\n");
+                printf("  bcN (0-3) ... Clear BKPT N\n");
+                printf("  bsN (0-3) ... Set BKPT N\n");
                 printf("  r         ... RUN until BKPT or HALT\n");
                 printf("  rst       ... Reset CPU\n");
                 printf("  q         ... Quit\n");
@@ -144,13 +137,13 @@ listbp:
                             printf("%d - %04x\n",i,bp[i]);
                         break;
                     case 'c':
-                        if ((buf[2] >= '0') && (buf[2] <= '9')){
+                        if ((buf[2] >= '0') && (buf[2] <= '3')){
                             bp[buf[2]-'0'] = 0;
                             goto listbp;
                         }
                         break;
                     case 's':
-                        if ((buf[2] >= '0') && (buf[2] <= '9')){
+                        if ((buf[2] >= '0') && (buf[2] <= '3')){
                             printf("Enter BP val hhhh:");
                             char buf2[8];
                             fgets(buf2,sizeof(buf2),stdin);

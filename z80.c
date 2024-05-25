@@ -1444,7 +1444,7 @@ rescan:
             z->code_prefix &= ~CODE_PREFIX_CB;
             goto rescan;
         }
-    }
+    }   // Fim da BASE 11xxxxxx
 
     z80_refresh_up(z);
 
@@ -2220,7 +2220,7 @@ rescan:
             z->out_callback(port,z->_a);
             return;
         }
-    }
+    }   // Fim da BASE 11xxxxxx sem DD/FD
 
     if ((opcode & 0b11000000) == 0){    // BASE 00xxxxxx  sem DD/FD
 
@@ -2383,7 +2383,8 @@ rescan:
             }
             return;
         }
-    }
+    }    // Fim da BASE 00xxxxxx  sem DD/FD
+
     ////////////////////////////////////////////////////////////////////////////
     printf("Unk. Opcode\n");
 }
