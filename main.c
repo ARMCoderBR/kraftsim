@@ -56,16 +56,20 @@ int main (int argc, char *argv[]){
 
     char buf[80];
 
-    #define NBP 10
+    #define NBP 4
     uint16_t bp[1+NBP] = {0};
     int running = 0;
 
+    int num_steps = 0;
+
     for (;!z.halted;){
 
-        if (!running)
+        if (!running){
             z80_dump_regs(&z);
+            printf("Step:%d\n",num_steps);
+        }
+#if 0
         else{
-
             for (int i = 0; i < 1+NBP; i++){
 
                 if (z.pc == bp[i]){
@@ -80,8 +84,19 @@ int main (int argc, char *argv[]){
                 }
             }
         }
+#else
+        if (z.pc == bp[NBP]){
+
+            bp[NBP] = 0;
+            running = 0;
+            z80_print(&z);
+            z80_dump_regs(&z);
+            printf("Step:%d\n",num_steps);
+        }
+#endif
 
         z80_step(&z);
+        num_steps++;
 
         //printf("NextPC:%04x AfterPC:%04x\n",z.pc,z.afterPC);
 
@@ -158,6 +173,7 @@ listbp:
                     if ((buf[1] == 's') && (buf[2] == 't')){
                         z80_reset(&z);
                         z80_print(&z);
+                        num_steps = 0;
                         continue;
                     }
                 }
@@ -175,6 +191,8 @@ listbp:
     }
 
     z80_dump_mem(&z, RAMBASE,512);
+
+    printf("\n==== NUM STEPS:%d ====\n",num_steps);
 
     return 0;
 }

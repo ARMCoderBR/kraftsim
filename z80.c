@@ -228,10 +228,10 @@ uint16_t z80_pop(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t *z80_get_dest(z80_t *z, int use_code_prefix){
 
-    uint8_t opc = z->opcode;
+    uint8_t opcode = z->opcode;
     uint8_t code_prefix_for_reg8_undoc = use_code_prefix ? z->code_prefix : 0;
 
-    switch (opc & 0b00111000){
+    switch (opcode & 0b00111000){
 
         case 0b00000000:
             return &z->_b;
@@ -266,10 +266,10 @@ uint8_t *z80_get_dest(z80_t *z, int use_code_prefix){
 ////////////////////////////////////////////////////////////////////////////////
 const uint8_t *z80_get_orig(z80_t *z, int use_code_prefix){
 
-    uint8_t opc = z->opcode;
+    uint8_t opcode = z->opcode;
     uint8_t code_prefix_for_reg8_undoc = use_code_prefix ? z->code_prefix : 0;
 
-    switch (opc & 0b00000111){
+    switch (opcode & 0b00000111){
 
         case 0b00000000:
             return &z->_b;
@@ -304,10 +304,10 @@ const uint8_t *z80_get_orig(z80_t *z, int use_code_prefix){
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t *z80_get_reg8_ptr(z80_t *z, int use_code_prefix){
 
-    uint8_t opc = z->opcode;
+    uint8_t opcode = z->opcode;
     uint8_t code_prefix_for_reg8_undoc = use_code_prefix ? z->code_prefix : 0;
 
-    switch (opc & 0b00000111){
+    switch (opcode & 0b00000111){
 
         case 0b00000000:
             return &z->_b;
@@ -477,13 +477,14 @@ void z80_exec_cb(z80_t *z){
 
     const uint8_t *operand_hxy_r = NULL;
     uint8_t *operand_hxy_w = NULL;
+    uint8_t opcode = z->opcode;
 
-    if (z->code_prefix & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
+    if (opcode & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
 
         z->pc--;
         operand_hxy_r = z80_get_phl_orig(z);
         operand_hxy_w = z80_get_phl_dest_last(z);
-        z->opcode = z80_fetch(z);
+        opcode = z->opcode = z80_fetch(z);
     }
     else{
 
@@ -493,9 +494,9 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// RLC m
-    if ((z->opcode & 0b11111000) == 0b00000000){
+    if ((opcode & 0b11111000) == 0b00000000){
 
-        if (z->opcode  == 0b00000110){                  // RLC (HL) / RLC (IX+d) / RLC (IY+d)
+        if (opcode  == 0b00000110){                  // RLC (HL) / RLC (IX+d) / RLC (IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -534,9 +535,9 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// RL m
-    if ((z->opcode & 0b11111000) == 0b00010000){        // RL r
+    if ((opcode & 0b11111000) == 0b00010000){        // RL r
 
-        if (z->opcode  == 0b00010110){
+        if (opcode  == 0b00010110){
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -575,9 +576,9 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// RRC m
-    if ((z->opcode & 0b11111000) == 0b00001000){
+    if ((opcode & 0b11111000) == 0b00001000){
 
-        if (z->opcode  == 0b00001110){                  // RRC (HL) / RRC (IX+d) / RRC (IY+d)
+        if (opcode  == 0b00001110){                  // RRC (HL) / RRC (IX+d) / RRC (IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -616,8 +617,8 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// RR m
-    if ((z->opcode & 0b11111000) == 0b00011000){
-        if (z->opcode  == 0b00011110){                  // RR (HL) / RR (IX+d) / RR (IY+d)
+    if ((opcode & 0b11111000) == 0b00011000){
+        if (opcode  == 0b00011110){                  // RR (HL) / RR (IX+d) / RR (IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -656,9 +657,9 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// SLA m
-    if ((z->opcode & 0b11111000) == 0b00100000){
+    if ((opcode & 0b11111000) == 0b00100000){
 
-        if (z->opcode  == 0b00100110){                  // SLA (HL) / SLA (IX+d) / SLA (IY+d)
+        if (opcode  == 0b00100110){                  // SLA (HL) / SLA (IX+d) / SLA (IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -693,9 +694,9 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// SRA m
-    if ((z->opcode & 0b11111000) == 0b00101000){
+    if ((opcode & 0b11111000) == 0b00101000){
 
-        if (z->opcode  == 0b00101110){                  // SRA (HL) / SRA (IX+d) / SRA (IY+d)
+        if (opcode  == 0b00101110){                  // SRA (HL) / SRA (IX+d) / SRA (IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -730,9 +731,9 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// SRL m
-    if ((z->opcode & 0b11111000) == 0b00111000){
+    if ((opcode & 0b11111000) == 0b00111000){
 
-        if (z->opcode  == 0b00111110){                  // SRL (HL) / SRL (IX+d) / SRL (IY+d)
+        if (opcode  == 0b00111110){                  // SRL (HL) / SRL (IX+d) / SRL (IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -767,11 +768,11 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// BIT b,m
-    if ((z->opcode & 0b11000000) == 0b01000000){
+    if ((opcode & 0b11000000) == 0b01000000){
 
-        uint8_t mask = 0x01 << ((z->opcode >> 3) & 0x07);
+        uint8_t mask = 0x01 << ((opcode >> 3) & 0x07);
 
-        if ((z->opcode & 0b00000111)  == 0b00000110){   // BIT b,(HL) / BIT b,(IX+d) / BIT b,(IY+d)
+        if ((opcode & 0b00000111)  == 0b00000110){   // BIT b,(HL) / BIT b,(IX+d) / BIT b,(IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
@@ -800,17 +801,17 @@ void z80_exec_cb(z80_t *z){
 
     ////////////////////////////////////////////////////////////////////////////
     /// SET b,m / RES b,m
-    if ((z->opcode & 0b10000000) == 0b10000000){
+    if ((opcode & 0b10000000) == 0b10000000){
 
-        uint8_t mask = 0x01 << ((z->opcode >> 3) & 0x07);
+        uint8_t mask = 0x01 << ((opcode >> 3) & 0x07);
 
-        if ((z->opcode & 0b00000111) == 0b00000110){   // SET/RES b,(HL) / SET/RES b,(IX+d) / SET/RES b,(IY+d)
+        if ((opcode & 0b00000111) == 0b00000110){   // SET/RES b,(HL) / SET/RES b,(IX+d) / SET/RES b,(IY+d)
 
             uint8_t arg = 0xff;
             if (operand_hxy_r != NULL)
                 arg = *operand_hxy_r;
 
-            if (z->opcode & 0b01000000)
+            if (opcode & 0b01000000)
                 arg |= mask;  // SET
             else
                 arg &= ~mask; // RES
@@ -822,7 +823,7 @@ void z80_exec_cb(z80_t *z){
 
         uint8_t *reg = z80_get_reg8_ptr(z,0);             // SET/RES b,r
 
-        if (z->opcode & 0b01000000)
+        if (opcode & 0b01000000)
             *reg |= mask;     // SET
         else
             *reg &= ~mask;    // RES
@@ -1311,7 +1312,6 @@ finish_jr:
         if (!z->_b) break;
         goto finish_jr;
 
-
     default:
         return 0;
     }
@@ -1405,39 +1405,45 @@ int z80_exec_undoc_dd_fd(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_step_in(z80_t *z){
 
+    uint8_t opcode;
+
 rescan:
-    z->opcode = z80_fetch(z);
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xDD){                             //DD Prefix (IX)
+    opcode = z->opcode = z80_fetch(z);
 
-        z->code_prefix |= CODE_PREFIX_DD;
-        z->code_prefix &= ~CODE_PREFIX_FD;
-        goto rescan;
-    }
+    if ((opcode & 0b11000000) == 0b11000000){   // BASE 11xxxxxx
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xFD){                             //FD Prefix (IY)
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xDD){                             //DD Prefix (IX)
 
-        z->code_prefix |= CODE_PREFIX_FD;
-        z->code_prefix &= ~CODE_PREFIX_DD;
-        goto rescan;
-    }
+            z->code_prefix |= CODE_PREFIX_DD;
+            z->code_prefix &= ~CODE_PREFIX_FD;
+            goto rescan;
+        }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xCB){                             //CB Prefix (bit ops)
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xFD){                             //FD Prefix (IY)
 
-        z->code_prefix |= CODE_PREFIX_CB;
-        z->code_prefix &= ~CODE_PREFIX_ED;
-        goto rescan;
-    }
+            z->code_prefix |= CODE_PREFIX_FD;
+            z->code_prefix &= ~CODE_PREFIX_DD;
+            goto rescan;
+        }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xED){                             //ED Prefix (specials)
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xCB){                             //CB Prefix (bit ops)
 
-        z->code_prefix |= CODE_PREFIX_ED;
-        z->code_prefix &= ~CODE_PREFIX_CB;
-        goto rescan;
+            z->code_prefix |= CODE_PREFIX_CB;
+            z->code_prefix &= ~CODE_PREFIX_ED;
+            goto rescan;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xED){                             //ED Prefix (specials)
+
+            z->code_prefix |= CODE_PREFIX_ED;
+            z->code_prefix &= ~CODE_PREFIX_CB;
+            goto rescan;
+        }
     }
 
     z80_refresh_up(z);
@@ -1461,548 +1467,618 @@ rescan:
         return;
 
     ////////////////////////////////////////////////////////////////////////////
-    if (z80_exec_call(z))
-        return;
+    if ((opcode & 0b11000000) == 0b11000000){   // BASE 11xxxxxx
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11000111) == 0b00000110){        // LD r,n
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xF9){                             // LD SP,HL / LD SP,IX / LD SP,IY
 
-        if (z->opcode == 0x36){                         // LD (HL),n / LD (IX+d),n / LD (IY+d),n
+            uint16_t arg;
+            if (z->code_prefix & CODE_PREFIX_DD)
+                arg = z->ix;
+            else
+            if (z->code_prefix & CODE_PREFIX_FD)
+                arg = z->iy;
+            else
+                arg = z->hl;
 
-            uint8_t *pdest = z80_get_dest(z, 0);
-            uint8_t arg = z80_fetch(z);
-            if (pdest){
+            z->sp = arg;
+            return;
+        }
 
-                *pdest = arg;
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11001111) == 0b11000101){        // PUSH qq
+
+            uint16_t arg;
+            switch(opcode & 0b00110000){
+
+                case 0b00000000:
+                    arg = z->bc;
+                    break;
+                case 0b00010000:
+                    arg = z->de;
+                    break;
+                case 0b00100000:
+                    if (z->code_prefix & CODE_PREFIX_DD)
+                        arg = z->ix;
+                    else
+                    if (z->code_prefix & CODE_PREFIX_FD)
+                        arg = z->iy;
+                    else
+                        arg = z->hl;
+                    break;
+                case 0b00110000:
+                    arg = z->af;
+                    break;
+            }
+
+            z80_push(z, arg);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11001111) == 0b11000001){        // POP qq
+
+            uint16_t arg = z80_pop(z);
+            switch(opcode & 0b00110000){
+
+                case 0b00000000:
+                    z->bc = arg;
+                    break;
+                case 0b00010000:
+                    z->de = arg;
+                    break;
+                case 0b00100000:
+                    if (z->code_prefix & CODE_PREFIX_DD)
+                        z->ix = arg;
+                    else
+                    if (z->code_prefix & CODE_PREFIX_FD)
+                        z->iy = arg;
+                    else
+                        z->hl = arg;
+                    break;
+                case 0b00110000:
+                    z->af = arg;
+                    break;
             }
             return;
         }
 
-        *z80_get_dest(z,1) = z80_fetch(z);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xE3){                             // EX (SP),HL / EX (SP),IX / EX (SP),IY
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11001111) == 0b00000001){        // LD dd,nn
+            uint16_t arg = z80_pop(z);
+            uint16_t arg2;
 
-        uint16_t argl = z80_fetch(z);
-        uint16_t argh = z80_fetch(z);
-        argh <<= 8;
-        argh |= argl;
-        switch(z->opcode & 0b00110000){
-            case 0b00000000:
-                z->bc = argh;
-                break;
-            case 0b00010000:
-                z->de = argh;
-                break;
-            case 0b00100000:                            // LD HL,nn / LD IX,nn / LD IY,nn
-                if (z->code_prefix & CODE_PREFIX_DD)
-                    z->ix = argh;
-                else
-                if (z->code_prefix & CODE_PREFIX_FD)
-                    z->iy = argh;
-                else
-                    z->hl = argh;
-                break;
-            case 0b00110000:
-                z->sp = argh;
-                break;
-        }
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x2A){                             // LD HL,(nn) / LD IX,(nn) / LD IY,(nn)
-
-        uint16_t addrl = z80_fetch(z);
-        uint16_t addrh = z80_fetch(z);
-        addrh <<= 8;
-        addrh |= addrl;
-
-        uint16_t arg = z80_read(z, addrh++);
-        uint16_t arg2 = z80_read(z, addrh);
-        arg2 <<= 8;
-        arg |= arg2;
-
-        if (z->code_prefix & CODE_PREFIX_DD)
-            z->ix = arg;
-        else
-        if (z->code_prefix & CODE_PREFIX_FD)
-            z->iy = arg;
-        else
-            z->hl = arg;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x22){                             // LD (nn),HL / LD (nn),IX / LD (nn),IY
-
-        uint16_t addrl = z80_fetch(z);
-        uint16_t addrh = z80_fetch(z);
-        addrh <<= 8;
-        addrh |= addrl;
-
-        uint16_t arg;
-        if (z->code_prefix & CODE_PREFIX_DD)
-            arg = z->ix;
-        else
-        if (z->code_prefix & CODE_PREFIX_FD)
-            arg = z->iy;
-        else
-            arg = z->hl;
-
-        z80_write(z, addrh++, arg & 0xFF);
-        z80_write(z, addrh, arg >> 8);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xF9){                             // LD SP,HL / LD SP,IX / LD SP,IY
-
-        uint16_t arg;
-        if (z->code_prefix & CODE_PREFIX_DD)
-            arg = z->ix;
-        else
-        if (z->code_prefix & CODE_PREFIX_FD)
-            arg = z->iy;
-        else
-            arg = z->hl;
-
-        z->sp = arg;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11001111) == 0b11000101){        // PUSH qq
-
-        uint16_t arg;
-        switch(z->opcode & 0b00110000){
-
-            case 0b00000000:
-                arg = z->bc;
-                break;
-            case 0b00010000:
-                arg = z->de;
-                break;
-            case 0b00100000:
-                if (z->code_prefix & CODE_PREFIX_DD)
-                    arg = z->ix;
-                else
-                if (z->code_prefix & CODE_PREFIX_FD)
-                    arg = z->iy;
-                else
-                    arg = z->hl;
-                break;
-            case 0b00110000:
-                arg = z->af;
-                break;
-        }
-
-        z80_push(z, arg);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11001111) == 0b11000001){        // POP qq
-
-        uint16_t arg = z80_pop(z);
-        switch(z->opcode & 0b00110000){
-
-            case 0b00000000:
-                z->bc = arg;
-                break;
-            case 0b00010000:
-                z->de = arg;
-                break;
-            case 0b00100000:
-                if (z->code_prefix & CODE_PREFIX_DD)
-                    z->ix = arg;
-                else
-                if (z->code_prefix & CODE_PREFIX_FD)
-                    z->iy = arg;
-                else
-                    z->hl = arg;
-                break;
-            case 0b00110000:
-                z->af = arg;
-                break;
-        }
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xE3){                             // EX (SP),HL / EX (SP),IX / EX (SP),IY
-
-        uint16_t arg = z80_pop(z);
-        uint16_t arg2;
-
-        if (z->code_prefix & CODE_PREFIX_DD){
-            arg2 = z->ix;
-            z->ix = arg;
-        }
-        else
-        if (z->code_prefix & CODE_PREFIX_FD){
-            arg2 = z->iy;
-            z->iy = arg;
-        }
-        else{
-            arg2 = z->hl;
-            z->hl = arg;
-        }
-
-        z80_push(z, arg2);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11110000) == 0b10000000){        // ADD A,r / ADC A,r
-
-        if (z->opcode == 0x86){                         // ADD A,(HL) / ADD A,(IX+d) / ADD A,(IY+d)
-
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
+            if (z->code_prefix & CODE_PREFIX_DD){
+                arg2 = z->ix;
+                z->ix = arg;
+            }
             else
-                arg = 0xff;
-            z80_add_acc(z, arg, 0);
+            if (z->code_prefix & CODE_PREFIX_FD){
+                arg2 = z->iy;
+                z->iy = arg;
+            }
+            else{
+                arg2 = z->hl;
+                z->hl = arg;
+            }
+
+            z80_push(z, arg2);
             return;
         }
 
-        if (z->opcode == 0x8E){                         // ADC A,(HL) / ADC A,(IX+d) / ADC A,(IY+d)
+        if (z80_exec_call(z))
+            return;
+    }   // Fim da BASE 11xxxxxx
 
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
-            z80_add_acc(z, arg, 1);
+    if ((opcode & 0b11000000) == 0b10000000){        // BASE 10xxxxxx
+
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11110000) == 0b10000000){        // ADD A,r / ADC A,r
+
+            if (opcode == 0x86){                         // ADD A,(HL) / ADD A,(IX+d) / ADD A,(IY+d)
+
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z80_add_acc(z, arg, 0);
+                return;
+            }
+
+            if (opcode == 0x8E){                         // ADC A,(HL) / ADC A,(IX+d) / ADC A,(IY+d)
+
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z80_add_acc(z, arg, 1);
+                return;
+            }
+
+            uint8_t *arg = z80_get_reg8_ptr(z,1);
+            z80_add_acc(z, *arg, opcode & 0x08 ? 1:0);   // Seleciona ADD ou ADC
             return;
         }
 
-        uint8_t *arg = z80_get_reg8_ptr(z,1);
-        z80_add_acc(z, *arg, z->opcode & 0x08 ? 1:0);   // Seleciona ADD ou ADC
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11110000) == 0b10010000){        // SUB r / SBC A,r
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11110000) == 0b10010000){        // SUB r / SBC A,r
+            if (opcode == 0x96){                         // SUB (HL) / SUB (IX+d) / SUB (IY+d)
 
-        if (z->opcode == 0x96){                         // SUB (HL) / SUB (IX+d) / SUB (IY+d)
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z80_sub_acc(z, arg, 0);
+                return;
+            }
 
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
-            z80_sub_acc(z, arg, 0);
+            if (opcode == 0x9E){                         // SBC A,(HL) / SBC A,(IX+d) / SBC A,(IY+d)
+
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z80_sub_acc(z, arg, 1);
+                return;
+            }
+
+            uint8_t *arg = z80_get_reg8_ptr(z,1);
+            z80_sub_acc(z, *arg, opcode & 0x08 ? 1:0);    // Seleciona SUB ou SBC
             return;
         }
 
-        if (z->opcode == 0x9E){                         // SBC A,(HL) / SBC A,(IX+d) / SBC A,(IY+d)
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11111000) == 0b10100000){        // AND r
 
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
-            z80_sub_acc(z, arg, 1);
-            return;
-        }
+            if (opcode == 0xA6){                         // AND (HL) / AND (IX+d) / AND (IY+d)
 
-        uint8_t *arg = z80_get_reg8_ptr(z,1);
-        z80_sub_acc(z, *arg, z->opcode & 0x08 ? 1:0);    // Seleciona SUB ou SBC
-        return;
-    }
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z->_a &= arg;
+                z80_update_flags_logic_acc(z,1);
+                return;
+            }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11111000) == 0b10100000){        // AND r
 
-        if (z->opcode == 0xA6){                         // AND (HL) / AND (IX+d) / AND (IY+d)
-
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
-            z->_a &= arg;
+            uint8_t *arg = z80_get_reg8_ptr(z,1);
+            z->_a &= *arg;
             z80_update_flags_logic_acc(z,1);
             return;
         }
 
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11111000) == 0b10110000){        // OR r
 
-        uint8_t *arg = z80_get_reg8_ptr(z,1);
-        z->_a &= *arg;
-        z80_update_flags_logic_acc(z,1);
-        return;
-    }
+            if (opcode == 0xB6){                         // OR (HL) / OR (IX+d) / OR (IY+d)
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11111000) == 0b10110000){        // OR r
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z->_a |= arg;
+                z80_update_flags_logic_acc(z,0);
+                return;
+            }
 
-        if (z->opcode == 0xB6){                         // OR (HL) / OR (IX+d) / OR (IY+d)
-
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
-            z->_a |= arg;
+            uint8_t *arg = z80_get_reg8_ptr(z,1);
+            z->_a |= *arg;
             z80_update_flags_logic_acc(z,0);
             return;
         }
 
-        uint8_t *arg = z80_get_reg8_ptr(z,1);
-        z->_a |= *arg;
-        z80_update_flags_logic_acc(z,0);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11111000) == 0b10101000){        // XOR r
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11111000) == 0b10101000){        // XOR r
+            if (opcode == 0xAE){                         // XOR (HL) / XOR (IX+d) / XOR (IY+d)
 
-        if (z->opcode == 0xAE){                         // XOR (HL) / XOR (IX+d) / XOR (IY+d)
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                z->_a ^= arg;
+                z80_update_flags_logic_acc(z,0);
+                return;
+            }
 
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
-            z->_a ^= arg;
+            uint8_t *arg = z80_get_reg8_ptr(z,1);
+            z->_a ^= *arg;
             z80_update_flags_logic_acc(z,0);
             return;
         }
 
-        uint8_t *arg = z80_get_reg8_ptr(z,1);
-        z->_a ^= *arg;
-        z80_update_flags_logic_acc(z,0);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11111000) == 0b10111000){        // CP r
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11111000) == 0b10111000){        // CP r
+            if (opcode == 0xBE){                         // CP (HL) / CP (IX+d) / CP (IY+d)
 
-        if (z->opcode == 0xBE){                         // CP (HL) / CP (IX+d) / CP (IY+d)
+                uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                uint8_t asave = z->_a;
+                z80_sub_acc(z, arg, 0);
+                z->_a = asave;
+                return;
+            }
 
-            uint8_t arg;
-            const uint8_t *parg = z80_get_phl_orig(z);
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
+            uint8_t *arg = z80_get_reg8_ptr(z,1);
             uint8_t asave = z->_a;
-            z80_sub_acc(z, arg, 0);
+            z80_sub_acc(z, *arg, 0);
             z->_a = asave;
+            z->_f &= ~0x28;
+            z->_f |= (*arg & 0x28);
+            return;
+        }
+    }   // Fim da BASE 10xxxxxx
+
+    if ((opcode & 0b11000000) == 0){        // BASE 00xxxxxx
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (!opcode){   //NOP
+
             return;
         }
 
-        uint8_t *arg = z80_get_reg8_ptr(z,1);
-        uint8_t asave = z->_a;
-        z80_sub_acc(z, *arg, 0);
-        z->_a = asave;
-        z->_f &= ~0x28;
-        z->_f |= (*arg & 0x28);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11000111) == 0b00000110){        // LD r,n
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11000111) == 0b00000100){        // INC r
+            if (opcode == 0x36){                         // LD (HL),n / LD (IX+d),n / LD (IY+d),n
 
-        uint8_t arg;
+                uint8_t *pdest = z80_get_dest(z, 0);
+                uint8_t arg = z80_fetch(z);
+                if (pdest){
 
-        if (z->opcode == 0x34){                         // INC (HL) / INC (IX+d) / INC (IY+d)
+                    *pdest = arg;
+                }
+                return;
+            }
 
-            const uint8_t *parg = z80_get_phl_orig(z);
-            uint8_t *parg2 = z80_get_phl_dest_last(z);
+            *z80_get_dest(z,1) = z80_fetch(z);
+            return;
+        }
 
-            if (parg != NULL)
-                arg = *parg;
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11001111) == 0b00000001){        // LD dd,nn
+
+            uint16_t argl = z80_fetch(z);
+            uint16_t argh = z80_fetch(z);
+            argh <<= 8;
+            argh |= argl;
+            switch(opcode & 0b00110000){
+                case 0b00000000:
+                    z->bc = argh;
+                    break;
+                case 0b00010000:
+                    z->de = argh;
+                    break;
+                case 0b00100000:                            // LD HL,nn / LD IX,nn / LD IY,nn
+                    if (z->code_prefix & CODE_PREFIX_DD)
+                        z->ix = argh;
+                    else
+                    if (z->code_prefix & CODE_PREFIX_FD)
+                        z->iy = argh;
+                    else
+                        z->hl = argh;
+                    break;
+                case 0b00110000:
+                    z->sp = argh;
+                    break;
+            }
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x2A){                             // LD HL,(nn) / LD IX,(nn) / LD IY,(nn)
+
+            uint16_t addrl = z80_fetch(z);
+            uint16_t addrh = z80_fetch(z);
+            addrh <<= 8;
+            addrh |= addrl;
+
+            uint16_t arg = z80_read(z, addrh++);
+            uint16_t arg2 = z80_read(z, addrh);
+            arg2 <<= 8;
+            arg |= arg2;
+
+            if (z->code_prefix & CODE_PREFIX_DD)
+                z->ix = arg;
             else
-                arg = 0xff;
+            if (z->code_prefix & CODE_PREFIX_FD)
+                z->iy = arg;
+            else
+                z->hl = arg;
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x22){                             // LD (nn),HL / LD (nn),IX / LD (nn),IY
+
+            uint16_t addrl = z80_fetch(z);
+            uint16_t addrh = z80_fetch(z);
+            addrh <<= 8;
+            addrh |= addrl;
+
+            uint16_t arg;
+            if (z->code_prefix & CODE_PREFIX_DD)
+                arg = z->ix;
+            else
+            if (z->code_prefix & CODE_PREFIX_FD)
+                arg = z->iy;
+            else
+                arg = z->hl;
+
+            z80_write(z, addrh++, arg & 0xFF);
+            z80_write(z, addrh, arg >> 8);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11000111) == 0b00000100){        // INC r
+
+            uint8_t arg;
+
+            if (opcode == 0x34){                         // INC (HL) / INC (IX+d) / INC (IY+d)
+
+                const uint8_t *parg = z80_get_phl_orig(z);
+                uint8_t *parg2 = z80_get_phl_dest_last(z);
+
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
+                arg++;
+                if (parg2)
+                    *parg2 = arg;
+
+                goto _inc_r_flags;
+            }
+
+            uint8_t *parg = z80_get_dest(z,1);
+            arg = *parg;
             arg++;
-            if (parg2)
-                *parg2 = arg;
+            *parg = arg;
 
-            goto _inc_r_flags;
+    _inc_r_flags:
+            z->_f = (arg & 0x28) | (z->_f & FLG_C);
+            if (arg & 0x80)
+                z->_f |= FLG_S;
+            if (!arg)
+                z->_f |= FLG_Z;
+            if (!(arg&0x0F))
+                z->_f |= FLG_H;
+            if (arg == 0x80)
+                z->_f |= FLG_PV;
+            //já está zerada z->_f &= ~FLG_N;
+            return;
         }
 
-        uint8_t *parg = z80_get_dest(z,1);
-        arg = *parg;
-        arg++;
-        *parg = arg;
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11000111) == 0b00000101){        // DEC r
 
-_inc_r_flags:
-        z->_f = (arg & 0x28) | (z->_f & FLG_C);
-        if (arg & 0x80)
-            z->_f |= FLG_S;
-        if (!arg)
-            z->_f |= FLG_Z;
-        if (!(arg&0x0F))
-            z->_f |= FLG_H;
-        if (arg == 0x80)
-            z->_f |= FLG_PV;
-        //já está zerada z->_f &= ~FLG_N;
-        return;
-    }
+            uint8_t arg;
 
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11000111) == 0b00000101){        // DEC r
+            if (opcode == 0x35){                         // DEC (HL) / DEC (IX+d) / DEC (IY+d)
 
-        uint8_t arg;
+                const uint8_t *parg = z80_get_phl_orig(z);
+                uint8_t *parg2 = z80_get_phl_dest_last(z);
 
-        if (z->opcode == 0x35){                         // DEC (HL) / DEC (IX+d) / DEC (IY+d)
+                if (parg != NULL)
+                    arg = *parg;
+                else
+                    arg = 0xff;
 
-            const uint8_t *parg = z80_get_phl_orig(z);
-            uint8_t *parg2 = z80_get_phl_dest_last(z);
+                arg--;
 
-            if (parg != NULL)
-                arg = *parg;
-            else
-                arg = 0xff;
+                if (parg2)
+                    *parg2 = arg;
 
+                goto _dec_r_flags;
+            }
+
+            uint8_t *parg = z80_get_dest(z,1);
+            arg = *parg;
             arg--;
+            *parg = arg;
 
-            if (parg2)
-                *parg2 = arg;
-
-            goto _dec_r_flags;
+    _dec_r_flags:
+            z->_f = (arg & 0x28) | (z->_f & FLG_C);
+            if (arg & 0x80)
+                z->_f |= FLG_S;
+            if (!arg)
+                z->_f |= FLG_Z;
+            if ((arg&0x0F) == 0x0F)
+                z->_f |= FLG_H;
+            if (arg == 0x7F)
+                z->_f |= FLG_PV;
+            z->_f |= FLG_N;
+            return;
         }
 
-        uint8_t *parg = z80_get_dest(z,1);
-        arg = *parg;
-        arg--;
-        *parg = arg;
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11000111) == 0b00000011){        // INC ss / DEC ss
 
-_dec_r_flags:
-        z->_f = (arg & 0x28) | (z->_f & FLG_C);
-        if (arg & 0x80)
-            z->_f |= FLG_S;
-        if (!arg)
-            z->_f |= FLG_Z;
-        if ((arg&0x0F) == 0x0F)
-            z->_f |= FLG_H;
-        if (arg == 0x7F)
-            z->_f |= FLG_PV;
-        z->_f |= FLG_N;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11000111) == 0b00000011){        // INC ss / DEC ss
-
-        switch(z->opcode){
-            case 0b00000011:
-                z->bc++;
-                break;
-            case 0b00010011:
-                z->de++;
-                break;
-            case 0b00100011:                            // INC HL / INC IX / INC IY
-                if (z->code_prefix & CODE_PREFIX_DD)
-                    z->ix++;
-                else
-                if (z->code_prefix & CODE_PREFIX_FD)
-                    z->iy++;
-                else
-                    z->hl++;
-                break;
-            case 0b00110011:
-                z->sp++;
-                break;
-            case 0b00001011:
-                z->bc--;
-                break;
-            case 0b00011011:
-                z->de--;
-                break;
-            case 0b00101011:                            // DEC HL / DEC IX / DEC IY
-                if (z->code_prefix & CODE_PREFIX_DD)
-                    z->ix--;
-                else
-                if (z->code_prefix & CODE_PREFIX_FD)
-                    z->iy--;
-                else
-                    z->hl--;
-                break;
-            case 0b00111011:
-                z->sp--;
-                break;
-        }
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11001111) == 0b00001001){        // ADD HL,ss / ADD IX,ss / ADD IY,ss
-
-        uint32_t arg1, arg2;
-        if (z->code_prefix & CODE_PREFIX_DD)
-            arg1 = z->ix;
-        else
-        if (z->code_prefix & CODE_PREFIX_FD)
-            arg1 = z->iy;
-        else
-            arg1 = z->hl;
-
-        switch(z->opcode & 0b00110000){
-
-            case 0b00000000:
-                arg2 = z->bc;
-                break;
-            case 0b00010000:
-                arg2 = z->de;
-                break;
-            case 0b00100000:
-                if (z->code_prefix & CODE_PREFIX_DD)
-                    arg2 = z->ix;
-                else
-                if (z->code_prefix & CODE_PREFIX_FD)
-                    arg2 = z->iy;
-                else
-                    arg2 = z->hl;
-                break;
-            case 0b00110000:
-                arg2 = z->sp;
-                break;
+            switch(opcode){
+                case 0b00000011:
+                    z->bc++;
+                    break;
+                case 0b00010011:
+                    z->de++;
+                    break;
+                case 0b00100011:                            // INC HL / INC IX / INC IY
+                    if (z->code_prefix & CODE_PREFIX_DD)
+                        z->ix++;
+                    else
+                    if (z->code_prefix & CODE_PREFIX_FD)
+                        z->iy++;
+                    else
+                        z->hl++;
+                    break;
+                case 0b00110011:
+                    z->sp++;
+                    break;
+                case 0b00001011:
+                    z->bc--;
+                    break;
+                case 0b00011011:
+                    z->de--;
+                    break;
+                case 0b00101011:                            // DEC HL / DEC IX / DEC IY
+                    if (z->code_prefix & CODE_PREFIX_DD)
+                        z->ix--;
+                    else
+                    if (z->code_prefix & CODE_PREFIX_FD)
+                        z->iy--;
+                    else
+                        z->hl--;
+                    break;
+                case 0b00111011:
+                    z->sp--;
+                    break;
+            }
+            return;
         }
 
-        z->_f &= ~(FLG_N|FLG_H|FLG_C);
+        ////////////////////////////////////////////////////////////////////////////
+        if ((opcode & 0b11001111) == 0b00001001){        // ADD HL,ss / ADD IX,ss / ADD IY,ss
 
-        if (((arg1&0xFFF) + (arg2&0xFFF)) & 0xF000)
-            z->_f |= FLG_H;
+            uint32_t arg1, arg2;
+            if (z->code_prefix & CODE_PREFIX_DD)
+                arg1 = z->ix;
+            else
+            if (z->code_prefix & CODE_PREFIX_FD)
+                arg1 = z->iy;
+            else
+                arg1 = z->hl;
 
-        arg1 += arg2;
+            switch(opcode & 0b00110000){
 
-        if (arg1 & 0xFFFF0000)
-            z->_f |= FLG_C;
+                case 0b00000000:
+                    arg2 = z->bc;
+                    break;
+                case 0b00010000:
+                    arg2 = z->de;
+                    break;
+                case 0b00100000:
+                    if (z->code_prefix & CODE_PREFIX_DD)
+                        arg2 = z->ix;
+                    else
+                    if (z->code_prefix & CODE_PREFIX_FD)
+                        arg2 = z->iy;
+                    else
+                        arg2 = z->hl;
+                    break;
+                case 0b00110000:
+                    arg2 = z->sp;
+                    break;
+            }
 
-        if (z->code_prefix & CODE_PREFIX_DD)
-            z->ix = arg1;
-        else
-        if (z->code_prefix & CODE_PREFIX_FD)
-            z->iy = arg1;
-        else
-            z->hl = arg1;
-        return;
-    }
+            z->_f &= ~(FLG_N|FLG_H|FLG_C);
+
+            if (((arg1&0xFFF) + (arg2&0xFFF)) & 0xF000)
+                z->_f |= FLG_H;
+
+            arg1 += arg2;
+
+            if (arg1 & 0xFFFF0000)
+                z->_f |= FLG_C;
+
+            if (z->code_prefix & CODE_PREFIX_DD)
+                z->ix = arg1;
+            else
+            if (z->code_prefix & CODE_PREFIX_FD)
+                z->iy = arg1;
+            else
+                z->hl = arg1;
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x0A){                             // LD A,(BC)
+
+            z->_a = z80_read(z, z->bc);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x1A){                             // LD A,(DE)
+
+            z->_a = z80_read(z, z->de);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x3A){                             // LD A,(nn)
+
+            uint16_t addrl = z80_fetch(z);
+            uint16_t addrh = z80_fetch(z);
+            z->_a = z80_read(z, addrh<<8 | addrl);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x02){                             // LD (BC),A
+
+            z80_write(z, z->bc, z->_a);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x12){                             // LD (DE),A
+
+            z80_write(z, z->de, z->_a);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x32){                             // LD (nn),A
+
+            uint16_t addrl = z80_fetch(z);
+            uint16_t addrh = z80_fetch(z);
+            z80_write(z, addrh<<8 | addrl, z->_a);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x08){                             // EX AF,AF'
+
+            uint16_t temp = z->af;
+            z->af = z->afa;
+            z->afa = temp;
+            return;
+        }
+    }   // Fim da BASE 00xxxxxx
 
     ////////////////////////////////////////////////////////////////////////////
-    if ((z->opcode & 0b11000000) == 0b01000000){        // LD r,r' e HALT
+    if ((opcode & 0b11000000) == 0b01000000){        // LD r,r' e HALT
 
-        if (z->opcode == 0x76) {                        // Caso especial 0x76: HALT
+        if (opcode == 0x76) {                        // Caso especial 0x76: HALT
 
             --z->pc;
             z->halted = 1;
             return;
         }
 
-        if ((z->opcode & 0b11000111) == 0b01000110){    // LD r,(HL) / LD r,(IX+d) / LD r,(IY+d)
+        if ((opcode & 0b11000111) == 0b01000110){    // LD r,(HL) / LD r,(IX+d) / LD r,(IY+d)
 
             const uint8_t *porig = z80_get_orig(z,0);
             uint8_t arg = 0xFF;
@@ -2012,7 +2088,7 @@ _dec_r_flags:
             return;
         }
 
-        if ((z->opcode & 0b11111000) == 0b01110000){    // LD (HL),r / LD (IX+d),r / LD (IY+d),r
+        if ((opcode & 0b11111000) == 0b01110000){    // LD (HL),r / LD (IX+d),r / LD (IY+d),r
 
             uint8_t *pdest = z80_get_dest(z,0);
             if (pdest)
@@ -2040,330 +2116,274 @@ _dec_r_flags:
         return;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (!z->opcode){   //NOP
+    if ((opcode & 0b11000000) == 0b11000000){   // BASE 11xxxxxx sem DD/FD
 
-        return;
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xD9){                             // EXX
+
+            uint16_t temp = z->bc;
+            z->bc = z->bca;
+            z->bca = temp;
+
+            temp = z->de;
+            z->de = z->dea;
+            z->dea = temp;
+
+            temp = z->hl;
+            z->hl = z->hla;
+            z->hla = temp;
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xC6){                             // ADD A,n
+
+            uint8_t arg = z80_fetch(z);
+            z80_add_acc(z, arg, 0);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xCE){                             // ADC A,n
+
+            uint8_t arg = z80_fetch(z);
+            z80_add_acc(z, arg, 1);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xD6){                             // SUB n
+
+            uint8_t arg = z80_fetch(z);
+            z80_sub_acc(z, arg, 0);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xDE){                             // SBC A,n
+
+            uint8_t arg = z80_fetch(z);
+            z80_sub_acc(z, arg, 1);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xE6){                             // AND n
+
+            uint8_t arg = z80_fetch(z);
+            z->_a &= arg;
+            z80_update_flags_logic_acc(z,1);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xF6){                             // OR n
+
+            uint8_t arg = z80_fetch(z);
+            z->_a |= arg;
+            z80_update_flags_logic_acc(z,0);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xEE){                             // XOR n
+
+            uint8_t arg = z80_fetch(z);
+            z->_a ^= arg;
+            z80_update_flags_logic_acc(z,0);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xFE){                             // CP n
+
+            uint8_t arg = z80_fetch(z);
+            uint8_t a = z->_a;
+            z80_sub_acc(z, arg, 0);
+            z->_a = a;
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xEB){                             // EX DE,HL
+
+            uint16_t temp = z->hl;
+            z->hl = z->de;
+            z->de = temp;
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xD3){                             // OUT (n),A
+
+            uint8_t port = z80_fetch(z);
+            z->out_callback(port,z->_a);
+            return;
+        }
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x0A){                             // LD A,(BC)
+    if ((opcode & 0b11000000) == 0){    // BASE 00xxxxxx  sem DD/FD
 
-        z->_a = z80_read(z, z->bc);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x37){                             // SCF
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x1A){                             // LD A,(DE)
+            z->_f &= ~(FLG_H|FLG_N);
+            z->_f |= FLG_C;
+            return;
+        }
 
-        z->_a = z80_read(z, z->de);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x3F){                             // CCF
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x3A){                             // LD A,(nn)
+            z->_f &= ~(FLG_H|FLG_N);
 
-        uint16_t addrl = z80_fetch(z);
-        uint16_t addrh = z80_fetch(z);
-        z->_a = z80_read(z, addrh<<8 | addrl);
-        return;
-    }
+            if (z->_f & FLG_C)
+                z->_f |= FLG_H;
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x02){                             // LD (BC),A
+            z->_f ^= FLG_C;
+            return;
+        }
 
-        z80_write(z, z->bc, z->_a);
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x27){                             // DAA
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x12){                             // LD (DE),A
+            uint8_t ah = z->_a >> 4;
+            uint8_t al = z->_a & 0x0f;
 
-        z80_write(z, z->de, z->_a);
-        return;
-    }
+            typedef struct{
+                uint8_t nf_before;
+                uint8_t cf_before;
+                uint8_t ah_min,ah_max;
+                uint8_t hf_before;
+                uint8_t al_min,al_max;
+                uint8_t byte_to_add;
+                uint8_t cf_after;
+            } daa_table_t;
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x32){                             // LD (nn),A
+            const daa_table_t daa_table[] = {
 
-        uint16_t addrl = z80_fetch(z);
-        uint16_t addrh = z80_fetch(z);
-        z80_write(z, addrh<<8 | addrl, z->_a);
-        return;
-    }
+                { 0, 0, 0x00, 0x09, 0, 0x00, 0x09, 0x00, 0},
+                { 0, 0, 0x00, 0x08, 0, 0x0a, 0x0f, 0x06, 0},
+                { 0, 0, 0x00, 0x09, 1, 0x00, 0x03, 0x06, 0},
+                { 0, 0, 0x0a, 0x0f, 0, 0x00, 0x09, 0x60, 1},
+                { 0, 0, 0x09, 0x0f, 0, 0x0a, 0x0f, 0x66, 1},
+                { 0, 0, 0x0a, 0x0f, 1, 0x00, 0x03, 0x66, 1},
+                { 0, 1, 0x00, 0x02, 0, 0x00, 0x09, 0x60, 1},
+                { 0, 1, 0x00, 0x02, 0, 0x0a, 0x0f, 0x66, 1},
+                { 0, 1, 0x00, 0x03, 1, 0x00, 0x03, 0x66, 1},
+                { 1, 0, 0x00, 0x09, 0, 0x00, 0x09, 0x00, 0},
+                { 1, 0, 0x00, 0x08, 1, 0x06, 0x0f, 0xfa, 0},
+                { 1, 1, 0x07, 0x0f, 0, 0x00, 0x09, 0xa0, 1},
+                { 1, 1, 0x06, 0x0f, 1, 0x06, 0x0f, 0x9a, 1}
+            };
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x08){                             // EX AF,AF'
+            for (int i = 0; i < 12; i++){
 
-        uint16_t temp = z->af;
-        z->af = z->afa;
-        z->afa = temp;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xD9){                             // EXX
-
-        uint16_t temp = z->bc;
-        z->bc = z->bca;
-        z->bca = temp;
-
-        temp = z->de;
-        z->de = z->dea;
-        z->dea = temp;
-
-        temp = z->hl;
-        z->hl = z->hla;
-        z->hla = temp;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xC6){                             // ADD A,n
-
-        uint8_t arg = z80_fetch(z);
-        z80_add_acc(z, arg, 0);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xCE){                             // ADC A,n
-
-        uint8_t arg = z80_fetch(z);
-        z80_add_acc(z, arg, 1);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xD6){                             // SUB n
-
-        uint8_t arg = z80_fetch(z);
-        z80_sub_acc(z, arg, 0);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xDE){                             // SBC A,n
-
-        uint8_t arg = z80_fetch(z);
-        z80_sub_acc(z, arg, 1);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xE6){                             // AND n
-
-        uint8_t arg = z80_fetch(z);
-        z->_a &= arg;
-        z80_update_flags_logic_acc(z,1);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xF6){                             // OR n
-
-        uint8_t arg = z80_fetch(z);
-        z->_a |= arg;
-        z80_update_flags_logic_acc(z,0);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xEE){                             // XOR n
-
-        uint8_t arg = z80_fetch(z);
-        z->_a ^= arg;
-        z80_update_flags_logic_acc(z,0);
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xFE){                             // CP n
-
-        uint8_t arg = z80_fetch(z);
-        uint8_t a = z->_a;
-        z80_sub_acc(z, arg, 0);
-        z->_a = a;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xEB){                             // EX DE,HL
-
-        uint16_t temp = z->hl;
-        z->hl = z->de;
-        z->de = temp;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x37){                             // SCF
-
-        z->_f &= ~(FLG_H|FLG_N);
-        z->_f |= FLG_C;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x3F){                             // CCF
-
-        z->_f &= ~(FLG_H|FLG_N);
-
-        if (z->_f & FLG_C)
-            z->_f |= FLG_H;
-
-        z->_f ^= FLG_C;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x27){                             // DAA
-
-        uint8_t ah = z->_a >> 4;
-        uint8_t al = z->_a & 0x0f;
-
-        typedef struct{
-            uint8_t nf_before;
-            uint8_t cf_before;
-            uint8_t ah_min,ah_max;
-            uint8_t hf_before;
-            uint8_t al_min,al_max;
-            uint8_t byte_to_add;
-            uint8_t cf_after;
-        } daa_table_t;
-
-        const daa_table_t daa_table[] = {
-
-            { 0, 0, 0x00, 0x09, 0, 0x00, 0x09, 0x00, 0},
-            { 0, 0, 0x00, 0x08, 0, 0x0a, 0x0f, 0x06, 0},
-            { 0, 0, 0x00, 0x09, 1, 0x00, 0x03, 0x06, 0},
-            { 0, 0, 0x0a, 0x0f, 0, 0x00, 0x09, 0x60, 1},
-            { 0, 0, 0x09, 0x0f, 0, 0x0a, 0x0f, 0x66, 1},
-            { 0, 0, 0x0a, 0x0f, 1, 0x00, 0x03, 0x66, 1},
-            { 0, 1, 0x00, 0x02, 0, 0x00, 0x09, 0x60, 1},
-            { 0, 1, 0x00, 0x02, 0, 0x0a, 0x0f, 0x66, 1},
-            { 0, 1, 0x00, 0x03, 1, 0x00, 0x03, 0x66, 1},
-            { 1, 0, 0x00, 0x09, 0, 0x00, 0x09, 0x00, 0},
-            { 1, 0, 0x00, 0x08, 1, 0x06, 0x0f, 0xfa, 0},
-            { 1, 1, 0x07, 0x0f, 0, 0x00, 0x09, 0xa0, 1},
-            { 1, 1, 0x06, 0x0f, 1, 0x06, 0x0f, 0x9a, 1}
-        };
-
-        for (int i = 0; i < 12; i++){
-
-            if ( (((z->_f & FLG_N)?1:0) == daa_table[i].nf_before)
-            &&
-                 (((z->_f & FLG_C)?1:0) == daa_table[i].cf_before)
-            &&
-                 (((z->_f & FLG_H)?1:0) == daa_table[i].hf_before)
-            ){
-                if ( (ah >= daa_table[i].ah_min) && (ah <= daa_table[i].ah_max)
+                if ( (((z->_f & FLG_N)?1:0) == daa_table[i].nf_before)
                 &&
-                     (al >= daa_table[i].al_min) && (al <= daa_table[i].al_max)
+                     (((z->_f & FLG_C)?1:0) == daa_table[i].cf_before)
+                &&
+                     (((z->_f & FLG_H)?1:0) == daa_table[i].hf_before)
                 ){
-                    z->_a += daa_table[i].byte_to_add;
+                    if ( (ah >= daa_table[i].ah_min) && (ah <= daa_table[i].ah_max)
+                    &&
+                         (al >= daa_table[i].al_min) && (al <= daa_table[i].al_max)
+                    ){
+                        z->_a += daa_table[i].byte_to_add;
 
-                    int flg_h = 0;
-                    if ((z->_a >> 4) != ah)
-                        flg_h = 1;
+                        int flg_h = 0;
+                        if ((z->_a >> 4) != ah)
+                            flg_h = 1;
 
-                    z80_update_flags_logic_acc(z, flg_h);
+                        z80_update_flags_logic_acc(z, flg_h);
 
-                    if (daa_table[i].cf_after)
-                        z->_f |= FLG_C;
-                    else
-                        z->_f &= ~FLG_C;
+                        if (daa_table[i].cf_after)
+                            z->_f |= FLG_C;
+                        else
+                            z->_f &= ~FLG_C;
 
-                    return;
+                        return;
+                    }
                 }
             }
+
+            z80_update_flags_logic_acc(z, 0);   // Se não processou o DAA, atualiza os flags assim mesmo.
+            return;
         }
 
-        z80_update_flags_logic_acc(z, 0);   // Se não processou o DAA, atualiza os flags assim mesmo.
-        return;
-    }
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x2F){                             // CPL
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x2F){                             // CPL
+            z->_f |= (FLG_H|FLG_N);
 
-        z->_f |= (FLG_H|FLG_N);
-
-        z->_a ^= 0xFF;
-        return;
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x07){                             // RLCA
-
-        z->_f &= ~(FLG_H|FLG_N|FLG_C);
-
-        uint8_t acopy = z->_a;
-        z->_a <<= 1;
-
-        if (acopy & 0x80){
-            z->_f |= FLG_C;
-            z->_a |= 0x01;
+            z->_a ^= 0xFF;
+            return;
         }
-        return;
-    }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x17){                             // RLA
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x07){                             // RLCA
 
-        uint8_t cy = z->_f & FLG_C;
-        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+            z->_f &= ~(FLG_H|FLG_N|FLG_C);
 
-        if (z->_a & 0x80)
-            z->_f |= FLG_C;
+            uint8_t acopy = z->_a;
+            z->_a <<= 1;
 
-        z->_a <<= 1;
-
-        if (cy){
-            z->_a |= 0x01;
+            if (acopy & 0x80){
+                z->_f |= FLG_C;
+                z->_a |= 0x01;
+            }
+            return;
         }
-        return;
-    }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x0F){                             // RRCA
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x17){                             // RLA
 
-        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+            uint8_t cy = z->_f & FLG_C;
+            z->_f &= ~(FLG_H|FLG_N|FLG_C);
 
-        uint8_t acopy = z->_a;
-        z->_a >>= 1;
+            if (z->_a & 0x80)
+                z->_f |= FLG_C;
 
-        if (acopy & 0x01){
-            z->_f |= FLG_C;
-            z->_a |= 0x80;
+            z->_a <<= 1;
+
+            if (cy){
+                z->_a |= 0x01;
+            }
+            return;
         }
-        return;
-    }
 
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0x1F){                             // RRA
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x0F){                             // RRCA
 
-        uint8_t cy = z->_f & FLG_C;
-        z->_f &= ~(FLG_H|FLG_N|FLG_C);
+            z->_f &= ~(FLG_H|FLG_N|FLG_C);
 
-        if (z->_a & 0x01)
-            z->_f |= FLG_C;
+            uint8_t acopy = z->_a;
+            z->_a >>= 1;
 
-        z->_a >>= 1;
-
-        if (cy){
-            z->_a |= 0x80;
+            if (acopy & 0x01){
+                z->_f |= FLG_C;
+                z->_a |= 0x80;
+            }
+            return;
         }
-        return;
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0x1F){                             // RRA
+
+            uint8_t cy = z->_f & FLG_C;
+            z->_f &= ~(FLG_H|FLG_N|FLG_C);
+
+            if (z->_a & 0x01)
+                z->_f |= FLG_C;
+
+            z->_a >>= 1;
+
+            if (cy){
+                z->_a |= 0x80;
+            }
+            return;
+        }
     }
-
-    ////////////////////////////////////////////////////////////////////////////
-    if (z->opcode == 0xD3){                             // OUT (n),A
-
-        uint8_t port = z80_fetch(z);
-        z->out_callback(port,z->_a);
-        return;
-    }
-
     ////////////////////////////////////////////////////////////////////////////
     printf("Unk. Opcode\n");
 }
