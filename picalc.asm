@@ -84,7 +84,7 @@ zero_reg:
 
     ;    memset(reg,0,NBYTES);
 
-    ld bc,NBYTES
+    ld bc,NBYTES-1
     xor a
     ld (hl),a
     ld d,h
@@ -1371,7 +1371,7 @@ div_reg2_by_reg1_3b:
     jp div_reg2_by_reg1_end
 
 ;        }
-;        else{   // reg2 > reg1
+;        else{   // reg2 >= regmdiv
 
 div_reg2_by_reg1_4:
 
@@ -1384,7 +1384,7 @@ div_reg2_by_reg1_4a:
     ;call prints
     ;db "(1_4a) ",0
 
-;                if (compare(reg2, regmdiv) < 0){ //acc < regmdiv
+;                if (compare(reg2, regmdiv) < 0){ //reg2 < regmdiv
 ;                    break;
 ;                }
     ld l,(ix+2)
@@ -1400,7 +1400,7 @@ div_reg2_by_reg1_4a:
     ld d,(ix+5)         ; IX+4, IX+5: regmdiv
     call shl_reg
 
-;                if (compare(reg2, regmdiv) < 0){ //acc < regmdiv
+;                if (compare(reg2, regmdiv) < 0){ //reg2 < regmdiv
 ;                    break;
 ;                }
     ld l,(ix+2)
@@ -1435,8 +1435,8 @@ div_reg2_by_reg1_4b:
     call shl_reg
 
 ;            sub_reg2_from_reg1(reg2, regmdiv);
-    ld d,(ix+2)
-    ld e,(ix+3)         ; IX+2, IX+3: reg2
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: reg2
     ld l,(ix+4)
     ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call sub_reg2_from_reg1
@@ -1532,7 +1532,13 @@ _main:
     ld hl,acc
     call zero_reg
     ld hl,acc
-    ld bc,0
+    ld bc,1
+    call set_bit_reg_int
+    ld hl,acc
+    ld bc,3
+    call set_bit_reg_int
+    ld hl,acc
+    ld bc,8
     call set_bit_reg_int
 
     ; divisor
