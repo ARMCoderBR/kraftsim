@@ -129,15 +129,16 @@ set_bit_reg0:
 
     ;   reg[byte] |= 1<<bits;
     add hl,de
+
     ld b,1
+    or a
+    jr z,set_bit_reg2
 
 set_bit_reg1:
 
-    or a
-    jr z, set_bit_reg2
     sla b
     dec a
-    jr set_bit_reg1
+    jr nz,set_bit_reg1
 
 set_bit_reg2:
 
@@ -1088,26 +1089,22 @@ compare_1:
 
 ;        if (reg1[i] < reg2[i]) return -1;   // reg1 < reg2
 ;        if (reg1[i] > reg2[i]) return 1;    // reg1 > reg2
+;    }
 
     ld a,(de)
-    cp (hl)
-    jr z,compare_2
-    ccf
-    ret
-
-compare_2:
-
-;    }
-    inc hl
+    cpi
+    jr nz,compare_2
     inc de
-
-    dec bc
-    ld a,b
-    or c
-    jr nz,compare_1
+    jp pe,compare_1
 
 ;    return 0;   // Iguais
     xor a
+    ret
+
+compare_2:
+    dec hl
+    cp (hl)
+    ccf
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -1122,20 +1119,16 @@ iszero:
 
 ;    for (int i = 0; i < NBYTES; i++){
     ld bc,NBYTES
+    xor a
 
 iszero_1:
 
 ;        if (reg[i]) return 0;   // não é zero
-    ld a,(hl)
-    or a
+    cpi
     ret nz
 
 ;    }
-    inc hl
-    dec bc
-    ld a,b
-    or c
-    jr nz,iszero_1
+    jp pe,iszero_1
 
 ;    return 1;   // É zero
     xor a
