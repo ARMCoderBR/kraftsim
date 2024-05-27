@@ -1769,23 +1769,13 @@ test_pi_bbp_1:
     cp NUM_IT >> 8
     jr c, test_pi_bbp_1a
 
-    ;call prints
-    ;db " T1 ",0
-
     ld a,c
     cp NUM_IT & 0xFF
     jr c, test_pi_bbp_1a
 
-    ;call prints
-    ;db " T2 ",0
-
     jp test_pi_bbp_2
 
 test_pi_bbp_1a:
-
-    ;call prints
-    ;db " GO ",0
-
 
 ;        zero_reg(regsubtotal);
     ld l,(ix+2)
@@ -1941,8 +1931,6 @@ test_pi_bbp_1a:
     ld h,(ix+1)         ; IX+0, IX+1: regtotal
     ld bc,NUM_DECS
     call println_reg_decimal
-    ;call prints
-    ;db "LOOP",0
 
 ;    }
     ld c,(ix+6)
@@ -1970,42 +1958,7 @@ test_pi_bbp_end:
 ;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
 _main:
 
-    ; dividendo
-    ;ld hl,acc
-    ;call zero_reg
-    ;ld hl,acc
-    ;ld bc,1
-    ;call set_bit_reg_int
-    ;ld hl,acc
-    ;ld bc,3
-    ;call set_bit_reg_int
-    ;ld hl,acc
-    ;ld bc,8
-    ;call set_bit_reg_int
-
-    ; divisor
-    ;ld hl,reg1
-    ;call zero_reg
-    ;ld hl,reg1
-    ;ld bc,0
-    ;call set_bit_reg_int
-    ;ld hl,reg1
-    ;ld bc,1
-    ;call set_bit_reg_int
-
-    ; resultado em acc
-    ;ld de,acc
-    ;ld hl,reg1
-    ;call div_reg2_by_reg1
-
-    ;call prints
-    ;db 13,10,"Result:",0
-    ;ld hl,acc
-    ;ld bc,100
-    ;call println_reg_decimal
-
     call test_pi_bbp
-
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
