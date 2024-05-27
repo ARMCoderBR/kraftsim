@@ -1797,13 +1797,6 @@ test_pi_bbp_1a:
     inc hl
     call load_reg_int   ; DE já deve estar certo aqui
 
-    ld bc,10
-    call prints
-    db "8k+1:",0
-    ld l,(ix+4)
-    ld h,(ix+5)         ; IX+4, IX+5: regden
-    call println_reg_decimal
-
 ;        zero_reg(acc);
     ld hl,acc
     call zero_reg
@@ -1829,11 +1822,6 @@ test_pi_bbp_1a:
     ld d,(ix+5)         ; IX+4, IX+5: regden
     ld a,3
     call inc_reg_int8
-    call prints
-    db "8k+4:",0
-    ld l,(ix+4)
-    ld h,(ix+5)         ; IX+4, IX+5: regden
-    call println_reg_decimal
 
 ;        zero_reg(acc);
     ld hl,acc
@@ -1860,11 +1848,6 @@ test_pi_bbp_1a:
     ld d,(ix+5)         ; IX+4, IX+5: regden
     ld a,1
     call inc_reg_int8
-    call prints
-    db "8k+5:",0
-    ld l,(ix+4)
-    ld h,(ix+5)         ; IX+4, IX+5: regden
-    call println_reg_decimal
 
 ;        zero_reg(acc);
     ld hl,acc
@@ -1891,11 +1874,6 @@ test_pi_bbp_1a:
     ld d,(ix+5)         ; IX+4, IX+5: regden
     ld a,1
     call inc_reg_int8
-    call prints
-    db "8k+6:",0
-    ld l,(ix+4)
-    ld h,(ix+5)         ; IX+4, IX+5: regden
-    call println_reg_decimal
 
 ;        zero_reg(acc);
     ld hl,acc
@@ -1926,10 +1904,6 @@ test_pi_bbp_1a:
     rl b
     sla c
     rl b
-    sla c
-    rl b
-    sla c
-    rl b
     call shr_reg
 
 ;        add_reg2_to_reg1(regtotal, regsubtotal);
@@ -1947,6 +1921,9 @@ test_pi_bbp_1a:
 ;;            if (places_ok >= 1000) return;
 ;;        }
 ;            print_reg_decimal(regtotal, 120);
+
+    call prints
+    db "TOTAL:",0
     ld l,(ix+0)
     ld h,(ix+1)         ; IX+0, IX+1: regtotal
     ld bc,90
