@@ -595,35 +595,6 @@ stack_test:
 ;     BC: places
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF
-;
-;    int i;
-;
-;    if (places > NBITS)
-;        places = NBITS;
-;
-;    int bytes = places >> 3;
-;    int bits = places & 0x07;
-;
-;    int rightbytes = NBYTES - bytes;
-;
-;    if (bytes){
-;
-;        if (rightbytes)
-;            memmove(&reg[bytes], &reg[0], rightbytes);
-;        memset(&reg[0],0,bytes);
-;    }
-;
-;    if (bits){
-;
-;        for (i = NBYTES1; i > bytes; i--){
-;
-;            reg[i] >>= bits;
-;            uint8_t aux = reg[i-1] << (8-bits);
-;            reg[i] |= aux;
-;        }
-;
-;        reg[bytes] >>= bits;
-;    }
 shr_reg:
 
     push ix
@@ -634,6 +605,8 @@ shr_reg:
     ld (ix+0),e     ; IX+0, IX+1 = 'reg'
     ld (ix+1),d
 
+;    if (places > NBITS)
+;        places = NBITS;
     ld a,NBITS >> 8
     sub b
     jr c,shr_reg_0
@@ -649,6 +622,8 @@ shr_reg_0:
 
 shr_reg_1:
 
+;    int bytes = places >> 3;
+;    int bits = places & 0x07;
     ld a,c
     and 0x07
     ld (ix+2),a     ; IX+2 = 'bits'
@@ -661,22 +636,24 @@ shr_reg_1:
     ld (ix+6),c
     ld (ix+7),b     ; IX+6, IX+7 = 'bytes'
 
+;    int rightbytes = NBYTES - bytes;
     ld hl,NBYTES
     xor a
     sbc hl,bc       ; HL = 'rightbytes'
     ld (ix+4),l     ; IX+4, IX+5 = 'rightbytes'
     ld (ix+5),h
 
-    ld a,b          ; if (bytes)
+;    if (bytes){
+    ld a,b
     or c
     jr z,shr_reg_2
 
-    ld a,h          ; if (rightbytes)
+;        if (rightbytes)
+    ld a,h
     or l
     jr z,shr_reg_1a
 
-    ; Move bytes para a direita
-
+;            memmove(&reg[bytes], &reg[0], rightbytes);
     ld hl,NBYTES1
     add hl,de
     ld d,h
@@ -690,8 +667,7 @@ shr_reg_1:
 
 shr_reg_1a:
 
-    ; Zera bytes da esquerda
-
+;        memset(&reg[0],0,bytes);
     ld c,(ix+6)
     ld b,(ix+7)     ; IX+6, IX+7 = 'bytes'
     ld l,(ix+0)
@@ -707,22 +683,29 @@ shr_reg_1b:
     or c
     jr nz,shr_reg_1b
 
+;    }
+
 shr_reg_2:
 
+;    if (bits){
     ld a,(ix+2)     ; 'bits'
     or a
     jr z,shr_reg_end
 
-    ; Vai fazer o shift
 
+;        for (i = NBYTES1; i > bytes; i--){
     ld hl,NBYTES1
     ld c,(ix+6)
     ld b,(ix+7)     ; IX+6, IX+7 = 'bytes'
     xor a
     sbc hl,bc
+
+    ld a,h
+    or l
+    jr z,shr_reg_2e
+
     ld b,h
     ld c,l          ; BC = número de bytes a processar
-    dec bc
 
     ld l,(ix+0)
     ld h,(ix+1)     ; HL = 'reg'
@@ -732,6 +715,7 @@ shr_reg_2:
 
 shr_reg_2a:
 
+;            reg[i] >>= bits;
     ld a,(ix+2)     ; 'bits'
     ld e,a          ; E = 'bits'
     neg
@@ -747,6 +731,7 @@ shr_reg_2b:
 
     ld e,a
 
+;            uint8_t aux = reg[i-1] << (8-bits);
     dec hl
     ld a,(hl)
     inc hl
@@ -757,25 +742,29 @@ shr_reg_2c:
     dec d
     jr nz,shr_reg_2c
 
+;            reg[i] |= aux;
     or e
     ld (hl),a
-    dec hl
 
+;        }
+    dec hl
     dec bc
     ld a,b
     or c
     jr nz,shr_reg_2a
 
-    ; Ajusta o último byte relevante
+shr_reg_2e:
+
+;        reg[bytes] >>= bits;
     ld a,(hl)
     ld b,(IX+2)     ; 'bits'
 
 shr_reg_2d:
-
     srl a
     djnz shr_reg_2d
-
     ld (hl),a
+
+;    }
 
 shr_reg_end:
 
@@ -1576,6 +1565,28 @@ print_int_part:
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
+print_bc:
+
+    ld l,c
+    ld h,b
+
+    ld d,0
+    ld bc,10000
+    call print_int_part_digit
+    ld bc,1000
+    call print_int_part_digit
+    ld bc,100
+    call print_int_part_digit
+    ld bc,10
+    call print_int_part_digit
+    ;ld bc,1
+    ;call print_int_part_digit
+    ld a,l
+    add a,'0'
+    out (0),a
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   print_reg_decimal
 ;   void print_reg_decimal(const uint8_t *reg, int nplaces);
 ;   Parâmetros:
@@ -1924,7 +1935,6 @@ test_pi_bbp_1a:
 ;;            if (places_ok >= 1000) return;
 ;;        }
 ;            print_reg_decimal(regtotal, 120);
-
     call prints
     db "TOTAL:",0
     ld l,(ix+0)
