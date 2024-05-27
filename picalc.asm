@@ -30,6 +30,11 @@
 ;    this regard). 100 digits is way more practical amount, unless you have A  ;
 ;    LOT of time to spare.                                                     ;
 ;                                                                              ;
+;    The main loop iteracts as many times as needed to calculate all the       ;
+;    decimal places requested (the number of iterations / number of digits have;
+;    a ratio close to 0.9). With each iteration the message 'TOTAL:' is printed;
+;    along the PI approximation calculated so far.                             ;
+;                                                                              ;
 ; Version & Date:                                                              ;
 ;    1.0 - 2024-MAY-27                                                         ;
 ;                                                                              ;
