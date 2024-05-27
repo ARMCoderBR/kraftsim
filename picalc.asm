@@ -6,7 +6,7 @@ RAMBASE:        equ 8192
 RAMSZ:          equ 8192
 
 NBITS_INT:      equ 16
-NBITS_FRAC:     equ 3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
+NBITS_FRAC:     equ 336 ;3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
 NBYTES_INT:     equ NBITS_INT >> 3
 NBITS:          equ NBITS_INT+NBITS_FRAC
 NBYTES:         equ NBITS>>3
@@ -54,8 +54,8 @@ pidigits: db "3.14159265358979323846264338327950288419716939937510"
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   prints
-;   void prints(void);
-;   Parâmetros: HL: String
+;   void prints(const char *string);
+;   Parâmetros: HL: string
 ;   Retorna: Nada
 ;   Afeta: HL
 prints:
@@ -71,6 +71,18 @@ prints_1:
 prints_2:
     inc hl
     push hl
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   print_crlf
+;   void print_crlf(void);
+;   Parâmetros: Nada
+;   Retorna: Nada
+;   Afeta: HL
+print_crlf:
+
+    call prints
+    db 13,10,0
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
@@ -494,6 +506,7 @@ shl_reg_2:
     ; Vai fazer o shift
     ld c,(ix+4)
     ld b,(ix+5)     ;'leftbytes'
+    dec bc
 
     ld l,(ix+0)
     ld h,(ix+1)     ; HL = 'reg'
@@ -1476,6 +1489,491 @@ div_reg2_by_reg1_end:
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   div_acc_by_reg
+;   int div_acc_by_reg(const uint8_t *reg)
+;   Parâmetros:
+;     HL: reg
+;   Retorna: Flags: Z:        Divisão OK
+;                   NZ:       Divisão com erro
+;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+div_acc_by_reg:
+
+    ;return div_reg2_by_reg1(reg, acc);
+    ld de,acc
+    jp div_reg2_by_reg1
+
+;///////////////////////////////////////////////////////////////////////////////
+;   print_int_part
+;   void print_int_part(const uint8_t *reg);
+;   Parâmetros:
+;     HL: reg
+;   Retorna: Nada
+;   Afeta: BC DE HL AF
+print_int_part_digit:
+
+    ld e,0
+    xor a
+
+print_int_part_digit_0:
+
+    sbc hl,bc
+    jr z,print_int_part_digit_2b
+    jr c,print_int_part_digit_2a
+    inc e
+    jr print_int_part_digit_0
+
+print_int_part_digit_2a:
+    add hl,bc
+    jr print_int_part_digit_2
+
+print_int_part_digit_2b:
+    inc e
+
+print_int_part_digit_2:
+
+    ld a,e
+    or a
+    jr nz,print_int_part_digit_3
+
+    bit 0,d
+    ret z
+
+print_int_part_digit_3:
+
+    ld d,1
+    add a,'0'
+    out (0),a
+
+    ret
+
+print_int_part:
+
+    ld b,(hl)
+    inc hl
+    ld c,(hl)
+    ld l,c
+    ld h,b
+
+    ld d,0
+    ld bc,10000
+    call print_int_part_digit
+    ld bc,1000
+    call print_int_part_digit
+    ld bc,100
+    call print_int_part_digit
+    ld bc,10
+    call print_int_part_digit
+    ;ld bc,1
+    ;call print_int_part_digit
+    ld a,l
+    add a,'0'
+    out (0),a
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   print_reg_decimal
+;   void print_reg_decimal(const uint8_t *reg, int nplaces);
+;   Parâmetros:
+;     HL: reg
+;     BC: nplaces
+;   Retorna: Nada
+;   Afeta: BC DE HL AF
+print_reg_decimal:
+
+    push ix
+    ld ix,0xFFF8-NBYTES    ; Reserva 8 bytes + buffer
+    add ix,sp
+    ld sp,ix
+    ld (ix+0),l
+    ld (ix+1),h         ; IX+0, IX+1: reg
+
+    ;uint8_t regtmp[NBYTES];
+    ld e,ixl
+    ld d,ixh            ; Copia IX em DE
+    ld HL,8
+    add hl,de
+    ld (ix+2),l
+    ld (ix+3),h         ; IX+2, IX+3: regtmp
+
+;    print_int_part(reg);
+;    printf(".");
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: reg
+    push hl
+    push bc
+    call print_int_part
+    pop bc
+    ld a,'.'
+    out (0),a
+    pop hl
+
+;    memcpy(regtmp, reg, NBYTES);
+    push bc
+
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: regtmp
+    ld bc,NBYTES
+    ldir
+
+    pop bc
+
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: regtmp
+
+;    if (nplaces)
+;        ++nplaces;
+    ld a,b
+    or c
+    jr z, print_reg_decimal_1
+    inc bc
+
+print_reg_decimal_1:
+
+;    for (;;){
+;        if (nplaces){
+    ld a,b
+    or c
+    jr z, print_reg_decimal_2
+
+;            --nplaces;
+    dec bc
+;            if (!nplaces)
+;                break;
+    ld a,b
+    or c
+    jr z, print_reg_decimal_3
+;        }
+
+print_reg_decimal_2:
+
+;        memset(regtmp,0,NBYTES_INT);
+    xor a
+    ld (hl),a
+    inc hl
+    ld (hl),a
+    dec hl
+
+;        if (iszero(regtmp)) break;
+    push bc
+    push hl
+    call iszero
+    pop hl
+    pop bc
+    jr z, print_reg_decimal_3
+
+;        mul_reg_10(regtmp);
+    push bc
+    push hl
+    ld e,l
+    ld d,h
+    call mul_reg_10
+    pop hl
+    pop bc
+
+;        print_int_part(regtmp);
+    inc hl
+    ld a,(hl)
+    dec hl
+    add a,'0'
+    out (0),a
+
+;    }
+    jr print_reg_decimal_1
+
+print_reg_decimal_3:
+print_reg_decimal_end:
+
+    ld hl,0x0008+NBYTES    ; Libera 8 bytes + buffer
+    add hl,sp
+    ld sp,hl
+    pop ix
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   println_reg_decimal
+;   void println_reg_decimal(const uint8_t *reg, int nplaces);
+;   Parâmetros:
+;     HL: reg
+;     BC: nplaces
+;   Retorna: Nada
+;   Afeta: BC DE HL AF
+println_reg_decimal:
+
+    call print_reg_decimal
+    call print_crlf
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
+;   test_pi_bbp
+;   void test_pi_bbp(void); // Bailey-Borwein-Plouffe
+;   Parâmetros: Nada
+;   Retorna: Nada
+;   Afeta: BC DE HL AF
+test_pi_bbp:
+
+NUM_IT:     equ 100
+
+    push ix
+    ld ix,0xFFF6-3*NBYTES    ; Reserva 10 bytes + 3 buffers
+    add ix,sp
+    ld sp,ix
+
+;    uint8_t regtotal[NBYTES];
+    ld c,ixl
+    ld b,ixh            ; Copia IX em BC
+    ld HL,10
+    add hl,bc
+    ld (ix+0),l
+    ld (ix+1),h         ; IX+0, IX+1: regtotal
+
+;    uint8_t regsubtotal[NBYTES];
+    ld bc,NBYTES
+    add hl,bc
+    ld (ix+2),l
+    ld (ix+3),h         ; IX+2, IX+3: regsubtotal
+
+;    uint8_t regden[NBYTES];
+    ;ld bc,NBYTES
+    add hl,bc
+    ld (ix+4),l
+    ld (ix+5),h         ; IX+4, IX+5: regden
+
+;    zero_reg(regtotal);
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: regtotal
+    call zero_reg
+
+;    for (int k = 0; k < 10000; k++){
+    ld bc,0
+
+test_pi_bbp_1:
+
+    ld (ix+6),c
+    ld (ix+7),b         ; IX+6, IX+7: k
+
+    ld a,b
+    cp NUM_IT >> 8
+    jr c, test_pi_bbp_1a
+
+    ;call prints
+    ;db " T1 ",0
+
+    ld a,c
+    cp NUM_IT & 0xFF
+    jr c, test_pi_bbp_1a
+
+    ;call prints
+    ;db " T2 ",0
+
+    jp test_pi_bbp_2
+
+test_pi_bbp_1a:
+
+    ;call prints
+    ;db " GO ",0
+
+
+;        zero_reg(regsubtotal);
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: regsubtotal
+    call zero_reg
+
+;        zero_reg(regden);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    push hl
+    call zero_reg
+    pop de              ; DE contém regden
+
+;        load_reg_int(regden,8*k+1);     // Inicia com 8k+1
+    ld l,(ix+6)
+    ld h,(ix+7)         ; IX+6, IX+7: k
+    sla l
+    rl h
+    sla l
+    rl h
+    sla l
+    rl h
+    inc hl
+    call load_reg_int   ; DE já deve estar certo aqui
+
+    ld bc,10
+    call prints
+    db "8k+1:",0
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call println_reg_decimal
+
+;        zero_reg(acc);
+    ld hl,acc
+    call zero_reg
+
+;        set_bit_reg_int(acc, 2);        // Inicia com 4
+    ld hl,acc
+    ld bc,2
+    call set_bit_reg_int
+
+;        div_acc_by_reg(regden);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call div_acc_by_reg
+
+;        add_reg2_to_reg1(regsubtotal,acc);
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: regsubtotal
+    ld hl,acc
+    call add_reg2_to_reg1
+
+;        inc_reg_int8(regden, 3);        // 8k+4
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regden
+    ld a,3
+    call inc_reg_int8
+    call prints
+    db "8k+4:",0
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call println_reg_decimal
+
+;        zero_reg(acc);
+    ld hl,acc
+    call zero_reg
+
+;        set_bit_reg_int(acc, 1);        // Inicia com 2
+    ld hl,acc
+    ld bc,1
+    call set_bit_reg_int
+
+;        div_acc_by_reg(regden);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call div_acc_by_reg
+
+;        sub_reg2_from_reg1(regsubtotal,acc);
+    ld hl,acc
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: regsubtotal
+    call sub_reg2_from_reg1
+
+;        inc_reg_int8(regden, 1);        // 8k+5
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regden
+    ld a,1
+    call inc_reg_int8
+    call prints
+    db "8k+5:",0
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call println_reg_decimal
+
+;        zero_reg(acc);
+    ld hl,acc
+    call zero_reg
+
+;        set_bit_reg_int(acc, 0);        // Inicia com 1
+    ld hl,acc
+    ld bc,0
+    call set_bit_reg_int
+
+;        div_acc_by_reg(regden);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call div_acc_by_reg
+
+;        sub_reg2_from_reg1(regsubtotal,acc);
+    ld hl,acc
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: regsubtotal
+    call sub_reg2_from_reg1
+
+;        inc_reg_int8(regden, 1);        // 8k+6
+    ld e,(ix+4)
+    ld d,(ix+5)         ; IX+4, IX+5: regden
+    ld a,1
+    call inc_reg_int8
+    call prints
+    db "8k+6:",0
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call println_reg_decimal
+
+;        zero_reg(acc);
+    ld hl,acc
+    call zero_reg
+
+;        set_bit_reg_int(acc, 0);        // Inicia com 1
+    ld hl,acc
+    ld bc,0
+    call set_bit_reg_int
+
+;        div_acc_by_reg(regden);
+    ld l,(ix+4)
+    ld h,(ix+5)         ; IX+4, IX+5: regden
+    call div_acc_by_reg
+
+;        sub_reg2_from_reg1(regsubtotal,acc);
+    ld hl,acc
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: regsubtotal
+    call sub_reg2_from_reg1
+
+;        shr_reg(regsubtotal, 4*k);
+    ld e,(ix+2)
+    ld d,(ix+3)         ; IX+2, IX+3: regsubtotal
+    ld c,(ix+6)
+    ld b,(ix+7)         ; IX+6, IX+7: k
+    sla c
+    rl b
+    sla c
+    rl b
+    sla c
+    rl b
+    sla c
+    rl b
+    call shr_reg
+
+;        add_reg2_to_reg1(regtotal, regsubtotal);
+    ld e,(ix+0)
+    ld d,(ix+1)         ; IX+0, IX+1: regtotal
+    ld l,(ix+2)
+    ld h,(ix+3)         ; IX+2, IX+3: regsubtotal
+    call add_reg2_to_reg1
+
+;;        if (!(k % 10)){
+;;            printf("%5d: ",k);
+;;            print_reg_decimal(regtotal, 120);
+;;            int places_ok = compare_digits_to_pi(regtotal);
+;;            printf(" (%d)\n",places_ok);
+;;            if (places_ok >= 1000) return;
+;;        }
+;            print_reg_decimal(regtotal, 120);
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: regtotal
+    ld bc,90
+    call println_reg_decimal
+    ;call prints
+    ;db "LOOP",0
+
+;    }
+    ld c,(ix+6)
+    ld b,(ix+7)         ; IX+6, IX+7: k
+    inc bc
+    ;ld (ix+6),c
+    ;ld (ix+7),b         ; IX+6, IX+7: k
+
+    jp test_pi_bbp_1
+
+test_pi_bbp_2:
+test_pi_bbp_end:
+
+    ld hl,0x000A+3*NBYTES    ; Libera 10 bytes + 3 buffers
+    add hl,sp
+    ld sp,hl
+    pop ix
+    or a
+    ret
+
+;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
 ;   Parâmetros: Nada
@@ -1483,71 +1981,41 @@ div_reg2_by_reg1_end:
 ;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
 _main:
 
-;    call stack_test
-
-;    ld hl,reg1
-;    call zero_reg
-
-;    ld bc,???
-;    ld de,reg1
-;    call shl_reg
-
-    ld hl,reg1
-    call zero_reg
-    ld hl,reg1
-    ;ld bc,NBYTES_INT-1
-    ;add hl,bc
-    ;ld (hl),2
-    ld bc,NBYTES_INT
-    add hl,bc
-    ld (hl),0x40
-
-    ld hl,acc
-    call zero_reg
-    ld hl,acc
-    call iszero
-
-    ld hl,acc
-    ld bc,NBYTES_INT-1
-    add hl,bc
-    ld (hl),3
-    ld hl,acc
-    call iszero
-
-    ld de,acc
-    ld hl,reg1
-    call compare
-
-    ld de,acc
-    call mul_reg_10
-
     ; dividendo
-    ld hl,acc
-    call zero_reg
-    ld hl,acc
-    ld bc,1
-    call set_bit_reg_int
-    ld hl,acc
-    ld bc,3
-    call set_bit_reg_int
-    ld hl,acc
-    ld bc,8
-    call set_bit_reg_int
+    ;ld hl,acc
+    ;call zero_reg
+    ;ld hl,acc
+    ;ld bc,1
+    ;call set_bit_reg_int
+    ;ld hl,acc
+    ;ld bc,3
+    ;call set_bit_reg_int
+    ;ld hl,acc
+    ;ld bc,8
+    ;call set_bit_reg_int
 
     ; divisor
-    ld hl,reg1
-    call zero_reg
-    ld hl,reg1
-    ld bc,0
-    call set_bit_reg_int
-    ld hl,reg1
-    ld bc,1
-    call set_bit_reg_int
+    ;ld hl,reg1
+    ;call zero_reg
+    ;ld hl,reg1
+    ;ld bc,0
+    ;call set_bit_reg_int
+    ;ld hl,reg1
+    ;ld bc,1
+    ;call set_bit_reg_int
 
     ; resultado em acc
-    ld de,acc
-    ld hl,reg1
-    call div_reg2_by_reg1
+    ;ld de,acc
+    ;ld hl,reg1
+    ;call div_reg2_by_reg1
+
+    ;call prints
+    ;db 13,10,"Result:",0
+    ;ld hl,acc
+    ;ld bc,100
+    ;call println_reg_decimal
+
+    call test_pi_bbp
 
     ret
 
