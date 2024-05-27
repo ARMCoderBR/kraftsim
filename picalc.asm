@@ -1,46 +1,104 @@
-; z80asm picalc.asm -o - | xxd -ps -c 16 > test.hex
+;//////////////////////////////////////////////////////////////////////////////;
+; Project:                                                                     ;
+;    Z80-PICALC                                                                ;
+;                                                                              ;
+; Description:                                                                 ;
+;    A calculator that yields an arbitrary number of digits of the number PI.  ;
+;                                                                              ;
+; Target:                                                                      ;
+;    Any Z80-based computer. Details of memory allocation and stack positioning;
+;    must be adjusted for the specifics of the target. In addition, INT 08h    ;
+;    is used as a function call to print character over TTY (A = character),   ;
+;    which implementation has to be adjusted to the target.                    ;
+;                                                                              ;
+; Compiler:                                                                    ;
+;    z80asm                                                                    ;
+;    https://manpages.ubuntu.com/manpages/trusty/man1/z80asm.1.html            ;
+;                                                                              ;
+;    Other compilers/assemblers may require minor changes in the source code.  ;
+;                                                                              ;
+; Usage:                                                                       ;
+;    The desired digits of PI is defined in the constant NUM_DECS. Default     ;
+;    value is 100. Note that incrementing this value will increase RAM usage   ;
+;    proportionally, and the needed CPU cycles quadratically. Don't change the ;
+;    other algorith constants unless you really know what you are doing.       ;
+;                                                                              ;
+; Version & Date:                                                              ;
+;    1.0 - 2024-MAY-27                                                         ;
+;                                                                              ;
+; Author:                                                                      ;
+;    Milton Maldonado Jr (ARM_Coder)                                           ;
+;                                                                              ;
+; License:                                                                     ;
+;    GPL V2                                                                    ;
+;                                                                              ;
+; Disclaimer:                                                                  ;
+;    This code is supplied 'as is' with no warranty against bugs. It was tested;
+;    on a Z80 simulator that *I* wrote (haha), so it was not tested against any;
+;    actual, validated target.                                                 ;
+;                                                                              ;
+; Note:                                                                        ;
+;    Along the ASM source, you will see some commented 'C' statemens. The      ;
+;    project was initially built and tested in C, and then hand-translated     ;
+;    to Z80 ASM.                                                               ;
+;                                                                              ;
+; Note 2:                                                                      ;
+;    I hope this is my last ASM project ever. Writing code in ASM is a real    ;
+;    PITA, but this project was a challenge I've set for me.                   ;
+;                                                                              ;
+; Funny note:                                                                  ;
+;    This project implements the Bailey-Borwein-Plouffe method of calculating  ;
+;    PI. This method is much, much faster that the classic Euler series.       ;
+;    The funny thing is that the method was discovered (invented?) in 1995,    ;
+;    when the Z80 had already passed its heyday and was fading into a niche,   ;
+;    retro platform.                                                           ;
+;//////////////////////////////////////////////////////////////////////////////;
 
+; Example: z80asm picalc.asm -o - | xxd -ps -c 16 > test.hex
+
+; Hardware constants
 ROMBASE:        equ 0
 ROMSZ:          equ 8192
 RAMBASE:        equ 8192
 RAMSZ:          equ 8192
 
+; Algorithm constants
 NUM_DECS:       equ 100
 NUM_IT:         equ ((NUM_DECS*9)/10)
 NBITS_FR:       equ (3*NUM_DECS + (NUM_DECS >> 1))
-
 NBITS_INT:      equ 16
-NBITS_FRAC:     equ 8*(1 + (NBITS_FR >> 3)) ;3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
+NBITS_FRAC:     equ 8*(1 + (NBITS_FR >> 3)) ; The number of bits should be at least 3.33x (1 / log(2)) the number of decimal places, plus a small cushion.
 NBYTES_INT:     equ NBITS_INT >> 3
 NBITS:          equ NBITS_INT+NBITS_FRAC
 NBYTES:         equ NBITS>>3
 NBYTES1:        equ NBYTES-1
 
-    org ROMBASE
+    org ROMBASE     ; Expected to be 0x00. Other values will clash with the
+                    ; interrupt handlers below.
 
     ld sp,RAMBASE + RAMSZ
     call _main
     halt
 
-    seek 0x0008     ; Para SW Interrupt
+    seek 0x0008     ; SW Interrupt. Used here to print characters.
     org 0x0008
-    out (0),a       ; Implementa putch
+    out (0),a       ; Change it for whatever your target needs.
     ret
 
-    seek 0x0038     ; Para HW Interrupt IM 1
+    seek 0x0038     ; HW Interrupt IM 1.
     org 0x0038
     reti
 
-    seek 0x0066     ; Para NMI
+    seek 0x0066     ; NMI.
     org 0x0066
     retn
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   prints
 ;   void prints(const char *string);
-;   Parâmetros: HL: string
-;   Retorna: Nada
-;   Afeta: HL
+;   Parameters: HL: string
+;   Returns: Nothing
+;   Affects: HL
 prints:
 
     pop hl
@@ -59,9 +117,9 @@ prints_2:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   print_crlf
 ;   void print_crlf(void);
-;   Parâmetros: Nada
-;   Retorna: Nada
-;   Afeta: HL
+;   Parameters: Nothing
+;   Returns: Nothing
+;   Affects: HL
 print_crlf:
 
     call prints
@@ -71,10 +129,10 @@ print_crlf:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   zero_reg
 ;   void zero_reg(uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 zero_reg:
 
     ;    memset(reg,0,NBYTES);
@@ -90,11 +148,11 @@ zero_reg:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   set_bit_reg
 ;   void set_bit_reg(uint8_t *reg, int place);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
 ;     BC: place
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 set_bit_reg:
 
     ;   int byte = NBYTES1 - (place >> 3);
@@ -144,11 +202,11 @@ set_bit_reg2:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   set_bit_reg_int
 ;   void set_bit_reg_int(uint8_t *reg, int place);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
 ;     BC: place
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 set_bit_reg_int:
 
     ;   int byte = NBYTES_INT - 1 - (place >> 3);
@@ -164,11 +222,11 @@ set_bit_reg_int:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   add_reg2_to_reg1
 ;   void add_reg2_to_reg1(uint8_t *reg1, const uint8_t *reg2);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg2
 ;     DE: reg1
-;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF BC' DE' HL' AF'
 add_reg2_to_reg1:
 
     ;   uint16_t cy = 0;
@@ -191,7 +249,7 @@ add_reg2_to_reg1:
     ld bc,NBYTES1
     inc bc
     exx
-    sub a   ;zera CY
+    sub a   ;zero Carry Flag
 
 add_reg2_to_reg1_0:
 
@@ -203,23 +261,23 @@ add_reg2_to_reg1_0:
     dec hl
     dec de
 
-    exx                         ; Salva HL e DE, recupera contador em BC
-    ex af,af'                   ; Salva CY
+    exx                         ; Save HL & DE, restores counter in BC
+    ex af,af'                   ; Save CY
     dec bc
     ld a,b
     or c
-    ret z                       ; Fim do loop, tchau
-    ex af,af'                   ; Recupera CY
-    exx                         ; Salva contador em BC, recupera HL e DE
+    ret z                       ; End loop, bye
+    ex af,af'                   ; Restore CY
+    exx                         ; Save counter in BC, restores HL & DE
     jr add_reg2_to_reg1_0
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   add_reg_to_acc
 ;   void add_reg_to_acc(const uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF BC' DE' HL' AF'
 add_reg_to_acc:
 
     ld de,acc
@@ -228,11 +286,11 @@ add_reg_to_acc:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   inc_reg_int8
 ;   void inc_reg_int8(uint8_t *reg, uint8_t byteval);
-;   Parâmetros:
+;   Parameters:
 ;     DE: reg
 ;     A:  byteval
-;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF BC' DE' HL' AF'
 inc_reg_int8:
 
     ;    uint16_t cy = byteval;
@@ -259,14 +317,14 @@ inc_reg_int8_0:
 
     ld e,0
     jr nc, inc_reg_int8_1
-    inc e       ; Aqui usa E como CY.
+    inc e       ; Here E propagates the carry for the sums.
 
 inc_reg_int8_1:
 
     dec bc
     ld a,b
     or c
-    ret z                       ; Fim do loop, tchau
+    ret z                       ; End loop, bye
 
     dec hl
     jr inc_reg_int8_0
@@ -274,11 +332,11 @@ inc_reg_int8_1:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   load_reg_int
 ;   void load_reg_int(uint8_t *reg, int val);
-;   Parâmetros:
+;   Parameters:
 ;     DE: reg
 ;     HL: val
-;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF BC' DE' HL' AF'
 load_reg_int:
 
 ;    for (int i = NBYTES_INT - 1; i >= 0; i--){
@@ -311,11 +369,11 @@ load_reg_int_0:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   sub_reg2_from_reg1
 ;   void sub_reg2_from_reg1(uint8_t *reg1, const uint8_t *reg2);
-;   Parâmetros:
+;   Parameters:
 ;     DE: reg1
 ;     HL: reg2
-;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF BC' DE' HL' AF'
 sub_reg2_from_reg1:
 
 ;    uint16_t cy = 0;
@@ -350,23 +408,23 @@ sub_reg2_to_reg1_0:
     dec hl
     dec de
 
-    exx                         ; Salva HL e DE, recupera contador em BC
-    ex af,af'                   ; Salva CY
+    exx                         ; Save HL & DE, restores counter in BC
+    ex af,af'                   ; Save CY
     dec bc
     ld a,b
     or c
-    ret z                       ; Fim do loop, tchau
-    ex af,af'                   ; Recupera CY
-    exx                         ; Salva contador em BC, recupera HL e DE
+    ret z                       ; End loop, bye
+    ex af,af'                   ; Restore CY
+    exx                         ; Save counter in BC, restore HL & DE
     jr sub_reg2_to_reg1_0
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   sub_reg_from_acc
 ;   void sub_reg_from_acc(const uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Nada
-;   Afeta: BC DE HL AF BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF BC' DE' HL' AF'
 sub_reg_from_acc:
 
     ld de,acc
@@ -376,15 +434,15 @@ sub_reg_from_acc:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   shl_reg
 ;   void shl_reg(uint8_t *reg, int places)
-;   Parâmetros:
+;   Parameters:
 ;     DE: reg
 ;     BC: places
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 shl_reg:
 
     push ix
-    ld ix,0xFFF8    ; Reserva 8 bytes
+    ld ix,0xFFF8    ; Allocates 8 bytes
     add ix,sp
     ld sp,ix
 
@@ -437,25 +495,25 @@ shl_reg_1:
     or l
     jr z,shl_reg_1a
 
-    push bc         ; Salva 'bytes'
-    push hl         ; Salva 'leftbytes'
+    push bc         ; Save 'bytes'
+    push hl         ; Save 'leftbytes'
 
 ;            memmove(&reg[0], &reg[bytes], leftbytes);
     ld h,d
     ld l,e
     add hl,bc       ; DE='reg' HL='reg[bytes]'
-    pop bc          ; Restaura 'leftbytes'
+    pop bc          ; Restore 'leftbytes'
     ldir
 
-    pop bc          ; Restaura 'bytes'
+    pop bc          ; Restore 'bytes'
 
 shl_reg_1a:
 
 ;        memset(&reg[leftbytes],0,bytes);
 ;    }
 
-    ld h,d  ; Aqui DE contém o primeiro byte a zerar (derivado do LDIR anterior, se ocorreu, ou o valor original).
-    ld l,e
+    ld h,d  ; Here DE points to the 1st byte to fill w/ zero (obtained from the
+    ld l,e  ; previous LDIR if it took place, or the previous value).
 
 shl_reg_1b:
 
@@ -545,7 +603,7 @@ shl_reg_2d:
 
 shl_reg_end:
 
-    ld hl,0x0008    ; Libera 8 bytes
+    ld hl,0x0008    ; Frees 8 bytes
     add hl,sp
     ld sp,hl
     pop ix
@@ -555,14 +613,14 @@ shl_reg_end:
 stack_test:
 
     push ix
-    ld ix,0xFFF8    ; Reserva 8 bytes
+    ld ix,0xFFF8    ; Allocates 8 bytes
     add ix,sp
     ld sp,ix
 
     ld c,(ix+0)
     ld b,(ix+1)
     ;....
-    ld hl,0x0008    ; Libera 8 bytes
+    ld hl,0x0008    ; Frees 8 bytes
     add hl,sp
     ld sp,hl
     pop ix
@@ -571,15 +629,15 @@ stack_test:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   shr_reg
 ;   void shr_reg(uint8_t *reg, int places);
-;   Parâmetros:
+;   Parameters:
 ;     DE: reg
 ;     BC: places
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 shr_reg:
 
     push ix
-    ld ix,0xFFF8    ; Reserva 8 bytes
+    ld ix,0xFFF8    ; Allocates 8 bytes
     add ix,sp
     ld sp,ix
 
@@ -638,7 +696,7 @@ shr_reg_1:
     ld hl,NBYTES1
     add hl,de
     ld d,h
-    ld e,l          ; DE = último byte do reg (destino)
+    ld e,l          ; DE = last buffer's byte (destination)
 
     xor a           ; BC = 'bytes'
     sbc hl,bc       ; HL = origem
@@ -686,7 +744,7 @@ shr_reg_2:
     jr z,shr_reg_2e
 
     ld b,h
-    ld c,l          ; BC = número de bytes a processar
+    ld c,l          ; BC = # of bytes to process
 
     ld l,(ix+0)
     ld h,(ix+1)     ; HL = 'reg'
@@ -749,7 +807,7 @@ shr_reg_2d:
 
 shr_reg_end:
 
-    ld hl,0x0008    ; Libera 8 bytes
+    ld hl,0x0008    ; Frees 8 bytes
     add hl,sp
     ld sp,hl
     pop ix
@@ -758,15 +816,15 @@ shr_reg_end:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   mul_reg2_by_reg1
 ;   void mul_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg1
 ;     DE: reg2
-;   Retorna: Nada
-;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 mul_reg2_by_reg1:
 
     push ix
-    ld ix,0xFFF8-2*NBYTES    ; Reserva 8 bytes + 2 buffers
+    ld ix,0xFFF8-2*NBYTES    ; Allocates 8 bytes + 2 buffers
     add ix,sp
     ld sp,ix
 
@@ -813,14 +871,14 @@ mul_reg2_by_reg1:
 ;    int places = 0;
     ld iy,0             ; IY = places
 
-;    // Parte inteira
+;    // Integer part
 ;    for (int i = NBYTES_INT-1; i>=0; i--){
 
     ld bc,NBYTES_INT
     ld l,(ix+0)
     ld h,(ix+1)       ; IX+0, IX+1: reg1
     add hl,bc
-    dec hl            ; HL: buffer a processar
+    dec hl            ; HL: buffer to process
 
 mul_reg2_by_reg1_1:
 
@@ -905,7 +963,7 @@ mul_reg2_by_reg1_4:
 ;    places = 0;
     ld iy,0
 
-;    //Parte fracionária
+;    //Frac part
 ;    for (int i = NBYTES_INT; i < NBYTES; i++){
     ld l,(ix+0)
     ld h,(ix+1)         ; IX+0, IX+1: reg1
@@ -936,7 +994,7 @@ mul_reg2_by_reg1_6:
     ld e,(ix+4)
     ld d,(ix+5)         ; IX+4, IX+5: regmdiv
     ld b,iyh
-    ld c,iyl            ; BC recebe IY = 'places'
+    ld c,iyl            ; BC <- IY = 'places'
     call shr_reg
 
 ;                add_reg2_to_reg1(reg2, regmdiv);
@@ -980,7 +1038,7 @@ mul_reg2_by_reg1_8:
 
 mul_reg2_by_reg1_end:
 
-    ld hl,0x0008+2*NBYTES    ; Libera 8 bytes + 2 buffers
+    ld hl,0x0008+2*NBYTES    ; Frees 8 bytes + 2 buffers
     add hl,sp
     ld sp,hl
     pop ix
@@ -989,10 +1047,10 @@ mul_reg2_by_reg1_end:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   mul_acc_by_reg
 ;   void mul_acc_by_reg(const uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Nada
-;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 mul_acc_by_reg:
 
 ;    mul_reg2_by_reg1(reg, acc);
@@ -1003,14 +1061,14 @@ mul_acc_by_reg:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   mul_reg_10
 ;   void mul_reg_10(uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     DE: reg
-;   Retorna: Nada
-;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+;   Returns: Nothing
+;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 mul_reg_10:
 
     push ix
-    ld ix,0xFFF8-NBYTES    ; Reserva 8 bytes + buffer
+    ld ix,0xFFF8-NBYTES    ; Allocates 8 bytes + buffer
     add ix,sp
     ld sp,ix
 
@@ -1052,7 +1110,7 @@ mul_reg_10:
     ld h,(ix+5)         ; IX+4, IX+5: regmdiv
     call add_reg2_to_reg1
 
-    ld hl,0x0008+NBYTES    ; Libera 8 bytes + buffer
+    ld hl,0x0008+NBYTES    ; Frees 8 bytes + buffer
     add hl,sp
     ld sp,hl
     pop ix
@@ -1061,13 +1119,13 @@ mul_reg_10:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   compare
 ;   int compare (const uint8_t *reg1, const uint8_t *reg2);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg1
 ;     DE: reg2
-;   Retorna: Flags: Z:        reg1 = reg2
+;   Returns: Flags: Z:        reg1 = reg2
 ;                   NZ e C:   reg1 < reg2
 ;                   NC e NC:  reg1 > reg2
-;   Afeta: BC DE HL AF
+;   Affects: BC DE HL AF
 compare:
 
 ;    for (int i = 0; i < NBYTES; i++){
@@ -1085,7 +1143,7 @@ compare_1:
     inc de
     jp pe,compare_1
 
-;    return 0;   // Iguais
+;    return 0;   // Same value
     xor a
     ret
 
@@ -1098,11 +1156,11 @@ compare_2:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   iszero
 ;   int iszero (const uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Flags: Z:        reg = 0
+;   Returns: Flags: Z:        reg = 0
 ;                   NZ:       reg1 != 0
-;   Afeta: BC DE HL AF
+;   Affects: BC DE HL AF
 iszero:
 
 ;    for (int i = 0; i < NBYTES; i++){
@@ -1111,30 +1169,30 @@ iszero:
 
 iszero_1:
 
-;        if (reg[i]) return 0;   // não é zero
+;        if (reg[i]) return 0;   // nonzero
     cpi
     ret nz
 
 ;    }
     jp pe,iszero_1
 
-;    return 1;   // É zero
+;    return 1;   // Is zero
     xor a
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
 ;   div_reg2_by_reg1
 ;   int div_reg2_by_reg1(const uint8_t *reg1, uint8_t *reg2);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg1
 ;     DE: reg2
-;   Retorna: Flags: Z:        Divisão OK
-;                   NZ:       Divisão com erro
-;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+;   Returns: Flags: Z:        Div OK
+;                   NZ:       Div Error
+;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 div_reg2_by_reg1:
 
     push ix
-    ld ix,0xFFF6-3*NBYTES    ; Reserva 10 bytes + 3 buffers
+    ld ix,0xFFF6-3*NBYTES    ; Allocates 10 bytes + 3 buffers
     add ix,sp
     ld sp,ix
 
@@ -1157,7 +1215,7 @@ div_reg2_by_reg1:
     ld (ix+6),l
     ld (ix+7),h         ; IX+6, IX+7: regmdiv2
 
-;    if (iszero(reg1)) return -1; // Divisão por zero
+;    if (iszero(reg1)) return -1; // Divide by zero
     ld l,(ix+0)
     ld h,(ix+1)         ; IX+0, IX+1: reg
     call iszero
@@ -1192,9 +1250,6 @@ div_reg2_by_reg1_1:
 
 div_reg2_by_reg1_2:
 
-    ;call prints
-    ;db "Vai dividir\n",0
-
 ;    uint8_t regquot[NBYTES];
     ld bc,NBYTES
     ld l,(ix+6)
@@ -1224,14 +1279,8 @@ div_reg2_by_reg1_2:
     ld bc,NBYTES
     ldir
 
-    ;call prints
-    ;db "(1) ",0
-
 ;    for (;!iszero(reg2);){
 div_reg2_by_reg1_3:
-
-    ;call prints
-    ;db "(1_3) ",0
 
     ld l,(ix+2)
     ld h,(ix+3)         ; IX+2, IX+3: reg2
@@ -1255,16 +1304,10 @@ div_reg2_by_reg1_3:
 ;            for (;!iszero(reg2);){
 div_reg2_by_reg1_3a:
 
-    ;call prints
-    ;db "(1_3a) ",0
-
     ld l,(ix+2)
     ld h,(ix+3)         ; IX+2, IX+3: reg2
     call iszero
     jr z, div_reg2_by_reg1_3b
-
-    ;call prints
-    ;db "(1_3aa) ",0
 
 ;                if (compare(reg2, regmdiv) < 0){ //reg2 < regmdiv
 
@@ -1275,9 +1318,6 @@ div_reg2_by_reg1_3a:
     call compare
     jr nc, div_reg2_by_reg1_3c
     jr z, div_reg2_by_reg1_3c
-
-    ;call prints
-    ;db "shr_reg(regmdiv,1) ",0
 
 ;                    shr_reg(regmdiv, 1);
     ld e,(ix+4)
@@ -1300,15 +1340,10 @@ div_reg2_by_reg1_3a:
     jr nc, div_reg2_by_reg1_3b
 
 ;                   continue;
-    ;call prints
-    ;db "(1_3a A) ",0
     jr div_reg2_by_reg1_3a
 ;                }
 
 div_reg2_by_reg1_3c:
-
-    ;call prints
-    ;db "(1_3a C) ",0
 
 ;                sub_reg2_from_reg1(reg2, regmdiv);
     ld l,(ix+4)
@@ -1330,14 +1365,9 @@ div_reg2_by_reg1_3c:
     call set_bit_reg
 
 ;            }
-    ;call prints
-    ;db "(1_3a B) ",0
     jp div_reg2_by_reg1_3a
 
 div_reg2_by_reg1_3b:
-
-    ;call prints
-    ;db "(==1_3b) ",0
 
 ;            memcpy(reg2, regquot, NBYTES);
     ld e,(ix+2)
@@ -1361,9 +1391,6 @@ div_reg2_by_reg1_4:
 
 ;            for (;;){
 div_reg2_by_reg1_4a:
-
-    ;call prints
-    ;db "(1_4a) ",0
 
 ;                if (compare(reg2, regmdiv) < 0){ //reg2 < regmdiv
 ;                    break;
@@ -1390,7 +1417,6 @@ div_reg2_by_reg1_4a:
     ld d,(ix+5)         ; IX+4, IX+5: regmdiv
     call compare
     jr c, div_reg2_by_reg1_4b
-
 
 ;                order++;
     inc iy
@@ -1456,7 +1482,7 @@ div_reg2_by_reg1_5:
 
 div_reg2_by_reg1_end:
 
-    ld hl,0x000A+3*NBYTES    ; Libera 10 bytes + 3 buffers
+    ld hl,0x000A+3*NBYTES    ; Frees 10 bytes + 3 buffers
     add hl,sp
     ld sp,hl
     pop ix
@@ -1466,11 +1492,11 @@ div_reg2_by_reg1_end:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   div_acc_by_reg
 ;   int div_acc_by_reg(const uint8_t *reg)
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Flags: Z:        Divisão OK
-;                   NZ:       Divisão com erro
-;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+;   Returns: Flags: Z:        Div OK
+;                   NZ:       Div Error
+;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 div_acc_by_reg:
 
     ;return div_reg2_by_reg1(reg, acc);
@@ -1480,10 +1506,10 @@ div_acc_by_reg:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   print_int_part
 ;   void print_int_part(const uint8_t *reg);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 print_int_part_digit:
 
     ld e,0
@@ -1559,8 +1585,6 @@ print_bc:
     call print_int_part_digit
     ld bc,10
     call print_int_part_digit
-    ;ld bc,1
-    ;call print_int_part_digit
     ld a,l
     add a,'0'
     rst 08h
@@ -1569,15 +1593,15 @@ print_bc:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   print_reg_decimal
 ;   void print_reg_decimal(const uint8_t *reg, int nplaces);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
 ;     BC: nplaces
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 print_reg_decimal:
 
     push ix
-    ld ix,0xFFF8-NBYTES    ; Reserva 8 bytes + buffer
+    ld ix,0xFFF8-NBYTES    ; Allocates 8 bytes + buffer
     add ix,sp
     ld sp,ix
     ld (ix+0),l
@@ -1679,7 +1703,7 @@ print_reg_decimal_2:
 print_reg_decimal_3:
 print_reg_decimal_end:
 
-    ld hl,0x0008+NBYTES    ; Libera 8 bytes + buffer
+    ld hl,0x0008+NBYTES    ; Frees 8 bytes + buffer
     add hl,sp
     ld sp,hl
     pop ix
@@ -1688,11 +1712,11 @@ print_reg_decimal_end:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   println_reg_decimal
 ;   void println_reg_decimal(const uint8_t *reg, int nplaces);
-;   Parâmetros:
+;   Parameters:
 ;     HL: reg
 ;     BC: nplaces
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 println_reg_decimal:
 
     call print_reg_decimal
@@ -1702,19 +1726,19 @@ println_reg_decimal:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   test_pi_bbp
 ;   void test_pi_bbp(void); // Bailey-Borwein-Plouffe
-;   Parâmetros: Nada
-;   Retorna: Nada
-;   Afeta: BC DE HL AF
+;   Parameters: Nothing
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 test_pi_bbp:
 
     push ix
-    ld ix,0xFFF6-3*NBYTES    ; Reserva 10 bytes + 3 buffers
+    ld ix,0xFFF6-3*NBYTES    ; Allocates 10 bytes + 3 buffers
     add ix,sp
     ld sp,ix
 
 ;    uint8_t regtotal[NBYTES];
     ld c,ixl
-    ld b,ixh            ; Copia IX em BC
+    ld b,ixh            ; IX -> BC
     ld HL,10
     add hl,bc
     ld (ix+0),l
@@ -1769,7 +1793,7 @@ test_pi_bbp_1a:
     call zero_reg
     pop de              ; DE contém regden
 
-;        load_reg_int(regden,8*k+1);     // Inicia com 8k+1
+;        load_reg_int(regden,8*k+1);     // Sets 8k+1
     ld l,(ix+6)
     ld h,(ix+7)         ; IX+6, IX+7: k
     sla l
@@ -1779,13 +1803,13 @@ test_pi_bbp_1a:
     sla l
     rl h
     inc hl
-    call load_reg_int   ; DE já deve estar certo aqui
+    call load_reg_int   ; DE is correct here
 
 ;        zero_reg(acc);
     ld hl,acc
     call zero_reg
 
-;        set_bit_reg_int(acc, 2);        // Inicia com 4
+;        set_bit_reg_int(acc, 2);        // Sets with 4
     ld hl,acc
     ld bc,2
     call set_bit_reg_int
@@ -1811,7 +1835,7 @@ test_pi_bbp_1a:
     ld hl,acc
     call zero_reg
 
-;        set_bit_reg_int(acc, 1);        // Inicia com 2
+;        set_bit_reg_int(acc, 1);        // Sets with 2
     ld hl,acc
     ld bc,1
     call set_bit_reg_int
@@ -1837,7 +1861,7 @@ test_pi_bbp_1a:
     ld hl,acc
     call zero_reg
 
-;        set_bit_reg_int(acc, 0);        // Inicia com 1
+;        set_bit_reg_int(acc, 0);        // Sets with 1
     ld hl,acc
     ld bc,0
     call set_bit_reg_int
@@ -1863,7 +1887,7 @@ test_pi_bbp_1a:
     ld hl,acc
     call zero_reg
 
-;        set_bit_reg_int(acc, 0);        // Inicia com 1
+;        set_bit_reg_int(acc, 0);        // Sets with 1
     ld hl,acc
     ld bc,0
     call set_bit_reg_int
@@ -1924,7 +1948,7 @@ test_pi_bbp_1a:
 test_pi_bbp_2:
 test_pi_bbp_end:
 
-    ld hl,0x000A+3*NBYTES    ; Libera 10 bytes + 3 buffers
+    ld hl,0x000A+3*NBYTES    ; Frees 10 bytes + 3 buffers
     add hl,sp
     ld sp,hl
     pop ix
@@ -1933,9 +1957,9 @@ test_pi_bbp_end:
 ;///////////////////////////////////////////////////////////////////////////////
 ;   _main
 ;   void _main(void);
-;   Parâmetros: Nada
-;   Retorna: Nada
-;   Afeta: BC DE HL AF IY BC' DE' HL' AF'
+;   Parameters: Nothing
+;   Returns: Nothing
+;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 _main:
 
     call test_pi_bbp
@@ -1945,6 +1969,6 @@ _main:
     seek RAMBASE
     org RAMBASE
 
-reg1:   ds NBYTES
-acc:    ds NBYTES
+acc:    ds NBYTES   ; The only global variable, to make things a bit easier.
 
+    end
