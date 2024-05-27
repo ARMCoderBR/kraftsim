@@ -5,8 +5,12 @@ ROMSZ:          equ 8192
 RAMBASE:        equ 8192
 RAMSZ:          equ 8192
 
+NUM_IT:         equ 100
+NUM_DECS:       equ 120
+NBITS_FR:       equ (3*NUM_DECS + NUM_DECS >> 1)
+
 NBITS_INT:      equ 16
-NBITS_FRAC:     equ 336 ;3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
+NBITS_FRAC:     equ 8*(1 + NBITS_FR >> 3) ;3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
 NBYTES_INT:     equ NBITS_INT >> 3
 NBITS:          equ NBITS_INT+NBITS_FRAC
 NBYTES:         equ NBITS>>3
@@ -718,6 +722,7 @@ shr_reg_2:
     sbc hl,bc
     ld b,h
     ld c,l          ; BC = número de bytes a processar
+    dec bc
 
     ld l,(ix+0)
     ld h,(ix+1)     ; HL = 'reg'
@@ -1711,8 +1716,6 @@ println_reg_decimal:
 ;   Afeta: BC DE HL AF
 test_pi_bbp:
 
-NUM_IT:     equ 100
-
     push ix
     ld ix,0xFFF6-3*NBYTES    ; Reserva 10 bytes + 3 buffers
     add ix,sp
@@ -1926,7 +1929,7 @@ test_pi_bbp_1a:
     db "TOTAL:",0
     ld l,(ix+0)
     ld h,(ix+1)         ; IX+0, IX+1: regtotal
-    ld bc,90
+    ld bc,NUM_DECS
     call println_reg_decimal
     ;call prints
     ;db "LOOP",0
@@ -1947,7 +1950,6 @@ test_pi_bbp_end:
     add hl,sp
     ld sp,hl
     pop ix
-    or a
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
