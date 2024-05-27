@@ -5,12 +5,12 @@ ROMSZ:          equ 8192
 RAMBASE:        equ 8192
 RAMSZ:          equ 8192
 
-NUM_IT:         equ 100
-NUM_DECS:       equ 120
-NBITS_FR:       equ (3*NUM_DECS + NUM_DECS >> 1)
+NUM_DECS:       equ 100
+NUM_IT:         equ ((NUM_DECS*9)/10)
+NBITS_FR:       equ (3*NUM_DECS + (NUM_DECS >> 1))
 
 NBITS_INT:      equ 16
-NBITS_FRAC:     equ 8*(1 + NBITS_FR >> 3) ;3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
+NBITS_FRAC:     equ 8*(1 + (NBITS_FR >> 3)) ;3368             ; O número de bits deve ser no mínimo 3.33x (1 / log(2)) o número de casas decimais + uma pequena folga
 NBYTES_INT:     equ NBITS_INT >> 3
 NBITS:          equ NBITS_INT+NBITS_FRAC
 NBYTES:         equ NBITS>>3
@@ -18,7 +18,6 @@ NBYTES1:        equ NBYTES-1
 
     org ROMBASE
 
-    ;ld sp,RAMBASE+RAMSZ
     ld sp,RAMBASE + RAMSZ
     call _main
     halt
@@ -403,28 +402,7 @@ sub_reg_from_acc:
 ;     BC: places
 ;   Retorna: Nada
 ;   Afeta: BC DE HL AF
-
 shl_reg:
-
-;    int i;
-;    if (places > NBITS)
-;        places = NBITS;
-;    int bytes = places >> 3;
-;    int bits = places & 0x07;
-;    int leftbytes = NBYTES - bytes;
-;    if (bytes){
-;        if (leftbytes)
-;            memmove(&reg[0], &reg[bytes], leftbytes);
-;        memset(&reg[leftbytes],0,bytes);
-;    }
-;    if (bits){
-;        for (i = 0; i < (leftbytes-1); i++){
-;            reg[i] <<= bits;
-;            uint8_t aux = reg[i+1] >> (8-bits);
-;            reg[i] |= aux;
-;        }
-;        reg[leftbytes - 1] <<= bits;
-;    }
 
     push ix
     ld ix,0xFFF8    ; Reserva 8 bytes
@@ -434,6 +412,8 @@ shl_reg:
     ld (ix+0),e     ;IX+0, IX+1 = 'reg'
     ld (ix+1),d
 
+;    if (places > NBITS)
+;        places = NBITS;
     ld a,NBITS >> 8
     sub b
     jr c,shl_reg_0
@@ -449,6 +429,8 @@ shl_reg_0:
 
 shl_reg_1:
 
+;    int bytes = places >> 3;
+;    int bits = places & 0x07;
     ld a,c
     and 0x07
     ld (ix+2),a     ; IX+2 = 'bits'
@@ -458,24 +440,28 @@ shl_reg_1:
     rr c
     srl b
     rr c            ; BC = 'bytes'
+
+;    int leftbytes = NBYTES - bytes;
     ld hl,NBYTES
     xor a
     sbc hl,bc       ; HL = 'leftbytes'
     ld (ix+4),l     ; IX+4, IX+5 = 'leftbytes'
     ld (ix+5),h
 
+;    if (bytes){
     ld a,b
     or c
     jr z,shl_reg_2
 
+;        if (leftbytes)
     ld a,h
     or l
     jr z,shl_reg_1a
 
-    ; Move bytes para a esquerda
     push bc         ; Salva 'bytes'
     push hl         ; Salva 'leftbytes'
 
+;            memmove(&reg[0], &reg[bytes], leftbytes);
     ld h,d
     ld l,e
     add hl,bc       ; DE='reg' HL='reg[bytes]'
@@ -486,9 +472,10 @@ shl_reg_1:
 
 shl_reg_1a:
 
-    ; Zera bytes da direita
-    ; Aqui DE contém o primeiro byte a zerar (derivado do LDIR anterior, se ocorreu, ou o valor original).
-    ld h,d
+;        memset(&reg[leftbytes],0,bytes);
+;    }
+
+    ld h,d  ; Aqui DE contém o primeiro byte a zerar (derivado do LDIR anterior, se ocorreu, ou o valor original).
     ld l,e
 
 shl_reg_1b:
@@ -503,20 +490,29 @@ shl_reg_1b:
 
 shl_reg_2:
 
+;    if (bits){
     ld a,(ix+2)     ; 'bits'
     or a
     jr z,shl_reg_end
 
+;        for (i = 0; i < (leftbytes-1); i++){
     ; Vai fazer o shift
     ld c,(ix+4)
     ld b,(ix+5)     ;'leftbytes'
+    ld a,b
+    or c
+    jr z,shl_reg_3
     dec bc
+    ld a,b
+    or c
+    jr z,shl_reg_3
 
     ld l,(ix+0)
     ld h,(ix+1)     ; HL = 'reg'
 
 shl_reg_2a:
 
+;            reg[i] <<= bits;
     ld a,(ix+2)     ; 'bits'
     ld e,a          ; 'bits'
     neg
@@ -530,6 +526,7 @@ shl_reg_2b:
     dec e
     jr nz,shl_reg_2b
 
+;            uint8_t aux = reg[i+1] >> (8-bits);
     ld e,a
 
     inc hl
@@ -542,6 +539,8 @@ shl_reg_2c:
     dec d
     jr nz,shl_reg_2c
 
+;            reg[i] |= aux;
+;        }
     or e
     ld (hl),a
     inc hl
@@ -551,7 +550,8 @@ shl_reg_2c:
     or c
     jr nz,shl_reg_2a
 
-    ; Ajusta o último byte relevante
+shl_reg_3:
+;        reg[leftbytes - 1] <<= bits;
     ld a,(hl)
     ld b,(IX+2)     ; 'bits'
 
@@ -561,6 +561,8 @@ shl_reg_2d:
     djnz shl_reg_2d
 
     ld (hl),a
+
+;    }
 
 shl_reg_end:
 
