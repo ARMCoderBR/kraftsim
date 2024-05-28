@@ -1,6 +1,6 @@
 ;//////////////////////////////////////////////////////////////////////////////;
 ; Project:                                                                     ;
-;    Z80-PICALC                                                                ;
+;    PICALC-Z80                                                                ;
 ;                                                                              ;
 ; Description:                                                                 ;
 ;    A calculator that yields an arbitrary number of digits of the number PI.  ;
@@ -1583,6 +1583,12 @@ print_int_part:
     ret
 
 ;///////////////////////////////////////////////////////////////////////////////
+;   print_bc
+;   Internal function for debugging
+;   Parameters:
+;     BC: value to print
+;   Returns: Nothing
+;   Affects: BC DE HL AF
 print_bc:
 
     ld l,c
