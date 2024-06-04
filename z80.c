@@ -479,7 +479,7 @@ void z80_exec_cb(z80_t *z){
     uint8_t *operand_hxy_w = NULL;
     uint8_t opcode = z->opcode;
 
-    if (opcode & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
+    if (z->code_prefix & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
 
         z->pc--;
         operand_hxy_r = z80_get_phl_orig(z);
