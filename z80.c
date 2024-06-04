@@ -176,7 +176,7 @@ const uint8_t *z80_get_phl_orig(z80_t *z){
 
         if (ofs < 128){
 
-            if (z->code_prefix == CODE_PREFIX_DD)
+            if (z->code_prefix & CODE_PREFIX_DD)
                 addr = z->ix + ofs;
             else
                 addr = z->iy + ofs;
@@ -184,7 +184,7 @@ const uint8_t *z80_get_phl_orig(z80_t *z){
         else{
             ofs ^= 0xff;
             ofs ++;
-            if (z->code_prefix == CODE_PREFIX_DD)
+            if (z->code_prefix & CODE_PREFIX_DD)
                 addr = z->ix - ofs;
             else
                 addr = z->iy - ofs;
@@ -482,7 +482,9 @@ void z80_exec_cb(z80_t *z){
     if (z->code_prefix & (CODE_PREFIX_DD | CODE_PREFIX_FD)){
 
         z->pc--;
+        int save = z->print; z->print = 0;
         operand_hxy_r = z80_get_phl_orig(z);
+        z->print = save;
         operand_hxy_w = z80_get_phl_dest_last(z);
         opcode = z->opcode = z80_fetch(z);
     }
