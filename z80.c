@@ -389,87 +389,261 @@ void z80_update_flags_logic_acc(z80_t *z, int flg_h){
     z80_update_flags_logic_reg(z, flg_h, z->_a);
 }
 
+typedef struct {
+
+    uint8_t A;
+    uint8_t B;
+    uint8_t result;
+    uint8_t cy;
+    uint8_t hcy;
+    uint8_t ovf;
+
+} full_adder8_t;
+
+////////////////////////////////////////////////////////////////////////////////
+void full_add8(full_adder8_t *a){
+
+    if (((uint8_t)a->A & 0x0f) + ((uint8_t)a->B & 0x0F) > 0x0F)
+        a->hcy = 1;
+    else
+        a->hcy = 0;
+
+    a->result = a->A + a->B;
+
+    a->ovf = 0;
+
+    if (!((a->A & 0x80) ^ (a->B & 0x80))) {
+
+        if ((a->A & 0x80) ^ (a->result & 0x80))
+            a->ovf = 1;
+    }
+
+    if ((uint16_t)a->A + (uint16_t)a->B > 255)
+        a->cy = 1;
+    else
+        a->cy = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void full_sub8(full_adder8_t *a){
+
+    if (((uint8_t)a->A & 0x0f) < (uint8_t)(a->B & 0x0F))
+        a->hcy = 1;
+    else
+        a->hcy = 0;
+
+    a->result = a->A - a->B;
+
+    a->ovf = 0;
+
+    if ((a->A & 0x80) ^ (a->B & 0x80)) {
+
+        if ((a->A & 0x80) ^ (a->result & 0x80))
+            a->ovf = 1;
+    }
+
+    if ((uint8_t)a->A < (uint8_t)a->B)
+        a->cy = 1;
+    else
+        a->cy = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//void z80_add_acc_old (z80_t *z, int8_t arg, uint8_t add_cy){
+//
+//    int16_t sum16 = (int16_t)arg; if (sum16 & 0x80) sum16 |= 0xFF00;
+//    int16_t acc16 = (int16_t)z->_a; if (acc16 & 0x80) acc16 |= 0xFF00;
+//    uint16_t usum16 = ((uint16_t)arg) & 0xff;
+//    uint16_t uacc16 = z->_a;
+//    int ovf = 0;
+//
+//    //printf("%04x: z80_add_acc(%d,%d, cy=%d)\n",z->pc,z->_a, arg, add_cy);
+//
+//    sum16 += acc16;
+//    if (add_cy && (z->_f & FLG_C))
+//        sum16++;
+//
+//    usum16 += uacc16;
+//    if (add_cy && (z->_f & FLG_C))
+//        usum16++;
+//
+//    if ((sum16 > 127) || (sum16 < -128)) ovf = 1;
+//
+//    z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_N|FLG_C);
+//
+//    if (usum16 & 0xFF00)
+//        z->_f |= FLG_C;
+//
+//    if (sum16 & 0x80)
+//        z->_f |= FLG_S;
+//
+//    if (!(sum16 & 0xFF))
+//        z->_f |= FLG_Z;
+//
+//    if ((z->_a & 0x0F) + (arg & 0x0F) + (add_cy?1:0) > 0x0F)
+//        z->_f |= FLG_H;
+//
+//    if (ovf)
+//        z->_f |= FLG_PV;
+//
+//    z->_f &= ~0x28;
+//    z->_f |= (sum16 & 0x28);
+//    z->_a = sum16 & 0xFF;
+//
+//    //printf("RES:%d FL:%02x\n",z->_a,z->_f);
+//}
+
 ////////////////////////////////////////////////////////////////////////////////
 void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 
-    int16_t sum16 = (int16_t)arg; if (sum16 & 0x80) sum16 |= 0xFF00;
-    int16_t acc16 = (int16_t)z->_a; if (acc16 & 0x80) acc16 |= 0xFF00;
-    uint16_t usum16 = ((uint16_t)arg) & 0xff;
-    uint16_t uacc16 = z->_a;
-    int ovf = 0;
+//    uint8_t save_a = z->_a, save_f = z->_f;
 
-    sum16 += acc16;
-    if (add_cy && (z->_f & FLG_C))
-        sum16++;
+    full_adder8_t adder1;
+    full_adder8_t adder2;
 
-    usum16 += uacc16;
-    if (add_cy && (z->_f & FLG_C))
-        usum16++;
+    adder1.A = z->_a;
+    adder1.B = arg;
+    full_add8(&adder1);
 
-    if ((sum16 > 127) || (sum16 < -128)) ovf = 1;
+    adder2.cy = adder2.hcy = adder2.ovf = 0;
+    adder2.result = adder1.result;
+
+    if (add_cy && (z->_f & FLG_C)){
+        adder2.A = adder1.result;
+        adder2.B = 1;
+        full_add8(&adder2);
+    }
+
+    z->_a = adder2.result;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_N|FLG_C);
 
-    if (usum16 & 0xFF00)
-        z->_f |= FLG_C;
-
-    if (sum16 & 0x80)
+    if (z->_a & 0x80)
         z->_f |= FLG_S;
 
-    if (!(sum16 & 0xFF))
+    if (!z->_a)
         z->_f |= FLG_Z;
 
-    if ((z->_a & 0x0F) + (arg & 0x0F) + (add_cy?1:0) > 0x0F)
+    if (adder1.hcy || adder2.hcy)
         z->_f |= FLG_H;
 
-    if (ovf)
+    if (adder1.cy || adder2.cy)
+        z->_f |= FLG_C;
+
+    if (adder1.ovf || adder2.ovf)
         z->_f |= FLG_PV;
 
     z->_f &= ~0x28;
-    z->_f |= (sum16 & 0x28);
-    z->_a = sum16 & 0xFF;
+    z->_f |= (z->_a & 0x28);
+
+//    uint8_t copy_a = z->_a;
+//    uint8_t copy_f = z->_f;
+//
+//    z->_a = save_a;
+//    z->_f = save_f;
+//
+//    z80_add_acc_old (z, arg, add_cy);
+
+    //if ((z->_a != copy_a) || (z->_f != copy_f))
+    //    printf("ADD(%d,%d,%d): RES1:%d FL1:%02x RES2:%d FL2:%02x\n",save_a, arg, add_cy, copy_a,copy_f,z->_a,z->_f);
 }
+
+//void z80_sub_acc_old (z80_t *z, uint8_t arg, uint8_t sub_cy){
+//
+//    int16_t dif16 = (int16_t)arg; if (dif16 & 0x80) dif16 |= 0xFF00;
+//    int16_t acc16 = (int16_t)z->_a;  if (acc16 & 0x80) acc16 |= 0xFF00;
+//    uint16_t udif16 = (uint16_t)arg & 0xff;
+//    uint16_t uacc16 = z->_a;
+//    int ovf = 0;
+//    //printf("%04x: z80_sub_acc(%d,%d, cy=%d)\n",z->pc,z->_a, arg, sub_cy);
+//
+//    dif16 = acc16 - dif16;
+//    if (sub_cy && (z->_f & FLG_C))
+//        dif16--;
+//
+//    udif16 = uacc16 - udif16;
+//    if (sub_cy && (z->_f & FLG_C))
+//        udif16--;
+//
+//    if ((dif16 > 127) || (dif16 < -128)) ovf = 1;
+//
+//    z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_C);
+//    z->_f |= FLG_N;             // Indica op. subtração
+//
+//    if (udif16 & 0xFF00)
+//        z->_f |= FLG_C;
+//
+//    if (dif16 & 0x80)
+//        z->_f |= FLG_S;
+//
+//    if (!(dif16 & 0xFF))
+//        z->_f |= FLG_Z;
+//
+//    if ((z->_a & 0x0F) < (sub_cy?1:0)+(arg & 0x0F))
+//        z->_f |= FLG_H;
+//
+//    if (ovf)
+//        z->_f |= FLG_PV;
+//
+//    z->_f &= ~0x28;
+//    z->_f |= (dif16 & 0x28);
+//    z->_a = dif16 & 0xFF;
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
 void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
 
-    int16_t dif16 = (int16_t)arg; if (dif16 & 0x80) dif16 |= 0xFF00;
-    int16_t acc16 = (int16_t)z->_a;  if (acc16 & 0x80) acc16 |= 0xFF00;
-    uint16_t udif16 = (uint16_t)arg & 0xff;
-    uint16_t uacc16 = z->_a;
-    int ovf = 0;
+    //uint8_t save_a = z->_a, save_f = z->_f;
 
-    dif16 = acc16 - dif16;
-    if (sub_cy && (z->_f & FLG_C))
-        dif16--;
+    full_adder8_t adder1;
+    full_adder8_t adder2;
 
-    udif16 = uacc16 - udif16;
-    if (sub_cy && (z->_f & FLG_C))
-        udif16--;
+    adder1.A = z->_a;
+    adder1.B = arg;
+    full_sub8(&adder1);
 
-    if ((dif16 > 127) || (dif16 < -128)) ovf = 1;
+    adder2.cy = adder2.hcy = adder2.ovf = 0;
+    adder2.result = adder1.result;
+
+    if (sub_cy && (z->_f & FLG_C)){
+        adder2.A = adder1.result;
+        adder2.B = 1;
+        full_sub8(&adder2);
+    }
+
+    z->_a = adder2.result;
 
     z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_C);
     z->_f |= FLG_N;             // Indica op. subtração
 
-    if (udif16 & 0xFF00)
-        z->_f |= FLG_C;
-
-    if (dif16 & 0x80)
+    if (z->_a & 0x80)
         z->_f |= FLG_S;
 
-    if (!(dif16 & 0xFF))
+    if (!z->_a)
         z->_f |= FLG_Z;
 
-    if ((z->_a & 0x0F) < (sub_cy?1:0)+(arg & 0x0F))
+    if (adder1.hcy || adder2.hcy)
         z->_f |= FLG_H;
 
-    if (ovf)
+    if (adder1.cy || adder2.cy)
+        z->_f |= FLG_C;
+
+    if (adder1.ovf || adder2.ovf)
         z->_f |= FLG_PV;
 
     z->_f &= ~0x28;
-    z->_f |= (dif16 & 0x28);
-    z->_a = dif16 & 0xFF;
+    z->_f |= (z->_a & 0x28);
+
+//    uint8_t copy_a = z->_a;
+//    uint8_t copy_f = z->_f;
+//
+//    z->_a = save_a;
+//    z->_f = save_f;
+//
+//    z80_sub_acc_old (z, arg, sub_cy);
+
+    //if ((z->_a != copy_a) || (z->_f != copy_f))
+    //        printf("SUB(%02x)(%d,%d,%d): RES1:%d FL1:%02x RES2:%d FL2:%02x\n",z->opcode,save_a, arg, sub_cy, copy_a,copy_f,z->_a,z->_f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
