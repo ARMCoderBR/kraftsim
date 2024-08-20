@@ -2212,6 +2212,9 @@ rescan:
             uint16_t temp = z->hl;
             z->hl = z->de;
             z->de = temp;
+            temp = z->hla;
+            z->hla = z->dea;
+            z->dea = temp;
             return;
         }
 
