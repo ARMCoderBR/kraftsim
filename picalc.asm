@@ -75,7 +75,7 @@ RAMBASE:        equ 8192
 RAMSZ:          equ 8192
 
 ; Algorithm constants
-NUM_DECS:       equ 100
+NUM_DECS:       equ 10
 NUM_IT:         equ ((NUM_DECS*9)/10)
 NBITS_FR:       equ (3*NUM_DECS + (NUM_DECS >> 1))
 NBITS_INT:      equ 16
@@ -1952,11 +1952,11 @@ test_pi_bbp_1a:
 ;;        }
 ;            print_reg_decimal(regtotal, 120);
     call prints
-    db "TOTAL:",0
-    ld l,(ix+0)
-    ld h,(ix+1)         ; IX+0, IX+1: regtotal
-    ld bc,NUM_DECS
-    call println_reg_decimal
+    db "*",0
+    ;ld l,(ix+0)
+    ;ld h,(ix+1)         ; IX+0, IX+1: regtotal
+    ;ld bc,NUM_DECS
+    ;call println_reg_decimal
 
 ;    }
     ld c,(ix+6)
@@ -1969,6 +1969,14 @@ test_pi_bbp_1a:
 
 test_pi_bbp_2:
 test_pi_bbp_end:
+
+    call prints
+    db "\r\nPI:",0
+    ld l,(ix+0)
+    ld h,(ix+1)         ; IX+0, IX+1: regtotal
+    ld bc,NUM_DECS
+    call println_reg_decimal
+
 
     ld hl,0x000A+3*NBYTES    ; Frees 10 bytes + 3 buffers
     add hl,sp
