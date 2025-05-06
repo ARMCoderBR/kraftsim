@@ -12,7 +12,7 @@
 #include <ctype.h>
 
 #define ROMSZ 8192
-#define RAMSZ 8192
+#define RAMSZ 56*1024
 #define RAMBASE 8192
 
 #include "z80.h"
@@ -38,7 +38,7 @@ int main (int argc, char *argv[]){
 
     memset(rom,0xff,ROMSZ);
 
-    if (romprog(rom,ROMSZ,"test.hex") < 0){
+    if (romprog(rom,ROMSZ) < 0){
 
         printf("Error loading ROM!\n");
         return -1;

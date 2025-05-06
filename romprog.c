@@ -73,7 +73,7 @@ int proclinehex (uint8_t *rom, uint16_t romsize, char *buf, int pc){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog(uint8_t *rom, uint16_t size, char *fname){
+int romprog_picalc(uint8_t *rom, uint16_t size){
 
     char buf[128];
 
@@ -82,7 +82,7 @@ int romprog(uint8_t *rom, uint16_t size, char *fname){
     // Para DEBUG if (system("z80asm picalc.asm -o - | xxd -ps -c 16 > test.hex")) exit (0);
 
 
-    FILE *f = fopen (fname,"r");
+    FILE *f = fopen ("test.hex","r");
     if (!f){
 
         printf("File not found\n");
@@ -110,4 +110,59 @@ int romprog(uint8_t *rom, uint16_t size, char *fname){
     fclose(f);
 
     return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int romprog_basesim(uint8_t *rom, uint16_t size){
+
+    char buf[128];
+
+
+    FILE *f = fopen ("crt0.ihx","r");
+    if (!f){
+
+        printf("File not found\n");
+        return -1;
+    }
+
+    while (!feof(f)){
+
+        if (fgets(buf, sizeof(buf), f)){
+
+            int len = strlen(buf);
+            if (buf[len-1] == '\n')
+                buf[len-1] = 0;
+
+            if (buf[0] != ':') return -1;
+            char *p = buf+1;
+
+            len = dechex8(p); p += 2;
+            if (len < 0) return -1;
+            if (!len) break;
+            int addr = dechex8(p); p += 2;
+            int addr2 = dechex8(p); p += 2;
+            if ((addr < 0) || (addr2 < 0)) return -1;
+            int type = dechex8(p); p += 2;
+            if (type) return -1;
+            addr <<= 8;
+            addr |= addr2;
+            printf("Programming %04x Data:%s\n",addr, buf);
+            for (int i = 0; i < len; i++){
+                int b = dechex8(p); p += 2;
+                if (b < 0) return -1;
+                rom[i+addr] = b;
+            }
+        }
+    }
+
+    fclose(f);
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int romprog(uint8_t *rom, uint16_t size){
+
+    //return romprog_picalc(rom, size, fname);
+    return romprog_basesim(rom, size);
 }

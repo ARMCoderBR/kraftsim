@@ -10,6 +10,6 @@
 
 #include <stdint.h>
 
-int romprog(uint8_t *rom, uint16_t size, char *fname);
+int romprog(uint8_t *rom, uint16_t size);
 
 #endif /* ROMPROG_H_ */
