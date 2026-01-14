@@ -163,6 +163,6 @@ int romprog_basesim(uint8_t *rom, uint16_t size){
 ////////////////////////////////////////////////////////////////////////////////
 int romprog(uint8_t *rom, uint16_t size){
 
-    //return romprog_picalc(rom, size, fname);
-    return romprog_basesim(rom, size);
+    return romprog_picalc(rom, size);//, fname);
+    //return romprog_basesim(rom, size);
 }

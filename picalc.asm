@@ -75,7 +75,7 @@ RAMBASE:        equ 8192
 RAMSZ:          equ 8192
 
 ; Algorithm constants
-NUM_DECS:       equ 10
+NUM_DECS:       equ 100
 NUM_IT:         equ ((NUM_DECS*9)/10)
 NBITS_FR:       equ (3*NUM_DECS + (NUM_DECS >> 1))
 NBITS_INT:      equ 16
