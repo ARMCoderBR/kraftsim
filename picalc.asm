@@ -70,9 +70,9 @@
 
 ; Hardware constants
 ROMBASE:        equ 0
-ROMSZ:          equ 8192
-RAMBASE:        equ 8192
-RAMSZ:          equ 8192
+ROMSZ:          equ 16384
+RAMBASE:        equ 16384
+RAMSZ:          equ (48*1024)
 
 ; Algorithm constants
 NUM_DECS:       equ 100
@@ -85,6 +85,10 @@ NBITS:          equ NBITS_INT+NBITS_FRAC
 NBYTES:         equ NBITS>>3
 NBYTES1:        equ NBYTES-1
 
+
+PORTSERSTATUS:  equ 0x58
+PORTSERDATA:    equ 0x59
+
     org ROMBASE     ; Expected to be 0x00. Other values will clash with the
                     ; interrupt handlers below.
 
@@ -94,6 +98,15 @@ NBYTES1:        equ NBYTES-1
 
     seek 0x0008     ; SW Interrupt. Used here to print characters.
     org 0x0008
+        ;di
+    out (PORTSERDATA),a
+wait_tx:
+    in  a,(PORTSERSTATUS)
+    bit 1,a
+    jr  nz,wait_tx
+    ;ei
+    ret
+
     out (0),a       ; Change it for whatever your target needs.
     ret
 

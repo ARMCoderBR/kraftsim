@@ -11,23 +11,14 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#define ROMSZ 8192
-#define RAMSZ 56*1024
-#define RAMBASE 8192
+#define ROMSZ 16384
+#define RAMBASE 16384
+#define RAMSZ 48*1024
 
 #include "z80.h"
 #include "romprog.h"
+#include "ios.h"
 
-
-////////////////////////////////////////////////////////////////////////////////
-OUT_CALLBACK_FND(new_out_callback){
-
-    if (port == 0){
-
-        printf("%c",value);
-        fflush(stdout);
-    }
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
@@ -46,7 +37,7 @@ int main (int argc, char *argv[]){
 
     printf("\n=== RUN ===\n\n");
 
-    z80_initialize(&z,rom,ROMSZ,ram,RAMBASE,RAMSZ, new_out_callback);
+    z80_initialize(&z, rom, ROMSZ, ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback);
 
     z80_reset(&z);
 
@@ -98,6 +89,14 @@ prompt:
         buf[0] = buf[1] = 0;
         printf("\n:");
         fgets(buf,sizeof(buf),stdin);
+
+        if (!strncmp(buf,"rst",3)){
+             z80_reset(&z);
+             z80_print(&z);
+             num_steps = 0;
+             continue;
+        }
+
         switch (buf[0]){
 
             case 'q':
@@ -112,7 +111,7 @@ prompt:
                 printf("  bl        ... List BKPTs\n");
                 printf("  bcN (0-3) ... Clear BKPT N\n");
                 printf("  bsN (0-3) ... Set BKPT N\n");
-                printf("  r         ... RUN until BKPT or HALT\n");
+                printf("  g         ... GO until BKPT or HALT\n");
                 printf("  rst       ... Reset CPU\n");
                 printf("  q         ... Quit\n");
                 goto prompt;
@@ -156,21 +155,10 @@ listbp:
                 }
                 goto prompt;
 
-            case 'r':
-                if (!isalpha(buf[1])){
-                    z80_noprint(&z);
-                    running = 1;
-                    continue;
-                }
-                else{
-                    if ((buf[1] == 's') && (buf[2] == 't')){
-                        z80_reset(&z);
-                        z80_print(&z);
-                        num_steps = 0;
-                        continue;
-                    }
-                }
-                break;
+            case 'g':
+                z80_noprint(&z);
+                running = 1;
+                continue;
 
             case 's':
                 if (z.afterPC){

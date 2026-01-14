@@ -9,13 +9,11 @@
 #include <stdio.h>
 
 #include "z80.h"
+#include "ios.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
-OUT_CALLBACK_FND(default_out_callback){}
-
-////////////////////////////////////////////////////////////////////////////////
-void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz, OUT_CALLBACK_FN(fc)){
+void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz, outcallback_t ocb_fn, incallback_t icb_fn){
 
     z->rom = rom;
     z->romsz = romsz;
@@ -24,8 +22,12 @@ void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, 
     z->ramsz = ramsz;
     z->ramend = rambase + ramsz - 1;
     z->out_callback = default_out_callback;
-    if (fc != NULL)
-        z->out_callback = fc;
+    if (ocb_fn != NULL)
+        z->out_callback = ocb_fn;
+
+    z->in_callback = default_in_callback;
+    if (icb_fn != NULL)
+        z->in_callback = icb_fn;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1357,6 +1359,18 @@ void z80_exec_ed(z80_t *z){
         return;
     }
 
+    if (z->opcode == 0x46){                              // IM 0
+        z->im = 0;
+    }
+
+    if (z->opcode == 0x56){                              // IM 1
+        z->im = 1;
+    }
+
+    if (z->opcode == 0x5E){                              // IM 2
+        z->im = 2;
+    }
+
     if (z->opcode == 0x4D){                              // RETI
 
         z->pc = z80_pop(z); // TODO: Estudar melhor como funciona
@@ -2393,12 +2407,35 @@ rescan:
         }
 
         ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xDB){                             // IN A,(n)
+
+            uint8_t port = z80_fetch(z);
+            z->_a = z->in_callback(port);
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
         if (opcode == 0xD3){                             // OUT (n),A
 
             uint8_t port = z80_fetch(z);
             z->out_callback(port,z->_a);
             return;
         }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xF3){                             // DI
+
+            z->iff1 = z->iff2 = 0;
+            return;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////
+        if (opcode == 0xFB){                             // EI
+
+            z->iff1 = z->iff2 = 1;
+            return;
+        }
+
     }   // Fim da BASE 11xxxxxx sem DD/FD
 
     if ((opcode & 0b11000000) == 0){    // BASE 00xxxxxx  sem DD/FD
@@ -2565,7 +2602,7 @@ rescan:
     }    // Fim da BASE 00xxxxxx  sem DD/FD
 
     ////////////////////////////////////////////////////////////////////////////
-    printf("Unk. Opcode\n");
+    printf("Unk. Opcode %02x at PC:%04x\n",opcode,z->pc);
     exit(0);
 }
 
