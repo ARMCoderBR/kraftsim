@@ -107,9 +107,6 @@ wait_tx:
     ;ei
     ret
 
-    out (0),a       ; Change it for whatever your target needs.
-    ret
-
     seek 0x0038     ; HW Interrupt IM 1.
     org 0x0038
     reti

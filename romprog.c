@@ -217,14 +217,13 @@ int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
 ////////////////////////////////////////////////////////////////////////////////
 int romprog_kraftsim(uint8_t *rom, uint16_t size){
 
-    //return romprog_readhex(rom, "crt0.ihx", size);
     return romprog_readintelhex(rom, "kraftbios-v2.ihx", size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int romprog(uint8_t *rom, uint16_t size){
 
-    return romprog_picalc_old(rom, size);
+    //return romprog_picalc_old(rom, size);
     //return romprog_picalc_kraft(rom, size);
-    //return romprog_kraftsim(rom, size);
+    return romprog_kraftsim(rom, size);
 }
