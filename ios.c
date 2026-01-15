@@ -109,7 +109,7 @@ void *thread_ios(void *arg){
             FD_ZERO (&readfds);
             FD_SET (0,&readfds);
             tv.tv_sec = 0;
-            tv.tv_usec = 100;
+            tv.tv_usec = 10;
             select (1,&readfds,NULL,NULL,&tv);
 
             if (FD_ISSET(0,&readfds)) {
@@ -121,11 +121,12 @@ void *thread_ios(void *arg){
             }
         }
         else
-            usleep(100);
+            usleep(10);
     }
     return NULL;
 }
 
+int presc = 0;
 ////////////////////////////////////////////////////////////////////////////////
 void new_hw_run(void){
 
@@ -135,6 +136,14 @@ void new_hw_run(void){
 
         initted = 1;
     }
+
+    if (!presc){
+
+        usleep(20);
+        presc = 50;
+    }
+    else
+        --presc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
