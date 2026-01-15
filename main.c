@@ -71,7 +71,7 @@ int main (int argc, char *argv[]){
         else{
             for (int i = 0; i < 1+NBP; i++){
 
-                if (z.pc == bp[i]){
+                if ((z.pc == bp[i])&&bp[i]){
 
                     if (i == NBP)
                         bp[NBP] = 0;
