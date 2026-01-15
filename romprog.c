@@ -103,8 +103,6 @@ int romprog_readintelhex(uint8_t *rom, char *fname, uint16_t size){
         return -1;
     }
 
-    memset(rom,0xff,size);
-
     while (!feof(f)){
 
         if (fgets(buf, sizeof(buf), f)){
@@ -209,7 +207,7 @@ int romprog_picalc_old(uint8_t *rom, uint16_t size){
 ////////////////////////////////////////////////////////////////////////////////
 int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
 
-    if (system ("sdasz80 -o -l -s -g picalc.s")) exit(0);
+    if (system ("sdasz80 -o -l -s -g ../picalc.s")) exit(0);    // Roda no display LCD, falta simular no Hardware!
     if (system ("sdcc -mz80 --no-std-crt0 picalc.rel")) exit(0);
     return romprog_readintelhex(rom, "picalc.ihx", size);
 }
@@ -217,7 +215,11 @@ int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
 ////////////////////////////////////////////////////////////////////////////////
 int romprog_kraftsim(uint8_t *rom, uint16_t size){
 
-    return romprog_readintelhex(rom, "kraftbios-v2.ihx", size);
+    memset(rom,0xff,size);
+
+    int res = romprog_readintelhex(rom, "../kraftbios-v2.ihx", size);
+    if (res < 0) return res;
+    return romprog_readintelhex(rom, "../bas32k.ihx", size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

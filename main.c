@@ -218,6 +218,7 @@ listbp:
     sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
     addstr(buf);
 
+    getch();
     endwin();
 
     return 0;

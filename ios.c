@@ -20,6 +20,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t fpga_status = 0;
 uint8_t portserdata = 0;
+uint8_t portserctl = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 void default_out_callback (uint8_t port, uint8_t value){}
@@ -34,6 +35,12 @@ void new_out_callback (uint8_t port, uint8_t value){
             refresh();
         }
     }
+    else
+    if (port == PORTSERCTL){
+
+        portserctl = value;
+    }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +52,7 @@ uint8_t default_in_callback (uint8_t port){
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t new_in_callback (uint8_t port){
 
-    char buf[128];
+    //char buf[128];
 
     switch (port){
 
@@ -91,23 +98,23 @@ void new_hw_run(void){
         --presc; return;
     }
 
-    presc = 100;
+    presc = 500;
 
-    //addch('1'); refresh();
+    if (portserctl & (PORTSER_EN|PORTSER_RTSON) == (PORTSER_EN|PORTSER_RTSON)){
 
-    FD_ZERO (&readfds);
-    FD_SET (0,&readfds);
-    tv.tv_sec = 0;
-    tv.tv_usec = 10;
-    select (1,&readfds,NULL,NULL,&tv);
+        FD_ZERO (&readfds);
+        FD_SET (0,&readfds);
+        tv.tv_sec = 0;
+        tv.tv_usec = 1;
+        select (1,&readfds,NULL,NULL,&tv);
 
-    if (FD_ISSET(0,&readfds)) {
+        if (FD_ISSET(0,&readfds)) {
 
-        portserdata = getch();
-        fpga_status |= 0x04;
-        //addch(portserdata); refresh();
+            portserdata = getch();
+            fpga_status |= 0x04;
+            //addch(portserdata); refresh();
+        }
     }
-    //addch('2'); refresh();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
