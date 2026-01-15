@@ -16,8 +16,6 @@
 
 #define DEBUG 0
 
-// z80asm test.asm -o - | xxd -ps -c 16 > test.hex
-
 ////////////////////////////////////////////////////////////////////////////////
 int parsehex8(char *s){
 
@@ -52,7 +50,7 @@ int parsehex16(char *s){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int proclineintelhex (uint8_t *rom, uint16_t romsize, char *buf){
+int proclineintelhex (uint8_t *mem, uint16_t membase, uint16_t memsize, char *buf){
 
     int type = parsehex8(buf+7);
     int addr = parsehex16(buf+3);
@@ -66,15 +64,16 @@ int proclineintelhex (uint8_t *rom, uint16_t romsize, char *buf){
         return -1;
     }
 
-    printf("size:%2x addr:%04x type:%02x - %s\n",size,addr,type,buf);
+    printf("size:%02x addr:%04x type:%02x - %s\n",size,addr,type,buf);
 
     if (type == 0){ // data
 
-        if (addr + size >= romsize){
-            printf("ROM Overflow!\n");
+        if (addr + size >= memsize){
+            printf("Memory Overflow!\n");
             return -1;
         }
-        else{
+        else
+        {
 
             for (int i = 0, j = 9; i < size; i++, j+=2){
 
@@ -83,7 +82,7 @@ int proclineintelhex (uint8_t *rom, uint16_t romsize, char *buf){
                     printf("Invalid hex line!\n");
                     return -1;
                 }
-                rom[addr+i] = b;
+                mem[addr-membase+i] = b;
             }
         }
     }
@@ -92,7 +91,7 @@ int proclineintelhex (uint8_t *rom, uint16_t romsize, char *buf){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog_readintelhex(uint8_t *rom, char *fname, uint16_t size){
+int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t memsize){
 
     char buf[128];
 
@@ -111,7 +110,7 @@ int romprog_readintelhex(uint8_t *rom, char *fname, uint16_t size){
             if (buf[len-1] == '\n')
                 buf[len-1] = 0;
 
-            if (proclineintelhex(rom, size, buf) < 0) break;
+            if (proclineintelhex(mem, membase, memsize, buf) < 0) break;
         }
     }
 
@@ -209,23 +208,25 @@ int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
 
     if (system ("sdasz80 -o -l -s -g ../picalc.s")) exit(0);    // Roda no display LCD, falta simular no Hardware!
     if (system ("sdcc -mz80 --no-std-crt0 picalc.rel")) exit(0);
-    return romprog_readintelhex(rom, "picalc.ihx", size);
+    return memprog_readintelhex(rom, "picalc.ihx", 0, size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog_kraftsim(uint8_t *rom, uint16_t size){
+int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize){
 
-    memset(rom,0xff,size);
+    memset(rom,0xff,romsize);
 
-    int res = romprog_readintelhex(rom, "../kraftbios-v2.ihx", size);
+    int res = memprog_readintelhex(rom, "../kraftbios-v2.ihx", 0, romsize);
     if (res < 0) return res;
-    return romprog_readintelhex(rom, "../bas32k.ihx", size);
+    res = memprog_readintelhex(rom, "../bas32k.ihx", 0, romsize);
+    if (res < 0) return res;
+    return memprog_readintelhex(ram, "../wolfram.ihx", rambase, ramsize);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog(uint8_t *rom, uint16_t size){
+int romprog(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize){
 
     //return romprog_picalc_old(rom, size);
     //return romprog_picalc_kraft(rom, size);
-    return romprog_kraftsim(rom, size);
+    return romprog_kraftsim(rom, romsize, ram, rambase, ramsize);
 }

@@ -31,7 +31,7 @@ int main (int argc, char *argv[]){
 
     memset(rom,0xff,ROMSZ);
 
-    if (romprog(rom,ROMSZ) < 0){
+    if (romprog(rom,ROMSZ,ram,RAMBASE,RAMSZ) < 0){
 
         printf("Error loading ROM!\n");
         return -1;
