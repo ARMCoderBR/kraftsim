@@ -10,19 +10,19 @@
 
 #include <stdint.h>
 
-//#define OUT_CALLBACK_FND(f)  void f (uint8_t port, uint8_t value)
-//#define OUT_CALLBACK_FN(f)  void (*f) (uint8_t port, uint8_t value)
+#include "callback.h"
+#include "z80.h"
 
-
-typedef void (*outcallback_t)(uint8_t port, uint8_t value);
-
-void new_out_callback (uint8_t port, uint8_t value);
 void default_out_callback (uint8_t port, uint8_t value);
+void new_out_callback (uint8_t port, uint8_t value);
 
-
-typedef uint8_t (*incallback_t)(uint8_t port);
-
-uint8_t new_in_callback (uint8_t port);
 uint8_t default_in_callback (uint8_t port);
+uint8_t new_in_callback (uint8_t port);
+
+void default_hw_run();
+void new_hw_run();
+
+int default_irq_sample(void);
+int new_irq_sample(void);
 
 #endif /* IOS_H_ */

@@ -41,10 +41,11 @@ int main (int argc, char *argv[]){
 
     idlok(stdscr,TRUE);
     scrollok(stdscr,TRUE);
+    noecho();
 
     addstr("\n=== RUN ===\n\n"); refresh();
 
-    z80_initialize(&z, rom, ROMSZ, ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback);
+    z80_initialize(&z, rom, ROMSZ, ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
 
     z80_reset(&z);
 
@@ -66,7 +67,6 @@ int main (int argc, char *argv[]){
             z80_dump_regs(&z);
             sprintf(buf,"Step:%d\n",num_steps);
             addstr(buf);
-            //refresh();
         }
         else{
             for (int i = 0; i < 1+NBP; i++){
@@ -81,7 +81,6 @@ int main (int argc, char *argv[]){
                     z80_dump_regs(&z);
                     sprintf(buf,"Step:%d\n",num_steps);
                     addstr(buf);
-                    //refresh();
                     break;
                 }
             }
@@ -104,7 +103,8 @@ prompt:
         char cbuf[32];
         for (;;){
 
-            read (1,cbuf,sizeof(cbuf));
+            //read (1,cbuf,sizeof(cbuf));
+            cbuf[0] = getch();
 
             if ((cbuf[0] == 8)||
                 (cbuf[0] == 127)){
@@ -112,8 +112,8 @@ prompt:
                 else continue;
             }
             else
-            if (cbuf[0] == 13){
-                addstr("\r\n");
+            if (cbuf[0] == 10){
+                addstr("\n");
                 break;
             }
             else

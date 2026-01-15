@@ -15,7 +15,10 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz, outcallback_t ocb_fn, incallback_t icb_fn){
+void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz,
+        outcallback_t ocb_fn, incallback_t icb_fn,
+        hw_run_t hwr_fn,
+        irq_sample_t irqsmp_fn){
 
     z->rom = rom;
     z->romsz = romsz;
@@ -24,12 +27,21 @@ void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, 
     z->ramsz = ramsz;
     z->ramend = rambase + ramsz - 1;
     z->out_callback = default_out_callback;
+    z->in_callback = default_in_callback;
+    z->hw_run = default_hw_run;
+    z->irq_sample = default_irq_sample;
+
     if (ocb_fn != NULL)
         z->out_callback = ocb_fn;
 
-    z->in_callback = default_in_callback;
     if (icb_fn != NULL)
         z->in_callback = icb_fn;
+
+    if (hwr_fn != NULL)
+        z->hw_run = hwr_fn;
+
+    if (irqsmp_fn != NULL)
+        z->irq_sample = irqsmp_fn;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2616,6 +2628,15 @@ rescan:
 }
 
 void z80_step(z80_t *z){
+
+    z->hw_run();
+    if (z->iff1)
+        if (z->irq_sample()){
+
+            z->iff1 = z->iff2 = 0;
+            z80_push(z, z->pc);
+            z->pc = 0x38;   // IM 1 apenas por enquanto!
+        }
 
     z80_step_in(z);
     z->code_prefix = 0;

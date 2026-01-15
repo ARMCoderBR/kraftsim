@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <ncurses.h>
+#include <sys/select.h>
+
 #include "ios.h"
 
 #define PORTBUTTONS     0x00
@@ -16,22 +19,33 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t fpga_status = 0;
+uint8_t portserdata = 0;
+
+////////////////////////////////////////////////////////////////////////////////
+void default_out_callback (uint8_t port, uint8_t value){}
 
 ////////////////////////////////////////////////////////////////////////////////
 void new_out_callback (uint8_t port, uint8_t value){
 
     if (port == PORTSERDATA){
 
-        printf("%c",value);
-        fflush(stdout);
+        if (value != 0x0d){
+            addch(value);
+            refresh();
+        }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void default_out_callback (uint8_t port, uint8_t value){}
+uint8_t default_in_callback (uint8_t port){
+
+    return 0xff;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t new_in_callback (uint8_t port){
+
+    char buf[128];
 
     switch (port){
 
@@ -54,14 +68,55 @@ uint8_t new_in_callback (uint8_t port){
 
         case PORTSERDATA:
             fpga_status &= ~0x04;
-            return 0xFF;
+            if (portserdata == 0x0a)
+                portserdata = 0x0d;
+            //sprintf(buf,"RD FOM INT:%02x\n",portserdata); addstr(buf); refresh();
+            return portserdata;
     }
 
     return 0xff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint8_t default_in_callback (uint8_t port){
+void default_hw_run(void){}
 
-    return 0xff;
+fd_set readfds;
+struct timeval tv;
+int presc = 0;
+
+////////////////////////////////////////////////////////////////////////////////
+void new_hw_run(void){
+
+    if (presc){
+        --presc; return;
+    }
+
+    presc = 100;
+
+    //addch('1'); refresh();
+
+    FD_ZERO (&readfds);
+    FD_SET (0,&readfds);
+    tv.tv_sec = 0;
+    tv.tv_usec = 10;
+    select (1,&readfds,NULL,NULL,&tv);
+
+    if (FD_ISSET(0,&readfds)) {
+
+        portserdata = getch();
+        fpga_status |= 0x04;
+        //addch(portserdata); refresh();
+    }
+    //addch('2'); refresh();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int default_irq_sample(void){
+
+    return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+int new_irq_sample(void){
+
+    return fpga_status & 0x07;
 }

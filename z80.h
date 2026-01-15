@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#include "ios.h"
+#include "callback.h"
 
 #define FLG_S 0x80
 #define FLG_Z 0x40
@@ -107,10 +107,16 @@ typedef struct {
 
 outcallback_t out_callback;
 incallback_t in_callback;
-
+hw_run_t hw_run;
+irq_sample_t irq_sample;
 } z80_t;
 
-void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz, outcallback_t ocb_fn, incallback_t icb_fn);
+void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz,
+                    outcallback_t ocb_fn,
+                    incallback_t icb_fn,
+                    hw_run_t hwr_fn,
+                    irq_sample_t irqsmp_fn);
+
 void z80_reset (z80_t *z);
 void z80_step(z80_t *z);
 void z80_dump_regs(z80_t *z);
