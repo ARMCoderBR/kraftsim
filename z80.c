@@ -7,6 +7,8 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <ncurses.h>
+#include <stdlib.h>
 
 #include "z80.h"
 #include "ios.h"
@@ -91,8 +93,12 @@ void z80_refresh_up(z80_t *z){
 uint8_t z80_fetch(z80_t *z){
 
     uint8_t b = z80_read(z,z->pc++);
-    if (z->print)
-        printf("%02X ",b);
+    if (z->print){
+        char buf[10];
+        sprintf(buf,"%02X ",b);
+        addstr(buf);
+        refresh();
+    }
     z->afterPC = 0;
     return b;
 }
@@ -2302,7 +2308,7 @@ rescan:
     ////////////////////////////////////////////////////////////////////////////
     if (z->code_prefix){    // Elimina códigos DD e FD inválidos
 
-        printf("Invalid IX/IY prefix\n");
+        addstr("Invalid IX/IY prefix\n");
         return;
     }
 
@@ -2602,7 +2608,10 @@ rescan:
     }    // Fim da BASE 00xxxxxx  sem DD/FD
 
     ////////////////////////////////////////////////////////////////////////////
-    printf("Unk. Opcode %02x at PC:%04x\n",opcode,z->pc);
+    char buf[100];
+    sprintf(buf,"Unk. Opcode %02x at PC:%04x\n",opcode,z->pc);
+    addstr(buf);
+    refresh();
     exit(0);
 }
 
@@ -2615,46 +2624,50 @@ void z80_step(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_dump_regs(z80_t *z){
 
-    printf("\nPC:%04X  SP:%04X  BC:%04X  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X  F:",
-            z->pc,z->sp,z->bc,z->de,z->hl,z->ix,z->iy,z->af);
+    char buf[180];
 
+    sprintf(buf,"\nPC:%04X  SP:%04X  BC:%04X  DE:%04X  HL:%04X  IX:%04X  IY:%04X  AF:%04X  F:",
+            z->pc,z->sp,z->bc,z->de,z->hl,z->ix,z->iy,z->af);
+    addstr(buf);
     if (z->_f & FLG_S)
-        printf("M ");
+        addstr("M ");
     else
-        printf("P ");
+        addstr("P ");
 
     if (z->_f & FLG_Z)
-        printf("Z  ");
+        addstr("Z  ");
     else
-        printf("NZ ");
+        addstr("NZ ");
 
     if (z->_f & FLG_H)
-        printf("H ");
+        addstr("H ");
     else
-        printf("- ");
+        addstr("- ");
 
     if (z->_f & FLG_PV)
-        printf("PE OV ");
+        addstr("PE OV ");
     else
-        printf("PO NV ");
+        addstr("PO NV ");
 
     if (z->_f & FLG_N)
-        printf("N ");
+        addstr("N ");
     else
-        printf("- ");
+        addstr("- ");
 
     if (z->_f & FLG_C)
-        printf("C ");
+        addstr("C ");
     else
-        printf("NC");
+        addstr("NC");
 
-    printf("\n");
+    addstr("\n");
+    refresh();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size){
 
     int i;
+    char buf[32];
 
     uint16_t start2 = start;
     if (start2 % 16){
@@ -2664,20 +2677,22 @@ void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size){
 
     size += start & 15;
 
-    printf("\n      +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F");
+    addstr("\n      +0 +1 +2 +3 +4 +5 +6 +7 +8 +9 +A +B +C +D +E +F");
     for (i = 0; i < size; i++){
 
-        if (!(i&15))
-            printf("\n%04x  ",start2+i);
+        if (!(i&15)){
+            sprintf(buf,"\n%04x  ",start2+i);
+            addstr(buf);
+        }
 
         if ((i + start2) < start)
-            printf("   ");
-        else
-            printf("%02X ",z80_read(z,i+start2));
-
-//        if (!((i+1)&15))
-//            printf("\n");
+            addstr("   ");
+        else{
+            sprintf(buf,"%02X ",z80_read(z,i+start2));
+            addstr(buf);
+        }
     }
-    printf("\n");
+    addstr("\n");
+    refresh();
 }
 

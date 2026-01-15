@@ -10,6 +10,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <curses.h>
+#include <unistd.h>
 
 #define ROMSZ 16384
 #define RAMBASE 16384
@@ -35,7 +37,12 @@ int main (int argc, char *argv[]){
         return -1;
     }
 
-    printf("\n=== RUN ===\n\n");
+    initscr();
+
+    idlok(stdscr,TRUE);
+    scrollok(stdscr,TRUE);
+
+    addstr("\n=== RUN ===\n\n"); refresh();
 
     z80_initialize(&z, rom, ROMSZ, ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback);
 
@@ -43,9 +50,9 @@ int main (int argc, char *argv[]){
 
     z80_print(&z);
 
-    printf("\n=== LOOP ===\n\n");
+    addstr("\n=== LOOP ===\n\n");
 
-    char buf[80];
+    char buf[255];
 
     #define NBP 4
     uint16_t bp[1+NBP] = {0};
@@ -57,9 +64,10 @@ int main (int argc, char *argv[]){
 
         if (!running){
             z80_dump_regs(&z);
-            printf("Step:%d\n",num_steps);
+            sprintf(buf,"Step:%d\n",num_steps);
+            addstr(buf);
+            //refresh();
         }
-#if 1
         else{
             for (int i = 0; i < 1+NBP; i++){
 
@@ -71,12 +79,13 @@ int main (int argc, char *argv[]){
                     running = 0;
                     z80_print(&z);
                     z80_dump_regs(&z);
-                    printf("Step:%d\n",num_steps);
+                    sprintf(buf,"Step:%d\n",num_steps);
+                    addstr(buf);
+                    //refresh();
                     break;
                 }
             }
         }
-#endif
 
         z80_step(&z);
         num_steps++;
@@ -87,8 +96,37 @@ int main (int argc, char *argv[]){
             continue;
 prompt:
         buf[0] = buf[1] = 0;
-        printf("\n:");
-        fgets(buf,sizeof(buf),stdin);
+        addstr("\n:");
+        refresh();
+
+        //fgets(buf,sizeof(buf),stdin);
+        int pbuf = 0;
+        char cbuf[32];
+        for (;;){
+
+            read (1,cbuf,sizeof(cbuf));
+
+            if ((cbuf[0] == 8)||
+                (cbuf[0] == 127)){
+                if (pbuf) --pbuf;
+                else continue;
+            }
+            else
+            if (cbuf[0] == 13){
+                addstr("\r\n");
+                break;
+            }
+            else
+                buf[pbuf++] = cbuf[0];
+            if (cbuf[0] == 127){
+                addch(8);addch(' ');addch(8);
+            }
+            else
+                addch(cbuf[0]);
+            refresh();
+        }
+
+        buf[pbuf] = 0;
 
         if (!strncmp(buf,"rst",3)){
              z80_reset(&z);
@@ -100,20 +138,22 @@ prompt:
         switch (buf[0]){
 
             case 'q':
-                printf("\n==== NUM STEPS:%d ====\n",num_steps);
+                sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
+                addstr(buf);
+                endwin();
                 exit(0);
 
             case 'h':
-                printf("  # HELP #\n");
-                printf("  ENTER     ... Step Into\n");
-                printf("  s         ... Step Over RAM\n");
-                printf("  d         ... Dump RAM\n");
-                printf("  bl        ... List BKPTs\n");
-                printf("  bcN (0-3) ... Clear BKPT N\n");
-                printf("  bsN (0-3) ... Set BKPT N\n");
-                printf("  g         ... GO until BKPT or HALT\n");
-                printf("  rst       ... Reset CPU\n");
-                printf("  q         ... Quit\n");
+                addstr("  # HELP #\n");
+                addstr("  ENTER     ... Step Into\n");
+                addstr("  s         ... Step Over RAM\n");
+                addstr("  d         ... Dump RAM\n");
+                addstr("  bl        ... List BKPTs\n");
+                addstr("  bcN (0-3) ... Clear BKPT N\n");
+                addstr("  bsN (0-3) ... Set BKPT N\n");
+                addstr("  g         ... GO until BKPT or HALT\n");
+                addstr("  rst       ... Reset CPU\n");
+                addstr("  q         ... Quit\n");
                 goto prompt;
 
             case 'd':
@@ -131,9 +171,11 @@ prompt:
 
                     case 'l':
 listbp:
-                        printf("\nBreakpoints\n");
-                        for (int i = 0; i < NBP; i++)
-                            printf("%d - %04x\n",i,bp[i]);
+                        addstr("\nBreakpoints\n");
+                        for (int i = 0; i < NBP; i++){
+                            sprintf(buf,"%d - %04x\n",i,bp[i]);
+                            addstr(buf);
+                        }
                         break;
                     case 'c':
                         if ((buf[2] >= '0') && (buf[2] <= '3')){
@@ -143,7 +185,7 @@ listbp:
                         break;
                     case 's':
                         if ((buf[2] >= '0') && (buf[2] <= '3')){
-                            printf("Enter BP val hhhh:");
+                            addstr("Enter BP val hhhh:");
                             char buf2[8];
                             fgets(buf2,sizeof(buf2),stdin);
                             int val;
@@ -173,7 +215,10 @@ listbp:
 
     z80_dump_mem(&z, RAMBASE,512);
 
-    printf("\n==== NUM STEPS:%d ====\n",num_steps);
+    sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
+    addstr(buf);
+
+    endwin();
 
     return 0;
 }
