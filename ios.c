@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <sys/select.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "ios.h"
 
@@ -49,6 +51,8 @@ uint8_t default_in_callback (uint8_t port){
     return 0xff;
 }
 
+pthread_mutex_t ios_mutex = PTHREAD_MUTEX_INITIALIZER;;
+
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t new_in_callback (uint8_t port){
 
@@ -74,10 +78,12 @@ uint8_t new_in_callback (uint8_t port){
             return 0xFF;
 
         case PORTSERDATA:
+            pthread_mutex_lock(&ios_mutex);
             fpga_status &= ~0x04;
             if (portserdata == 0x0a)
                 portserdata = 0x0d;
             //sprintf(buf,"RD FOM INT:%02x\n",portserdata); addstr(buf); refresh();
+            pthread_mutex_unlock(&ios_mutex);
             return portserdata;
     }
 
@@ -89,31 +95,45 @@ void default_hw_run(void){}
 
 fd_set readfds;
 struct timeval tv;
-int presc = 0;
+pthread_t mythread;
+int initted = 0;
+
+////////////////////////////////////////////////////////////////////////////////
+void *thread_ios(void *arg){
+
+    for (;;){
+
+        if ( ( (portserctl & (PORTSER_EN|PORTSER_RTSON)) == (PORTSER_EN|PORTSER_RTSON) )
+               &&  (!(fpga_status & 0x04) ) ){
+
+            FD_ZERO (&readfds);
+            FD_SET (0,&readfds);
+            tv.tv_sec = 0;
+            tv.tv_usec = 100;
+            select (1,&readfds,NULL,NULL,&tv);
+
+            if (FD_ISSET(0,&readfds)) {
+                pthread_mutex_lock(&ios_mutex);
+                portserdata = getch();
+                fpga_status |= 0x04;
+                pthread_mutex_unlock(&ios_mutex);
+                //addch(portserdata); refresh();
+            }
+        }
+        else
+            usleep(100);
+    }
+    return NULL;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void new_hw_run(void){
 
-    if (presc){
-        --presc; return;
-    }
+    if (!initted){
 
-    presc = 500;
+        /*int res =*/ pthread_create(&mythread, NULL, thread_ios, NULL);
 
-    if (portserctl & (PORTSER_EN|PORTSER_RTSON) == (PORTSER_EN|PORTSER_RTSON)){
-
-        FD_ZERO (&readfds);
-        FD_SET (0,&readfds);
-        tv.tv_sec = 0;
-        tv.tv_usec = 1;
-        select (1,&readfds,NULL,NULL,&tv);
-
-        if (FD_ISSET(0,&readfds)) {
-
-            portserdata = getch();
-            fpga_status |= 0x04;
-            //addch(portserdata); refresh();
-        }
+        initted = 1;
     }
 }
 
