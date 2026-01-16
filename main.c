@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include <curses.h>
 #include <unistd.h>
+#include <gtk/gtk.h>
+
 
 #define ROMSZ 16384
 #define RAMBASE 16384
@@ -23,62 +25,61 @@
 
 
 ////////////////////////////////////////////////////////////////////////////////
-int main (int argc, char *argv[]){
+typedef struct {
 
-    uint8_t *rom = malloc(ROMSZ);
-    uint8_t *ram = malloc(RAMSZ);
+    int width;
+    int height;
+    GtkWidget *drawing_area;
+    cairo_surface_t **psurface;
+    uint8_t *rom;
+    uint8_t *ram;
     z80_t z;
+    pthread_t z80thread;
+} activate_data_t;
 
-    memset(rom,0xff,ROMSZ);
+////////////////////////////////////////////////////////////////////////////////
+static void clear_surface(activate_data_t *act) {
 
-    if (romprog(rom,ROMSZ,ram,RAMBASE,RAMSZ) < 0){
+    cairo_t *cr;
 
-        printf("Error loading ROM!\n");
-        return -1;
-    }
+    cairo_surface_t **psurface = act->psurface;
+    cr = cairo_create(*psurface);
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_paint(cr);
+    cairo_destroy(cr);
+}
 
-    initscr();
 
-    idlok(stdscr,TRUE);
-    scrollok(stdscr,TRUE);
-    noecho();
 
-    addstr("\n=== RUN ===\n\n"); refresh();
-
-    z80_initialize(&z, rom, ROMSZ, ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
-
-    z80_reset(&z);
-
-    z80_print(&z);
-
-    addstr("\n=== LOOP ===\n\n");
+////////////////////////////////////////////////////////////////////////////////
+void z80runner(activate_data_t *act){
 
     char buf[255];
 
-    #define NBP 4
-    uint16_t bp[1+NBP] = {0};
     int running = 0;
-
     int num_steps = 0;
 
-    for (;!z.halted;){
+#define NBP 4
+    uint16_t bp[1+NBP] = {0};
+
+    for (;!act->z.halted;){
 
         if (!running){
-            z80_dump_regs(&z);
+            z80_dump_regs(&act->z);
             sprintf(buf,"Step:%d\n",num_steps);
             addstr(buf);
         }
         else{
             for (int i = 0; i < 1+NBP; i++){
 
-                if ((z.pc == bp[i])&&bp[i]){
+                if ((act->z.pc == bp[i])&&bp[i]){
 
                     if (i == NBP)
                         bp[NBP] = 0;
 
                     running = 0;
-                    z80_print(&z);
-                    z80_dump_regs(&z);
+                    z80_print(&act->z);
+                    z80_dump_regs(&act->z);
                     sprintf(buf,"Step:%d\n",num_steps);
                     addstr(buf);
                     break;
@@ -86,7 +87,7 @@ int main (int argc, char *argv[]){
             }
         }
 
-        z80_step(&z);
+        z80_step(&act->z);
         num_steps++;
 
         //printf("NextPC:%04x AfterPC:%04x\n",z.pc,z.afterPC);
@@ -129,8 +130,8 @@ prompt:
         buf[pbuf] = 0;
 
         if (!strncmp(buf,"rst",3)){
-             z80_reset(&z);
-             z80_print(&z);
+             z80_reset(&act->z);
+             z80_print(&act->z);
              num_steps = 0;
              continue;
         }
@@ -158,11 +159,11 @@ prompt:
 
             case 'd':
                 if (!isxdigit(buf[1]))
-                    z80_dump_mem(&z, RAMBASE,512);
+                    z80_dump_mem(&act->z, RAMBASE,512);
                 else{
                     int val;
                     sscanf(buf+1,"%04x",&val);
-                    z80_dump_mem(&z, val,512);
+                    z80_dump_mem(&act->z, val,512);
                 }
                 goto prompt;
 
@@ -198,14 +199,14 @@ listbp:
                 goto prompt;
 
             case 'g':
-                z80_noprint(&z);
+                z80_noprint(&act->z);
                 running = 1;
                 continue;
 
             case 's':
-                if (z.afterPC){
-                    bp[NBP] = z.afterPC;
-                    z80_noprint(&z);
+                if (act->z.afterPC){
+                    bp[NBP] = act->z.afterPC;
+                    z80_noprint(&act->z);
                     running = 1;
                     continue;
                 }
@@ -213,13 +214,222 @@ listbp:
         }
     }
 
-    z80_dump_mem(&z, RAMBASE,512);
-
     sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
     addstr(buf);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/* Create a new surface of the appropriate size to store our scribbles */
+static gboolean configure_event_cb(GtkWidget *widget, GdkEventConfigure *event,
+        gpointer data) {
+
+    if (event->type == GDK_CONFIGURE) {
+        printf("configure_event_cb()\n");
+
+        activate_data_t *act = (activate_data_t*)data;
+        cairo_surface_t **psurface = act->psurface;
+
+        if (*psurface)
+            cairo_surface_destroy(*psurface);
+
+        *psurface = gdk_window_create_similar_surface(gtk_widget_get_window(widget),
+                CAIRO_CONTENT_COLOR, gtk_widget_get_allocated_width(widget),
+                gtk_widget_get_allocated_height(widget));
+
+        /* Initialize the surface to white */
+        clear_surface(act);
+
+        act->width = event->width;
+        act->height = event->height;
+
+        pthread_create(&act->z80thread, NULL, z80runner, data);
+        //mandel(act);
+    }
+
+    /* We've handled the configure event, no need for further processing. */
+    return TRUE;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/* Redraw the screen from the surface. Note that the ::draw
+ * signal receives a ready-to-be-used cairo_t that is already
+ * clipped to only draw the exposed areas of the widget
+ */
+static gboolean draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
+
+    if (widget == NULL) return FALSE;
+    if (cr == NULL) return FALSE;
+    if (data == NULL) return FALSE;
+
+    //printf("draw_cb()\n");
+
+    activate_data_t *act = (activate_data_t*)data;
+    cairo_surface_t **psurface = act->psurface;
+
+    cairo_set_source_surface(cr, *psurface, 0, 0);
+    cairo_paint(cr);
+
+    return FALSE;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+static void close_window(GtkWidget *object, gpointer data) {
+
+    printf("close_window()\n");
+
+    activate_data_t *act = (activate_data_t*)data;
+    cairo_surface_t **psurface = act->psurface;
+
+    if (*psurface)
+        cairo_surface_destroy(*psurface);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+static void activate(GtkApplication *app, gpointer user_data) {
+
+    GtkWidget *window;
+    activate_data_t *act = (activate_data_t*) user_data;
+
+    window = gtk_application_window_new(app);
+
+    gtk_window_set_title(GTK_WINDOW(window), "KRAFT80 Monitor");
+
+    g_signal_connect(window, "destroy", G_CALLBACK (close_window), act);
+
+    gtk_container_set_border_width(GTK_CONTAINER(window), 8);
+
+    act->drawing_area = gtk_drawing_area_new();
+
+    /* set a minimum size */
+    gtk_widget_set_size_request(act->drawing_area, act->width, act->height);
+
+    GtkWidget *main_grid = gtk_grid_new();
+    gtk_container_add (GTK_CONTAINER (window), main_grid);
+
+    gtk_widget_set_hexpand(main_grid,TRUE);
+    gtk_widget_set_vexpand(main_grid,TRUE);
+
+    g_signal_connect(act->drawing_area, "configure-event",
+            G_CALLBACK (configure_event_cb), act);
+
+    /* Signals used to handle the backing surface */
+    g_signal_connect(act->drawing_area, "draw", G_CALLBACK (draw_cb), act);
+
+    gtk_widget_set_hexpand(act->drawing_area,TRUE);
+    gtk_widget_set_vexpand(act->drawing_area,TRUE);
+
+#if 0
+    /* Event signals */
+    g_signal_connect(drawing_area, "motion-notify-event",
+            G_CALLBACK (motion_notify_event_cb), psurface);
+
+    g_signal_connect(drawing_area, "button-press-event",
+            G_CALLBACK (button_press_event_cb), psurface);
+#endif
+
+//    GtkWidget *zoomin = gtk_button_new_with_label ("ZOOM+");
+//    g_signal_connect (zoomin, "clicked", G_CALLBACK (fn_zoomin), user_data);
+//
+//    GtkWidget *zoomout = gtk_button_new_with_label ("ZOOM-");
+//    g_signal_connect (zoomout, "clicked", G_CALLBACK (fn_zoomout), user_data);
+//
+//    GtkWidget *zoomres = gtk_button_new_with_label ("ZOOMRes");
+//    g_signal_connect (zoomres, "clicked", G_CALLBACK (fn_zoomres), user_data);
+//
+//    GtkWidget *setcenter = gtk_button_new_with_label ("SetCenter");
+//    g_signal_connect (setcenter, "clicked", G_CALLBACK (fn_setcenter), user_data);
+//
+//    GtkWidget *itup = gtk_button_new_with_label ("IT+");
+//    g_signal_connect (itup, "clicked", G_CALLBACK (fn_itup), user_data);
+//
+//    GtkWidget *itdown = gtk_button_new_with_label ("IT-");
+//    g_signal_connect (itdown, "clicked", G_CALLBACK (fn_itdown), user_data);
+//
+//    GtkWidget *itzero = gtk_button_new_with_label ("IT0");
+//    g_signal_connect (itzero, "clicked", G_CALLBACK (fn_itzero), user_data);
+//
+//    gtk_grid_attach ((GtkGrid*)main_grid, zoomin,    1, 1, 1, 1);
+//    gtk_grid_attach ((GtkGrid*)main_grid, zoomout,   2, 1, 1, 1);
+//    gtk_grid_attach ((GtkGrid*)main_grid, zoomres,   3, 1, 1, 1);
+//    gtk_grid_attach ((GtkGrid*)main_grid, setcenter, 4, 1, 1, 1);
+//    gtk_grid_attach ((GtkGrid*)main_grid, itup,      5, 1, 1, 1);
+//    gtk_grid_attach ((GtkGrid*)main_grid, itdown,    6, 1, 1, 1);
+//    gtk_grid_attach ((GtkGrid*)main_grid, itzero,    7, 1, 1, 1);
+
+    gtk_grid_attach ((GtkGrid*)main_grid, act->drawing_area,1, 2, 7, 1);
+
+    gtk_widget_add_events(act->drawing_area, GDK_BUTTON_PRESS_MASK /*| GDK_POINTER_MOTION_MASK*/);
+
+    /* Ask to receive events the drawing area doesn't normally
+     * subscribe to. In particular, we need to ask for the
+     * button press and motion notify events that want to handle.
+     */
+//    gtk_widget_set_events(drawing_area,
+//            gtk_widget_get_events(drawing_area) | GDK_BUTTON_PRESS_MASK
+//                    | GDK_POINTER_MOTION_MASK);
+
+    gtk_widget_show_all(window);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int main (int argc, char *argv[]){
+
+    cairo_surface_t *surface = NULL;
+    GtkApplication *app;
+    activate_data_t act;
+
+    act.width = 640;
+    act.height = 480;
+    act.drawing_area = NULL;
+    act.psurface = &surface;
+
+    act.rom = malloc(ROMSZ);
+    act.ram = malloc(RAMSZ);
+
+    char procname[100];
+    sprintf(procname, "kraftsim-%d.br.com.cpstecnologia", getpid());
+    app = gtk_application_new(procname, G_APPLICATION_FLAGS_NONE);
+    g_signal_connect(app, "activate", G_CALLBACK (activate), &act);
+
+
+
+    memset(act.rom,0xff,ROMSZ);
+    memset(act.ram,0x00,RAMSZ);
+
+    if (romprog(act.rom,ROMSZ,act.ram,RAMBASE,RAMSZ) < 0){
+
+        printf("Error loading ROM!\n");
+        return -1;
+    }
+
+    initscr();
+
+    idlok(stdscr,TRUE);
+    scrollok(stdscr,TRUE);
+    noecho();
+
+    addstr("\n=== RUN ===\n\n"); refresh();
+
+    z80_initialize(&act.z, act.rom, ROMSZ, act.ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
+
+    z80_reset(&act.z);
+
+    z80_print(&act.z);
+
+    addstr("\n=== LOOP ===\n\n");
+
+    char buf[255];
+
+    /*int status =*/ g_application_run(G_APPLICATION(app), 1, argv);
+
+    //z80runner(&act);
+
+    z80_dump_mem(&act.z, RAMBASE,512);
 
     getch();
     endwin();
+
+    g_object_unref(app);
 
     return 0;
 }

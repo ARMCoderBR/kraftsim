@@ -95,7 +95,7 @@ void default_hw_run(void){}
 
 fd_set readfds;
 struct timeval tv;
-pthread_t mythread;
+pthread_t iosthread;
 int initted = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ void new_hw_run(void){
 
     if (!initted){
 
-        /*int res =*/ pthread_create(&mythread, NULL, thread_ios, NULL);
+        /*int res =*/ pthread_create(&iosthread, NULL, thread_ios, NULL);
 
         initted = 1;
     }
