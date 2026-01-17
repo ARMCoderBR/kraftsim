@@ -64,6 +64,8 @@ void z80runner(activate_data_t *act){
 
     for (;!act->z.halted;){
 
+        sched_yield();
+
         if (!running){
             z80_dump_regs(&act->z);
             sprintf(buf,"Step:%d\n",num_steps);
@@ -417,8 +419,6 @@ int main (int argc, char *argv[]){
     z80_print(&act.z);
 
     addstr("\n=== LOOP ===\n\n");
-
-    char buf[255];
 
     /*int status =*/ g_application_run(G_APPLICATION(app), 1, argv);
 

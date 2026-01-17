@@ -5,11 +5,14 @@
 #include <unistd.h>
 
 #include "ios.h"
+#include "psg.h"
 
 #define PORTBUTTONS     0x00
 
-#define PORTTIMER       0x54    // TIMER EOI
+#define PORTTIMER       0x54    // TIMER ENABLE/EOI
 #define PORTKEY         0x55    // PS/2 DATA
+#define PORTAYADDR      0x56
+#define PORTAYDATA      0x57
 #define PORTSERSTATUS   0x58
 #define PORTSERCTL      0x58
 #define    PORTSER_EN      2
@@ -21,8 +24,13 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t fpga_status = 0;
+uint8_t porttimer = 0;
 uint8_t portserdata = 0;
 uint8_t portserctl = 0;
+uint8_t psgaddr = 0;
+
+psg_t *psg;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void default_out_callback (uint8_t port, uint8_t value){}
@@ -30,19 +38,26 @@ void default_out_callback (uint8_t port, uint8_t value){}
 ////////////////////////////////////////////////////////////////////////////////
 void new_out_callback (uint8_t port, uint8_t value){
 
-    if (port == PORTSERDATA){
-
-        if (value != 0x0d){
-            addch(value);
-            refresh();
-        }
+    switch (port){
+        case PORTSERDATA:
+            if (value != 0x0d){
+                addch(value);
+                refresh();
+            }
+            break;
+        case PORTTIMER:
+            porttimer = value;
+            break;
+        case PORTSERCTL:
+            portserctl = value;
+            break;
+        case PORTAYADDR:
+            psgaddr = value;
+            break;
+        case PORTAYDATA:
+            psg_outreg(psg, psgaddr, value);
+            break;
     }
-    else
-    if (port == PORTSERCTL){
-
-        portserctl = value;
-    }
-
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -95,13 +110,28 @@ void default_hw_run(void){}
 
 fd_set readfds;
 struct timeval tv;
-pthread_t iosthread;
+pthread_t serialthread;
+pthread_t timerthread;
+pthread_t psgthread;
 int initted = 0;
+int endthreads = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
-void *thread_ios(void *arg){
+void *thread_timer(void *arg){
 
-    for (;;){
+    for (;!endthreads;){
+
+        usleep(3333);   // 300Hz
+        if (porttimer & 0x01)
+            fpga_status |= 0x02;
+    }
+    return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void *thread_serial(void *arg){
+
+    for (;!endthreads;){
 
         if ( ( (portserctl & (PORTSER_EN|PORTSER_RTSON)) == (PORTSER_EN|PORTSER_RTSON) )
                &&  (!(fpga_status & 0x04) ) ){
@@ -123,6 +153,17 @@ void *thread_ios(void *arg){
         else
             usleep(10);
     }
+
+    return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void *thread_psg(void *arg){
+
+    for (;!endthreads;){
+        psg_run(psg);
+    }
+
     return NULL;
 }
 
@@ -132,7 +173,11 @@ void new_hw_run(void){
 
     if (!initted){
 
-        /*int res =*/ pthread_create(&iosthread, NULL, thread_ios, NULL);
+        psg = psg_init();
+
+        pthread_create(&serialthread, NULL, thread_serial, NULL);
+        pthread_create(&timerthread, NULL, thread_timer, NULL);
+        pthread_create(&psgthread, NULL, thread_psg, NULL);
 
         initted = 1;
     }
