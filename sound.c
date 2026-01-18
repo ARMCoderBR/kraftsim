@@ -73,7 +73,7 @@ sound_t *sound_init(void){
 
     pa_buffer_attr pba;
     pba.fragsize = (uint32_t) -1;
-    pba.maxlength = (uint32_t) -1;
+    pba.maxlength = 10000;//(uint32_t) -1;
     pba.minreq = (uint32_t) -1;
     pba.prebuf = (uint32_t) -1;
     pba.tlength = (uint32_t) -1;

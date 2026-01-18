@@ -221,7 +221,8 @@ int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramb
     res = memprog_readintelhex(rom, "../bas32k.ihx", 0, romsize);
     if (res < 0) return res;
     //return memprog_readintelhex(ram, "../wolfram.ihx", rambase, ramsize);
-    return memprog_readintelhex(ram, "../chiptunes2.ihx", rambase, ramsize);
+    //return memprog_readintelhex(ram, "../chiptunes2.ihx", rambase, ramsize);
+    return memprog_readintelhex(ram, "../chiptunes.ihx", rambase, ramsize);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
