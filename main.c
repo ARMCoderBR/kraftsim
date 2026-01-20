@@ -23,19 +23,7 @@
 #include "romprog.h"
 #include "ios.h"
 
-
-////////////////////////////////////////////////////////////////////////////////
-typedef struct {
-
-    int width;
-    int height;
-    GtkWidget *drawing_area;
-    cairo_surface_t **psurface;
-    uint8_t *rom;
-    uint8_t *ram;
-    z80_t z;
-    pthread_t z80thread;
-} activate_data_t;
+#include "act.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 static void clear_surface(activate_data_t *act) {
@@ -49,10 +37,8 @@ static void clear_surface(activate_data_t *act) {
     cairo_destroy(cr);
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
-void z80runner(activate_data_t *act){
+void *z80runner(activate_data_t *act){
 
     char buf[255];
 
@@ -218,6 +204,8 @@ listbp:
 
     sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
     addstr(buf);
+
+    return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -238,11 +226,13 @@ static gboolean configure_event_cb(GtkWidget *widget, GdkEventConfigure *event,
                 CAIRO_CONTENT_COLOR, gtk_widget_get_allocated_width(widget),
                 gtk_widget_get_allocated_height(widget));
 
-        /* Initialize the surface to white */
-        clear_surface(act);
-
         act->width = event->width;
         act->height = event->height;
+
+        /* Initialize the surface to black */
+        clear_surface(act);
+
+        lcd_init(act);
 
         pthread_create(&act->z80thread, NULL, z80runner, data);
         //mandel(act);
