@@ -54,7 +54,7 @@ void draw_lcdpoint(GtkWidget *widget, gdouble x, gdouble y,
     cairo_destroy(cr);
 
     /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, y, 1, 1);
+    gtk_widget_queue_draw_area(widget, x, y, 3, 3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -109,6 +109,14 @@ void lcd_refresh(activate_data_t *act){
         lcd_out_symbol(act, 1+i*17, 1+27, ddram[64+i]);
 }
 
+gboolean on_timeout(gpointer user_data) {
+
+    activate_data_t *act = (activate_data_t *)user_data;
+    lcd_refresh(act);
+
+    // Return TRUE to continue the timer, FALSE to stop
+    return TRUE;
+}
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_init(activate_data_t *act) {
 
@@ -128,15 +136,15 @@ void lcd_init(activate_data_t *act) {
     draw_lcdback(act->drawing_area, 0, 0,
             *act->psurface);
 
-    lcdact = act;
-    lcd_refresh(act);
+    g_timeout_add(100, on_timeout, act);
+    //lcd_refresh(act);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int proc_cmd8(uint8_t value){
 
-    char buf[100];
 #if DEBUG
+    char buf[100];
     sprintf(buf," [PROC:%02x] ",value);
     addstr(buf);
 #endif
@@ -236,7 +244,7 @@ void proc_data8(uint8_t value){
 #if DEBUG
         addstr(" =writeDDRAM=\n");
 #endif
-        lcd_refresh(lcdact);
+        //lcd_refresh(lcdact);
     }
 }
 

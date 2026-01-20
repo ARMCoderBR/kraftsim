@@ -207,7 +207,7 @@ int romprog_picalc_old(uint8_t *rom, uint16_t size){
 int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
 
     if (system ("sdasz80 -o -l -s -g ../picalc.s")) exit(0);    // Roda no display LCD, falta simular no Hardware!
-    if (system ("sdcc -mz80 --no-std-crt0 picalc.rel")) exit(0);
+    if (system ("sdcc -mz80 --no-std-crt0 ../picalc.rel")) exit(0);
     return memprog_readintelhex(rom, "picalc.ihx", 0, size);
 }
 
@@ -229,6 +229,6 @@ int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramb
 int romprog(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize){
 
     //return romprog_picalc_old(rom, size);
-    //return romprog_picalc_kraft(rom, size);
-    return romprog_kraftsim(rom, romsize, ram, rambase, ramsize);
+    return romprog_picalc_kraft(rom, romsize);
+    //return romprog_kraftsim(rom, romsize, ram, rambase, ramsize);
 }
