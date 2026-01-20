@@ -222,13 +222,26 @@ int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramb
     if (res < 0) return res;
     //return memprog_readintelhex(ram, "../wolfram.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../chiptunes2.ihx", rambase, ramsize);
-    return memprog_readintelhex(ram, "../chiptunes.ihx", rambase, ramsize);
+    //return memprog_readintelhex(ram, "../chiptunes.ihx", rambase, ramsize);
+    return memprog_readintelhex(ram, "../clock.ihx", rambase, ramsize);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 int romprog(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize){
 
     //return romprog_picalc_old(rom, size);
-    return romprog_picalc_kraft(rom, romsize);
-    //return romprog_kraftsim(rom, romsize, ram, rambase, ramsize);
+    //return romprog_picalc_kraft(rom, romsize);
+    return romprog_kraftsim(rom, romsize, ram, rambase, ramsize);
 }
+
+
+/*
+Investigar erro de Z80 na sequencia:
+
+:20 46EB 00 9F 57 >> 7C AA 17 7C F5 17 3006 97 95 6F 9F 94 67 CB7A 2806 97 93 5F 9F 92 57 CD2247 F1 D0 47 C7
+:20 470B 00 >> 97 93 5F 9F 92 57 78 C9 17 EB D0 97 93 5F 9F 92 57 C9 5D6F2600547BE680B220110610ED83
+:20472B006A17933001833FED6A10F65FEBC906097D6C2600CB1DED6AED523001193F1710AB
+:06474B00F5CB10505FC920
+:00000001FF
+ */
+
