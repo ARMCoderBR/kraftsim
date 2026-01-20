@@ -8,7 +8,7 @@
 #include "psg.h"
 
 #define PORTBUTTONS     0x00
-
+#define PORTDISP        0x10
 #define PORTTIMER       0x54    // TIMER ENABLE/EOI
 #define PORTKEY         0x55    // PS/2 DATA
 #define PORTAYADDR      0x56
@@ -39,6 +39,9 @@ void default_out_callback (uint8_t port, uint8_t value){}
 void new_out_callback (uint8_t port, uint8_t value){
 
     switch (port){
+        case PORTDISP:
+            lcd_out(value);
+            break;
         case PORTSERDATA:
             if (value != 0x0d){
                 addch(value);

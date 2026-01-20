@@ -9,9 +9,12 @@
 #define LCD_H_
 
 #include <gtk/gtk.h>
+#include <stdint.h>
 
 #include "act.h"
 
 void lcd_init(activate_data_t *act);
+
+void lcd_out(uint8_t value);
 
 #endif /* LCD_H_ */
