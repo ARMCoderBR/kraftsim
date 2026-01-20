@@ -15,7 +15,7 @@ void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
 
     cairo_rectangle(cr, x, y, (16*17), (2*27));
     //cairo_set_source_rgb(cr, 0, 0.4, 0.2);
-    cairo_set_source_rgb(cr, 0.2, 1, 0.4);
+    cairo_set_source_rgb(cr, 0, 0.8, 0.3);
     cairo_fill(cr);
 
     cairo_destroy(cr);
@@ -69,7 +69,6 @@ void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
 
-
             draw_lcdpoint(act->drawing_area, px+3*col, py+3*row,
                     *act->psurface, state);
 
@@ -87,8 +86,8 @@ void lcd_init(activate_data_t *act) {
             *act->psurface);
 
     for (int i = 0; i < 16; i++)
-        lcd_out_symbol(act, i*17, 0, 'A'+i);
+        lcd_out_symbol(act, 1+i*17, 1+0, 'A'+i);
 
     for (int i = 0; i < 16; i++)
-        lcd_out_symbol(act, i*17, 26, 'Q'+i);
+        lcd_out_symbol(act, 1+i*17, 1+27, 'Q'+i);
 }
