@@ -24,6 +24,8 @@
 #include "ios.h"
 
 #include "act.h"
+#include "lcd.h"
+#include "leds.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 static void clear_surface(activate_data_t *act) {
@@ -232,6 +234,7 @@ static gboolean configure_event_cb(GtkWidget *widget, GdkEventConfigure *event,
         clear_surface(act);
 
         lcd_init(act);
+        leds_init(act);
 
         pthread_create(&act->z80thread, NULL, z80runner, data);
         //mandel(act);
@@ -370,7 +373,7 @@ int main (int argc, char *argv[]){
     activate_data_t act;
 
     act.width = 640;
-    act.height = 480;
+    act.height = 480 + 60;
     act.drawing_area = NULL;
     act.psurface = &surface;
 

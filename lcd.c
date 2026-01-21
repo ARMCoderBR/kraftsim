@@ -8,6 +8,9 @@
 
 #define DEBUG 0
 
+#define DIV_Y_POS 482
+#define LCD_Y_OFFSET 485
+
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
 void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
@@ -18,7 +21,15 @@ void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
     /* Paint to the surface, where we store our state */
     cr = cairo_create(surface);
 
-    cairo_rectangle(cr, x, y, (16*17), (2*27));
+    cairo_rectangle(cr, 0, DIV_Y_POS, 640, 1);
+    cairo_set_source_rgb(cr, 1, 1, 1);
+    cairo_fill(cr);
+
+    /* Now invalidate the affected region of the drawing area. */
+    gtk_widget_queue_draw_area(widget, 0, DIV_Y_POS, 640, 1);
+
+
+    cairo_rectangle(cr, x, LCD_Y_OFFSET+y, (16*17), (2*27));
     //cairo_set_source_rgb(cr, 0, 0.4, 0.2);
     cairo_set_source_rgb(cr, 0, 0.8, 0.3);
     cairo_fill(cr);
@@ -26,7 +37,7 @@ void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
     cairo_destroy(cr);
 
     /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, y, (16*17), (2*27));
+    gtk_widget_queue_draw_area(widget, x, LCD_Y_OFFSET+y, (16*17), (2*27));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,12 +50,12 @@ void draw_lcdpoint(GtkWidget *widget, gdouble x, gdouble y,
     /* Paint to the surface, where we store our state */
     cr = cairo_create(surface);
 
-    cairo_rectangle(cr, x, y, 3, 3);
+    cairo_rectangle(cr, x, LCD_Y_OFFSET+y, 3, 3);
     cairo_set_source_rgb(cr, 0, 0.7, 0.3);
     cairo_fill(cr);
 
 
-    cairo_rectangle(cr, x, y, 2, 2);
+    cairo_rectangle(cr, x, LCD_Y_OFFSET+y, 2, 2);
     if (onoff)
         cairo_set_source_rgb(cr, 0, 0, 0);
     else
@@ -54,7 +65,7 @@ void draw_lcdpoint(GtkWidget *widget, gdouble x, gdouble y,
     cairo_destroy(cr);
 
     /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, y, 3, 3);
+    gtk_widget_queue_draw_area(widget, x, LCD_Y_OFFSET+y, 3, 3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +139,8 @@ void lcd_refresh(activate_data_t *act){
     }
 }
 
-gboolean on_timeout(gpointer user_data) {
+////////////////////////////////////////////////////////////////////////////////
+gboolean on_timeout_lcd(gpointer user_data) {
 
     activate_data_t *act = (activate_data_t *)user_data;
     lcd_refresh(act);
@@ -136,6 +148,7 @@ gboolean on_timeout(gpointer user_data) {
     // Return TRUE to continue the timer, FALSE to stop
     return TRUE;
 }
+
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_init(activate_data_t *act) {
 
@@ -157,8 +170,7 @@ void lcd_init(activate_data_t *act) {
     draw_lcdback(act->drawing_area, 0, 0,
             *act->psurface);
 
-    g_timeout_add(100, on_timeout, act);
-    //lcd_refresh(act);
+    g_timeout_add(100, on_timeout_lcd, act);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

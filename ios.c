@@ -7,6 +7,7 @@
 #include "ios.h"
 #include "psg.h"
 
+#define PORTLEDS        0x00
 #define PORTBUTTONS     0x00
 #define PORTDISP        0x10
 #define PORTTIMER       0x54    // TIMER ENABLE/EOI
@@ -39,6 +40,9 @@ void default_out_callback (uint8_t port, uint8_t value){}
 void new_out_callback (uint8_t port, uint8_t value){
 
     switch (port){
+        case PORTLEDS:
+            leds_out(value);
+            break;
         case PORTDISP:
             lcd_out(value);
             break;
