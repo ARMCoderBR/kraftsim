@@ -42,7 +42,7 @@ void *z80runner(activate_data_t *act){
 
     char buf[255];
 
-    int running = 0;
+    act->z.running = 0;
     int num_steps = 0;
 
 #define NBP 4
@@ -52,7 +52,7 @@ void *z80runner(activate_data_t *act){
 
         sched_yield();
 
-        if (!running){
+        if (!act->z.running){
             z80_dump_regs(&act->z);
             sprintf(buf,"Step:%d\n",num_steps);
             addstr(buf);
@@ -65,7 +65,7 @@ void *z80runner(activate_data_t *act){
                     if (i == NBP)
                         bp[NBP] = 0;
 
-                    running = 0;
+                    act->z.running = 0;
                     z80_print(&act->z);
                     z80_dump_regs(&act->z);
                     sprintf(buf,"Step:%d\n",num_steps);
@@ -80,7 +80,7 @@ void *z80runner(activate_data_t *act){
 
         //printf("NextPC:%04x AfterPC:%04x\n",z.pc,z.afterPC);
 
-        if (running)
+        if (act->z.running)
             continue;
 prompt:
         buf[0] = buf[1] = 0;
@@ -188,14 +188,14 @@ listbp:
 
             case 'g':
                 z80_noprint(&act->z);
-                running = 1;
+                act->z.running = 1;
                 continue;
 
             case 's':
                 if (act->z.afterPC){
                     bp[NBP] = act->z.afterPC;
                     z80_noprint(&act->z);
-                    running = 1;
+                    act->z.running = 1;
                     continue;
                 }
                 break;

@@ -73,6 +73,8 @@ typedef struct {
 
     uint8_t print;
 
+    uint8_t running;
+
 #define bc _bc.r16
 #define de _de.r16
 #define hl _hl.r16

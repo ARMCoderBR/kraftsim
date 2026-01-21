@@ -238,10 +238,87 @@ int romprog(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint
 /*
 Investigar erro de Z80 na sequencia:
 
-:20 46EB 00 9F 57 >> 7C AA 17 7C F5 17 3006 97 95 6F 9F 94 67 CB7A 2806 97 93 5F 9F 92 57 CD2247 F1 D0 47 C7
-:20 470B 00 >> 97 93 5F 9F 92 57 78 C9 17 EB D0 97 93 5F 9F 92 57 C9 5D6F2600547BE680B220110610ED83
-:20472B006A17933001833FED6A10F65FEBC906097D6C2600CB1DED6AED523001193F1710AB
-:06474B00F5CB10505FC920
-:00000001FF
+:20 46EB 00 9F 57 >>
+46ed: 7C        LD A,H
+      AA        XOR D
+      17        RLA
+      7C        LD A,H
+      F5        PUSH AF
+      17        RLA
+      3006      JR NC,X1
+      97        SUB A
+      95        SUB L
+      6F        LD L,A
+      9F        SBC A
+      94        SUB H
+      67        LD H,A
+X1:   CB7A      BIT 7,D
+      2806      JR Z,X2
+      97        SUB A
+      93        SUB E
+      5F        LD E,A
+      9F        SBC A
+      92        SUB D
+      57        LD D,A
+X2:   CD2247    CALL 4722
+      F1        POP AF
+      D0        RET NC
+      47        LD B,A
+      C7        RST 0
+:20 470B 00 >>
+      97        SUB A
+      93        SUB E
+      5F        LD E,A
+      9F        SBC A
+      92        SUB D
+      57        LD D,A
+      78        LD A,B
+      C9        RET
+      17        RLA
+X4714:EB        EX DE,HL
+      D0        RET NC
+      97        SUB A
+      93        SUB E
+      5F        LD E,A
+      9F        SBC A
+      92        SUB D
+      57        LD D,A
+      C9        RET
+      5D        LD E,L
+X471E:6F        LD L,A
+      2600      LD H,0
+      54        LD D,H
+X4722:7B        LD A,E
+      E680      AND 0x80
+      B2        OR D
+      2011      JR NZ,X4
+      0610      LD B,0x10
+      ED6A      ADC HL,HL
+X3:   17        RLA
+      93        SUB E
+      3001      JR NC,X5
+      83        ADD A,E
+X5:   3F        CCF
+      ED6A      ADC HL,HL
+      10F6      DJNZ X3
+      5F        LD E,A
+      EB        EX DE,HL
+      C9        RET
+X4:   0609      LD B,9
+      7D        LD A,L
+      6C        LD L,A
+      2600      LD H,0
+      CB1D      RR L
+X7:   ED6A      ADC HL,HL
+      ED52      SBC HL,DE
+      3001      JR NC,X6
+      19        ADD HL,DE
+X6:   3F        CCF
+      17        RLA
+      10F5      DJNZ X7
+      CB10      RL B
+      50        LD D,B
+      5F        LD E,A
+      C9        RET
  */
 

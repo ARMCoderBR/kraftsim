@@ -1247,7 +1247,7 @@ void z80_exec_ed(z80_t *z){
         uarg2 = (arg2 & 0xFFFF);
         if (arg2 & 0x8000) arg2 |= 0xFFFF0000;
 
-        z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
+        z->_f &= ~(FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
 
         if (((arg1&0xFFF) + (arg2&0xFFF) + (z->_f & FLG_C ? 1:0)) & 0xF000)
             z->_f |= FLG_H;
@@ -1262,6 +1262,8 @@ void z80_exec_ed(z80_t *z){
 
         if (uarg1 & 0xFFFF0000)
             z->_f |= FLG_C;
+        else
+            z->_f &= ~FLG_C;
 
         if (!z->hl)
             z->_f |= FLG_Z;
@@ -1302,7 +1304,7 @@ void z80_exec_ed(z80_t *z){
         uarg2 = (arg2 & 0xFFFF);
         if (arg2 & 0x8000) arg2 |= 0xFFFF0000;
 
-        z->_f &= ~(FLG_C|FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
+        z->_f &= ~(FLG_N|FLG_PV|FLG_H|FLG_Z|FLG_S); // Verificar cálculo de FLG_PV
 
         if (((arg1&0xFFF) - ((arg2&0xFFF) + (z->_f & FLG_C ? 1:0))) & 0xF000)
             z->_f |= FLG_H;
@@ -1317,6 +1319,8 @@ void z80_exec_ed(z80_t *z){
 
         if (uarg1 & 0xFFFF0000)
             z->_f |= FLG_C;
+        else
+            z->_f &= ~FLG_C;
 
         if (!z->hl)
             z->_f |= FLG_Z;
@@ -1590,6 +1594,11 @@ int z80_exec_call(z80_t *z){
         z->pc = z->opcode & 0x38;
         break;
 
+//    case 0b11111111:    // RST 38h
+//        z->running = 0;
+//        z->print = 1;
+//        z->iff1 = z->iff2 = 0;
+//        break;
     default:
         return 0;
     }
