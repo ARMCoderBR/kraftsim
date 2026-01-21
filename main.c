@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <gtk/gtk.h>
 
-
+#define RUN 1
 #define ROMSZ 16384
 #define RAMBASE 16384
 #define RAMSZ 48*1024
@@ -42,7 +42,6 @@ void *z80runner(activate_data_t *act){
 
     char buf[255];
 
-    act->z.running = 0;
     int num_steps = 0;
 
 #define NBP 4
@@ -214,7 +213,7 @@ static gboolean configure_event_cb(GtkWidget *widget, GdkEventConfigure *event,
         gpointer data) {
 
     if (event->type == GDK_CONFIGURE) {
-        printf("configure_event_cb()\n");
+        //printf("configure_event_cb()\n");
 
         activate_data_t *act = (activate_data_t*)data;
         cairo_surface_t **psurface = act->psurface;
@@ -267,7 +266,7 @@ static gboolean draw_cb(GtkWidget *widget, cairo_t *cr, gpointer data) {
 ////////////////////////////////////////////////////////////////////////////////
 static void close_window(GtkWidget *object, gpointer data) {
 
-    printf("close_window()\n");
+    //printf("close_window()\n");
 
     activate_data_t *act = (activate_data_t*)data;
     cairo_surface_t **psurface = act->psurface;
@@ -383,14 +382,12 @@ int main (int argc, char *argv[]){
     app = gtk_application_new(procname, G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app, "activate", G_CALLBACK (activate), &act);
 
-
-
     memset(act.rom,0xff,ROMSZ);
     memset(act.ram,0x00,RAMSZ);
 
     if (romprog(act.rom,ROMSZ,act.ram,RAMBASE,RAMSZ) < 0){
 
-        printf("Error loading ROM!\n");
+        addstr("Error loading ROM!\n");
         return -1;
     }
 
@@ -400,15 +397,21 @@ int main (int argc, char *argv[]){
     scrollok(stdscr,TRUE);
     noecho();
 
-    addstr("\n=== RUN ===\n\n"); refresh();
+    //addstr("\n=== RUN ===\n\n"); refresh();
 
     z80_initialize(&act.z, act.rom, ROMSZ, act.ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
 
     z80_reset(&act.z);
 
+#if RUN
+    z80_noprint(&act.z);
+    act.z.running = 1;
+#else
     z80_print(&act.z);
+    act->z.running = 0;
+#endif
 
-    addstr("\n=== LOOP ===\n\n");
+    //addstr("\n=== LOOP ===\n\n");
 
     /*int status =*/ g_application_run(G_APPLICATION(app), 1, argv);
 

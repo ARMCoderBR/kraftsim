@@ -86,6 +86,9 @@ void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
 
 uint8_t ddram[64+40];
 uint8_t cgram[64];
+uint8_t lcd_row1[16];
+uint8_t lcd_row2[16];
+
 uint8_t lcd_active;
 uint8_t ddram_addr;
 uint8_t cgram_addr;
@@ -102,11 +105,27 @@ activate_data_t *lcdact;
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_refresh(activate_data_t *act){
 
-    for (int i = 0; i < 16; i++)
-        lcd_out_symbol(act, 1+i*17, 1+0, ddram[i]);
+    for (int i = 0; i < 16; i++){
 
-    for (int i = 0; i < 16; i++)
-        lcd_out_symbol(act, 1+i*17, 1+27, ddram[64+i]);
+        int addr = i;
+
+        if (lcd_row1[i] != ddram[addr]){
+
+            lcd_out_symbol(act, 1+i*17, 1+0, ddram[addr]);
+            lcd_row1[i] = ddram[addr];
+        }
+    }
+
+    for (int i = 0; i < 16; i++){
+
+        int addr = 64+i;
+
+        if (lcd_row2[i] != ddram[addr]){
+
+            lcd_out_symbol(act, 1+i*17, 1+27, ddram[addr]);
+            lcd_row2[i] = ddram[addr];
+        }
+    }
 }
 
 gboolean on_timeout(gpointer user_data) {
@@ -122,6 +141,8 @@ void lcd_init(activate_data_t *act) {
 
     memset(ddram,0x20,sizeof(ddram));
     memset(cgram,0x00,sizeof(cgram));
+    memset(lcd_row1,0x00,sizeof(lcd_row1));
+    memset(lcd_row2,0x00,sizeof(lcd_row2));
     lcd_active =
     ddram_addr =
     cgram_addr =
