@@ -10,6 +10,6 @@
 
 #include <stdint.h>
 
-extern uint8_t lcdrom[];
+extern const uint8_t lcdrom[];
 
 #endif /* LCDROM_H_ */

@@ -1,5 +1,6 @@
 #include "lcdrom.h"
 
+const
 uint8_t lcdrom[] = { 0b10000,   // 0x10
                      0b11000,
                      0b11100,
