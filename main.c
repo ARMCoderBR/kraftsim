@@ -235,6 +235,7 @@ static gboolean configure_event_cb(GtkWidget *widget, GdkEventConfigure *event,
 
         lcd_init(act);
         leds_init(act);
+        vga_init(act);
 
         pthread_create(&act->z80thread, NULL, z80runner, data);
         //mandel(act);
