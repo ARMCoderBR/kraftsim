@@ -26,6 +26,7 @@
 #include "act.h"
 #include "lcd.h"
 #include "leds.h"
+#include "keyb.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 static void clear_surface(activate_data_t *act) {
@@ -368,6 +369,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 ////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
+
+    //keyb_run();
+    //exit(0);
+
 
     cairo_surface_t *surface = NULL;
     GtkApplication *app;

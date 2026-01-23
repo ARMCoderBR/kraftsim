@@ -55,6 +55,7 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.85266138" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.c.link.option.libs.99716074" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="SDL2"/>
 									<listOptionValue builtIn="false" value="pulse-simple"/>
 									<listOptionValue builtIn="false" value="ncurses"/>
 									<listOptionValue builtIn="false" value="pthread"/>
