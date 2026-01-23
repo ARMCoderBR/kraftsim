@@ -370,8 +370,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 ////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
 
-    //keyb_run();
-    //exit(0);
+    keyb_init();
+    keyb_run();
+    exit(0);
 
 
     cairo_surface_t *surface = NULL;

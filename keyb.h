@@ -9,5 +9,6 @@
 #define KEYB_H_
 
 void keyb_run(void);
+void keyb_init();
 
 #endif /* KEYB_H_ */
