@@ -9,7 +9,7 @@ uint8_t leds_port;
 uint8_t leds_port_old;
 
 #define LEDS_X_OFFSET 380
-#define LEDS_Y_OFFSET 505
+//#define LEDS_Y_OFFSET 505
 
 ////////////////////////////////////////////////////////////////////////////////
 void leds_refresh(activate_data_t *act){
@@ -26,7 +26,7 @@ void leds_refresh(activate_data_t *act){
 
         if ((leds_port ^ leds_port_old) & mask){
 
-            cairo_rectangle(cr, LEDS_X_OFFSET+20*i, LEDS_Y_OFFSET, 16, 16);
+            cairo_rectangle(cr, LEDS_X_OFFSET+20*i, act->height - 25, 16, 16);
 
             if (leds_port & mask)
                 cairo_set_source_rgb(cr, 1, 1, 0);
@@ -36,7 +36,7 @@ void leds_refresh(activate_data_t *act){
             cairo_fill(cr);
 
             /* Now invalidate the affected region of the drawing area. */
-            gtk_widget_queue_draw_area(act->drawing_area, LEDS_X_OFFSET+20*i, LEDS_Y_OFFSET, 16, 16);
+            gtk_widget_queue_draw_area(act->drawing_area, LEDS_X_OFFSET+20*i, act->height - 25, 16, 16);
         }
 
         mask >>= 1;

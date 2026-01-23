@@ -373,8 +373,8 @@ int main (int argc, char *argv[]){
     GtkApplication *app;
     activate_data_t act;
 
-    act.width = 640;
-    act.height = 480 + 60;
+    act.width = 1280;
+    act.height = 960 + 60;
     act.drawing_area = NULL;
     act.psurface = &surface;
 

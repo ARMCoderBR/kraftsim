@@ -8,12 +8,12 @@
 
 #define DEBUG 0
 
-#define DIV_Y_POS 482
-#define LCD_Y_OFFSET 485
+//#define DIV_Y_POS 482
+//#define LCD_Y_OFFSET 485
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
+void draw_lcdback(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
         cairo_surface_t *surface) {
 
     cairo_t *cr;
@@ -29,7 +29,7 @@ void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
     gtk_widget_queue_draw_area(widget, 0, DIV_Y_POS, 640, 1);
 
 
-    cairo_rectangle(cr, x, LCD_Y_OFFSET+y, (16*17), (2*27));
+    cairo_rectangle(cr, x, DIV_Y_POS+4+y, (16*17), (2*27));
     //cairo_set_source_rgb(cr, 0, 0.4, 0.2);
     cairo_set_source_rgb(cr, 0, 0.8, 0.3);
     cairo_fill(cr);
@@ -37,12 +37,12 @@ void draw_lcdback(GtkWidget *widget, gdouble x, gdouble y,
     cairo_destroy(cr);
 
     /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, LCD_Y_OFFSET+y, (16*17), (2*27));
+    gtk_widget_queue_draw_area(widget, x, DIV_Y_POS+4+y, (16*17), (2*27));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdpoint(GtkWidget *widget, gdouble x, gdouble y,
+void draw_lcdpoint(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
         cairo_surface_t *surface, int onoff) {
 
     cairo_t *cr;
@@ -50,12 +50,12 @@ void draw_lcdpoint(GtkWidget *widget, gdouble x, gdouble y,
     /* Paint to the surface, where we store our state */
     cr = cairo_create(surface);
 
-    cairo_rectangle(cr, x, LCD_Y_OFFSET+y, 3, 3);
+    cairo_rectangle(cr, x, DIV_Y_POS+4+y, 3, 3);
     cairo_set_source_rgb(cr, 0, 0.7, 0.3);
     cairo_fill(cr);
 
 
-    cairo_rectangle(cr, x, LCD_Y_OFFSET+y, 2, 2);
+    cairo_rectangle(cr, x, DIV_Y_POS+4+y, 2, 2);
     if (onoff)
         cairo_set_source_rgb(cr, 0, 0, 0);
     else
@@ -65,7 +65,7 @@ void draw_lcdpoint(GtkWidget *widget, gdouble x, gdouble y,
     cairo_destroy(cr);
 
     /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, LCD_Y_OFFSET+y, 3, 3);
+    gtk_widget_queue_draw_area(widget, x, DIV_Y_POS+4+y, 3, 3);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +85,7 @@ void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
 
-            draw_lcdpoint(act->drawing_area, px+3*col, py+3*row,
+            draw_lcdpoint(act->drawing_area, act->height-64, px+3*col, py+3*row,
                     *act->psurface, state);
 
             colmask >>= 1;
@@ -167,7 +167,7 @@ void lcd_init(activate_data_t *act) {
 
     function_dl_n_f = 0x10;
 
-    draw_lcdback(act->drawing_area, 0, 0,
+    draw_lcdback(act->drawing_area, act->height-64, 0, 0,
             *act->psurface);
 
     g_timeout_add(100, on_timeout_lcd, act);
@@ -247,7 +247,7 @@ int proc_cmd8(uint8_t value){
         }
 #if DEBUG
     else
-        addstr(" =?????=\n");
+        addstr(" = ????? =\n");
 #endif
 
     return 0;
