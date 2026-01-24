@@ -3,14 +3,19 @@
 #include <string.h>
 #include <ncurses.h>
 
+
 #include "vga.h"
 #include "vgafont.h"
 
+#if 0
 static cairo_surface_t *stamp_surface[256];
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void vga_init(activate_data_t *act){
 
+#if 0
     GdkWindow *window = gtk_widget_get_window(act->drawing_area);
     cairo_t *cr0;
 
@@ -60,5 +65,6 @@ void vga_init(activate_data_t *act){
     gtk_widget_queue_draw_area(act->drawing_area, 0, 0, 48, 16);
 
     cairo_destroy(cr);
-
+#endif
 }
+

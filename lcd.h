@@ -8,7 +8,6 @@
 #ifndef LCD_H_
 #define LCD_H_
 
-#include <gtk/gtk.h>
 #include <stdint.h>
 
 #include "act.h"

@@ -8,7 +8,6 @@
 #ifndef VGA_H_
 #define VGA_H_
 
-#include <gtk/gtk.h>
 #include <stdint.h>
 
 #include "act.h"

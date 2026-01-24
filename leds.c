@@ -5,6 +5,7 @@
 
 #include "leds.h"
 
+
 uint8_t leds_port;
 uint8_t leds_port_old;
 
@@ -12,6 +13,7 @@ uint8_t leds_port_old;
 //#define LEDS_Y_OFFSET 505
 
 ////////////////////////////////////////////////////////////////////////////////
+#if 0
 void leds_refresh(activate_data_t *act){
 
     if (leds_port == leds_port_old) return;
@@ -56,7 +58,7 @@ gboolean on_timeout_led(gpointer user_data) {
     // Return TRUE to continue the timer, FALSE to stop
     return TRUE;
 }
-
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void leds_init(activate_data_t *act){
@@ -64,7 +66,9 @@ void leds_init(activate_data_t *act){
     leds_port = 0;
     leds_port_old = 0xff;
 
+#if 0
     g_timeout_add(11, on_timeout_led, act);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -72,3 +76,4 @@ void leds_out(uint8_t value){
 
     leds_port = value;
 }
+

@@ -13,18 +13,18 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdback(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
-        cairo_surface_t *surface) {
+void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, gdouble x, gdouble y) {
 
-    cairo_t *cr;
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = DIV_Y_POS;
+    rect.w = 640;
+    rect.h = 1;
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_RenderPresent(renderer);
 
-    /* Paint to the surface, where we store our state */
-    cr = cairo_create(surface);
-
-    cairo_rectangle(cr, 0, DIV_Y_POS, 640, 1);
-    cairo_set_source_rgb(cr, 1, 1, 1);
-    cairo_fill(cr);
-
+#if 0
     /* Now invalidate the affected region of the drawing area. */
     gtk_widget_queue_draw_area(widget, 0, DIV_Y_POS, 640, 1);
 
@@ -38,8 +38,10 @@ void draw_lcdback(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
 
     /* Now invalidate the affected region of the drawing area. */
     gtk_widget_queue_draw_area(widget, x, DIV_Y_POS+4+y, (16*17), (2*27));
+#endif
 }
 
+#if 0
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
 void draw_lcdpoint(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
@@ -67,6 +69,7 @@ void draw_lcdpoint(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
     /* Now invalidate the affected region of the drawing area. */
     gtk_widget_queue_draw_area(widget, x, DIV_Y_POS+4+y, 3, 3);
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
@@ -81,13 +84,13 @@ void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
 
         for (int col = 0; col < 5; col++){
 
+#if 0
             int state = 0;
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
-
             draw_lcdpoint(act->drawing_area, act->height-64, px+3*col, py+3*row,
                     *act->psurface, state);
-
+#endif
             colmask >>= 1;
         }
 
@@ -139,6 +142,7 @@ void lcd_refresh(activate_data_t *act){
     }
 }
 
+#if 0
 ////////////////////////////////////////////////////////////////////////////////
 gboolean on_timeout_lcd(gpointer user_data) {
 
@@ -148,6 +152,7 @@ gboolean on_timeout_lcd(gpointer user_data) {
     // Return TRUE to continue the timer, FALSE to stop
     return TRUE;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_init(activate_data_t *act) {
@@ -167,10 +172,11 @@ void lcd_init(activate_data_t *act) {
 
     function_dl_n_f = 0x10;
 
-    draw_lcdback(act->drawing_area, act->height-64, 0, 0,
-            *act->psurface);
+    draw_lcdback(act->renderer, act->height-64, 0, 0);
 
+#if 0
     g_timeout_add(100, on_timeout_lcd, act);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

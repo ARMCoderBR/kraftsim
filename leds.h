@@ -8,7 +8,6 @@
 #ifndef LEDS_H_
 #define LEDS_H_
 
-#include <gtk/gtk.h>
 #include <stdint.h>
 
 #include "act.h"
