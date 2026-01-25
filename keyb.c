@@ -9,11 +9,16 @@
 #include <SDL2/SDL.h>
 
 #include "act.h"
+#include "leds.h"
+#include "lcd.h"
 
 SDL_Event event;
 
 ////////////////////////////////////////////////////////////////////////////////
-void __keyb_run(void){
+void keyb_run(activate_data_t *act){
+
+    leds_refresh(act);
+    lcd_refresh(act);
 
     while (SDL_PollEvent(&event)) {
         printf("poll\n");
@@ -45,18 +50,10 @@ void __keyb_run(void){
     }
 }
 
-void keyb_run(activate_data_t *act){
-
-    //for (;;){
-        __keyb_run();
-    //    usleep(100000);
-    //}
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 int keyb_init(activate_data_t *act){
 
-    if (SDL_Init(SDL_INIT_EVENTS|SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_EVENTS|SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
          printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
          return -1; // Exit on error
      }

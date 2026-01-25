@@ -8,57 +8,56 @@
 
 uint8_t leds_port;
 uint8_t leds_port_old;
+SDL_TimerID ledsTimer;
+int ledsTick;
 
 #define LEDS_X_OFFSET 380
 //#define LEDS_Y_OFFSET 505
 
 ////////////////////////////////////////////////////////////////////////////////
-#if 0
-void leds_refresh(activate_data_t *act){
+void leds_refresh(void *userdata){
 
-    if (leds_port == leds_port_old) return;
+    if (!ledsTick) return;
+    ledsTick = 0;
 
-    cairo_t *cr;
+    activate_data_t *act = userdata;
 
-    /* Paint to the surface, where we store our state */
-    cr = cairo_create(*act->psurface);
+    if (leds_port == leds_port_old);
 
     uint8_t mask = 0x80;
     for (int i = 0; i < 8; i++){
 
         if ((leds_port ^ leds_port_old) & mask){
 
-            cairo_rectangle(cr, LEDS_X_OFFSET+20*i, act->height - 25, 16, 16);
+            SDL_Rect rect;
+            rect.x = LEDS_X_OFFSET+20*i;
+            rect.y = act->height - 25;
+            rect.w = 16;
+            rect.h = 16;
 
             if (leds_port & mask)
-                cairo_set_source_rgb(cr, 1, 1, 0);
+                SDL_SetRenderDrawColor(act->renderer, 255, 255, 0, 255);
             else
-                cairo_set_source_rgb(cr, 0.2, 0.2, 0);
+                SDL_SetRenderDrawColor(act->renderer, 51, 51, 0, 255);
 
-            cairo_fill(cr);
-
-            /* Now invalidate the affected region of the drawing area. */
-            gtk_widget_queue_draw_area(act->drawing_area, LEDS_X_OFFSET+20*i, act->height - 25, 16, 16);
+            SDL_RenderFillRect(act->renderer, &rect);
+            //act->ledsRender = 1;
         }
 
         mask >>= 1;
     }
 
-    leds_port_old = leds_port;
+    SDL_RenderPresent(act->renderer);
 
-    cairo_destroy(cr);
+    leds_port_old = leds_port;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-gboolean on_timeout_led(gpointer user_data) {
+Uint32 leds_set_tick(Uint32 interval, void *param){
 
-    activate_data_t *act = (activate_data_t *)user_data;
-    leds_refresh(act);
-
-    // Return TRUE to continue the timer, FALSE to stop
-    return TRUE;
+    ledsTick = 1;
+    return interval;
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void leds_init(activate_data_t *act){
@@ -66,9 +65,7 @@ void leds_init(activate_data_t *act){
     leds_port = 0;
     leds_port_old = 0xff;
 
-#if 0
-    g_timeout_add(11, on_timeout_led, act);
-#endif
+    ledsTimer = SDL_AddTimer(11, leds_set_tick, NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

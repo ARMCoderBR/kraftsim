@@ -16,5 +16,6 @@ void leds_init(activate_data_t *act);
 
 void leds_out(uint8_t value);
 
+void leds_refresh(void *userdata);
 
 #endif /* LEDS_H_ */

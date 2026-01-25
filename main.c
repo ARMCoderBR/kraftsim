@@ -213,10 +213,6 @@ void init(activate_data_t *act){
 ////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
 
-//    keyb_init();
-//    keyb_run();
-//    exit(0);
-
     activate_data_t act;
 
     act.width = 1280;
@@ -260,8 +256,6 @@ int main (int argc, char *argv[]){
 #endif
 
     //addstr("\n=== LOOP ===\n\n");
-
-
 
     z80runner(&act);
 

@@ -8,8 +8,8 @@
 
 #define DEBUG 0
 
-//#define DIV_Y_POS 482
-//#define LCD_Y_OFFSET 485
+SDL_TimerID lcdTimer;
+int lcdTick;
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
@@ -24,52 +24,40 @@ void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, gdouble x, gdouble y) {
     SDL_RenderFillRect(renderer, &rect);
     SDL_RenderPresent(renderer);
 
-#if 0
-    /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, 0, DIV_Y_POS, 640, 1);
+    rect.x = x;
+    rect.y = DIV_Y_POS+4+y;
+    rect.w = (16*17);
+    rect.h = (2*27);
 
-
-    cairo_rectangle(cr, x, DIV_Y_POS+4+y, (16*17), (2*27));
-    //cairo_set_source_rgb(cr, 0, 0.4, 0.2);
-    cairo_set_source_rgb(cr, 0, 0.8, 0.3);
-    cairo_fill(cr);
-
-    cairo_destroy(cr);
-
-    /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, DIV_Y_POS+4+y, (16*17), (2*27));
-#endif
+    SDL_SetRenderDrawColor(renderer, 0, 204, 77, 255);
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_RenderPresent(renderer);
 }
 
-#if 0
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdpoint(GtkWidget *widget, int DIV_Y_POS, gdouble x, gdouble y,
-        cairo_surface_t *surface, int onoff) {
+void draw_lcdpoint(SDL_Renderer* renderer, int DIV_Y_POS, gdouble x, gdouble y, int onoff) {
 
-    cairo_t *cr;
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = DIV_Y_POS+4+y;
+    rect.w = 3;
+    rect.h = 3;
+    SDL_SetRenderDrawColor(renderer, 0, 179, 77, 255);
+    SDL_RenderFillRect(renderer, &rect);
+    //SDL_RenderPresent(renderer);
 
-    /* Paint to the surface, where we store our state */
-    cr = cairo_create(surface);
+    rect.w = 2;
+    rect.h = 2;
 
-    cairo_rectangle(cr, x, DIV_Y_POS+4+y, 3, 3);
-    cairo_set_source_rgb(cr, 0, 0.7, 0.3);
-    cairo_fill(cr);
-
-
-    cairo_rectangle(cr, x, DIV_Y_POS+4+y, 2, 2);
     if (onoff)
-        cairo_set_source_rgb(cr, 0, 0, 0);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     else
-        cairo_set_source_rgb(cr, 0, 0.8, 0.3);
-    cairo_fill(cr);
+        SDL_SetRenderDrawColor(renderer, 0, 204, 77, 255);
 
-    cairo_destroy(cr);
-
-    /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(widget, x, DIV_Y_POS+4+y, 3, 3);
+    SDL_RenderFillRect(renderer, &rect);
+    //SDL_RenderPresent(renderer);
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
@@ -84,18 +72,17 @@ void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
 
         for (int col = 0; col < 5; col++){
 
-#if 0
             int state = 0;
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
-            draw_lcdpoint(act->drawing_area, act->height-64, px+3*col, py+3*row,
-                    *act->psurface, state);
-#endif
+            draw_lcdpoint(act->renderer, act->height-64, px+3*col, py+3*row, state);
+
             colmask >>= 1;
         }
 
         rom_ofs++;
     }
+    SDL_RenderPresent(act->renderer);
 }
 
 uint8_t ddram[64+40];
@@ -118,6 +105,9 @@ activate_data_t *lcdact;
 
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_refresh(activate_data_t *act){
+
+    if (!lcdTick) return;
+    lcdTick = 0;
 
     for (int i = 0; i < 16; i++){
 
@@ -142,17 +132,12 @@ void lcd_refresh(activate_data_t *act){
     }
 }
 
-#if 0
 ////////////////////////////////////////////////////////////////////////////////
-gboolean on_timeout_lcd(gpointer user_data) {
+Uint32 lcd_set_tick(Uint32 interval, void *param){
 
-    activate_data_t *act = (activate_data_t *)user_data;
-    lcd_refresh(act);
-
-    // Return TRUE to continue the timer, FALSE to stop
-    return TRUE;
+    lcdTick = 1;
+    return interval;
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_init(activate_data_t *act) {
@@ -174,9 +159,7 @@ void lcd_init(activate_data_t *act) {
 
     draw_lcdback(act->renderer, act->height-64, 0, 0);
 
-#if 0
-    g_timeout_add(100, on_timeout_lcd, act);
-#endif
+    lcdTimer = SDL_AddTimer(100, lcd_set_tick, NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
