@@ -59,7 +59,7 @@ int keyb_init(activate_data_t *act){
      }
 
     act->window = SDL_CreateWindow(
-            "SDL Window Example",           // Window title
+            "Kraft80 Monitor",           // Window title
             SDL_WINDOWPOS_UNDEFINED,        // Initial x position
             SDL_WINDOWPOS_UNDEFINED,        // Initial y position
             act->width,                            // Width in pixels

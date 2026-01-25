@@ -1,4 +1,3 @@
-#include <gtk/gtk.h>
 #include <stdint.h>
 #include <string.h>
 #include <ncurses.h>
@@ -13,7 +12,7 @@ int lcdTick;
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, gdouble x, gdouble y) {
+void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y) {
 
     SDL_Rect rect;
     rect.x = 0;
@@ -36,7 +35,7 @@ void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, gdouble x, gdouble y) {
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdpoint(SDL_Renderer* renderer, int DIV_Y_POS, gdouble x, gdouble y, int onoff) {
+void draw_lcdpoint(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y, int onoff) {
 
     SDL_Rect rect;
     rect.x = x;
