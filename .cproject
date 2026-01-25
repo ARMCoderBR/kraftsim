@@ -59,18 +59,6 @@
 									<listOptionValue builtIn="false" value="pulse-simple"/>
 									<listOptionValue builtIn="false" value="ncurses"/>
 									<listOptionValue builtIn="false" value="pthread"/>
-									<listOptionValue builtIn="false" value="gtk-3"/>
-									<listOptionValue builtIn="false" value="gdk-3"/>
-									<listOptionValue builtIn="false" value="pangocairo-1.0"/>
-									<listOptionValue builtIn="false" value="pango-1.0"/>
-									<listOptionValue builtIn="false" value="harfbuzz"/>
-									<listOptionValue builtIn="false" value="atk-1.0"/>
-									<listOptionValue builtIn="false" value="cairo-gobject"/>
-									<listOptionValue builtIn="false" value="cairo"/>
-									<listOptionValue builtIn="false" value="gdk_pixbuf-2.0"/>
-									<listOptionValue builtIn="false" value="gio-2.0"/>
-									<listOptionValue builtIn="false" value="gobject-2.0"/>
-									<listOptionValue builtIn="false" value="glib-2.0"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1981589294" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -151,6 +139,13 @@
 		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/z80sim"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/z80sim"/>
+		</configuration>
+	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>
