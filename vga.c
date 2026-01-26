@@ -6,8 +6,6 @@
 #include "vga.h"
 #include "vgafont.h"
 
-static SDL_Texture *stamp_surface[256];
-
 ////////////////////////////////////////////////////////////////////////////////
 void vga_init(activate_data_t *act){
 
@@ -37,7 +35,7 @@ void vga_init(activate_data_t *act){
             exit(0);
         }
 
-        // 2. Clear the entire screen/window to the set color
+        // Clear the entire screen/window to the set color
         if (SDL_RenderClear(tempRenderer) < 0) {
             // Handle error (optional)
             SDL_Log("SDL_RenderClear failed: %s", SDL_GetError());
@@ -70,23 +68,29 @@ void vga_init(activate_data_t *act){
         }
         vgafont_offset += 8;
 
-        stamp_surface[charcode] = SDL_CreateTextureFromSurface(act->renderer, tempSurface);
+        act->fontTexture[charcode] = SDL_CreateTextureFromSurface(act->renderer, tempSurface);
     }
 
     SDL_FreeSurface(tempSurface);
+    SDL_DestroyRenderer(tempRenderer);
 
     rect.x = 0;
     rect.y = 0;
     rect.w = 16;
     rect.h = 16;
 
-    SDL_RenderCopy(act->renderer, stamp_surface[65], NULL, &rect);
+    SDL_RenderCopy(act->renderer, act->fontTexture[65], NULL, &rect);
     rect.x += 16;
-    SDL_RenderCopy(act->renderer, stamp_surface[66], NULL, &rect);
+    SDL_RenderCopy(act->renderer, act->fontTexture[66], NULL, &rect);
     rect.x += 16;
-    SDL_RenderCopy(act->renderer, stamp_surface[67], NULL, &rect);
+    SDL_RenderCopy(act->renderer, act->fontTexture[67], NULL, &rect);
     SDL_RenderPresent(act->renderer); //updates the renderer
+}
 
-    SDL_DestroyRenderer(tempRenderer);
+////////////////////////////////////////////////////////////////////////////////
+void vga_close(activate_data_t *act){
+
+    for (int charcode = 0; charcode < 256; charcode++)
+        SDL_DestroyTexture(act->fontTexture[charcode]);
 }
 

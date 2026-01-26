@@ -21,6 +21,7 @@ typedef struct {
     int height;
     SDL_Window* window;
     SDL_Renderer* renderer;
+    SDL_Texture *fontTexture[256];
     uint8_t *rom;
     uint8_t *ram;
     z80_t z;
