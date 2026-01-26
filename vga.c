@@ -1,35 +1,55 @@
 #include <stdint.h>
 #include <string.h>
 #include <ncurses.h>
-
+#include <SDL2/SDL.h>
 
 #include "vga.h"
 #include "vgafont.h"
 
-#if 0
-static cairo_surface_t *stamp_surface[256];
-#endif
-
+static SDL_Texture *stamp_surface[256];
 
 ////////////////////////////////////////////////////////////////////////////////
 void vga_init(activate_data_t *act){
 
-#if 0
-    GdkWindow *window = gtk_widget_get_window(act->drawing_area);
-    cairo_t *cr0;
+    SDL_Surface* tempSurface = SDL_CreateRGBSurface
+        (0,     /*Uint32 flags*/
+         16,    /*int width*/
+         16,    /*int height*/
+         32,    /*int depth*/
+         0,     /*Uint32 Rmask*/
+         0,     /*Uint32 Gmask*/
+         0,     /*Uint32 Bmask*/
+         0      /*Uint32 Amask*/
+         );
+
+    SDL_Rect rect;
+    rect.w = 2;
+    rect.h = 2;
+
+    SDL_Renderer* tempRenderer = SDL_CreateSoftwareRenderer(tempSurface);
 
     int vgafont_offset = 0;
     for (int charcode = 0; charcode < 256; charcode++){
 
-        stamp_surface[charcode] = gdk_window_create_similar_surface(
-                window, CAIRO_CONTENT_COLOR_ALPHA, 16, 16);
+        if (SDL_SetRenderDrawColor(tempRenderer, 0, 0, 0, 255) < 0) {
+            // Handle error (optional)
+            SDL_Log("SDL_SetRenderDrawColor failed: %s", SDL_GetError());
+            exit(0);
+        }
 
-        cr0 = cairo_create(stamp_surface[charcode]);
+        // 2. Clear the entire screen/window to the set color
+        if (SDL_RenderClear(tempRenderer) < 0) {
+            // Handle error (optional)
+            SDL_Log("SDL_RenderClear failed: %s", SDL_GetError());
+            exit(0);
+        }
 
-        cairo_set_source_rgb(cr0, 0, 0, 0);
-        cairo_paint(cr0);
+        if (SDL_SetRenderDrawColor(tempRenderer, 0, 255, 0, 255) < 0) {
+            // Handle error (optional)
+            SDL_Log("SDL_SetRenderDrawColor failed: %s", SDL_GetError());
+            exit(0);
+        }
 
-        cairo_set_source_rgb(cr0, 0, 1, 0);
         for (int row = 0; row < 7; row++){
 
             uint8_t b = vgafont[vgafont_offset+row];
@@ -39,31 +59,34 @@ void vga_init(activate_data_t *act){
 
                 if (b & mask){
 
-                    cairo_rectangle(cr0, col*2, row*2, 2, 2);
-                    cairo_fill(cr0);
+                    rect.x = col*2;
+                    rect.y = row*2;
+
+                    SDL_RenderFillRect(tempRenderer, &rect);
                 }
 
                 mask >>= 1;
             }
         }
         vgafont_offset += 8;
-        cairo_destroy(cr0);
+
+        stamp_surface[charcode] = SDL_CreateTextureFromSurface(act->renderer, tempSurface);
     }
 
-    /* Paint to the surface, where we store our state */
-    cairo_t *cr = cairo_create(*act->psurface);
+    SDL_FreeSurface(tempSurface);
 
-    cairo_set_source_surface(cr, stamp_surface[65], 0, 0);
-    cairo_paint(cr);
-    cairo_set_source_surface(cr, stamp_surface[66], 16, 0);
-    cairo_paint(cr);
-    cairo_set_source_surface(cr, stamp_surface[67], 32, 0);
-    cairo_paint(cr);
+    rect.x = 0;
+    rect.y = 0;
+    rect.w = 16;
+    rect.h = 16;
 
-    /* Now invalidate the affected region of the drawing area. */
-    gtk_widget_queue_draw_area(act->drawing_area, 0, 0, 48, 16);
+    SDL_RenderCopy(act->renderer, stamp_surface[65], NULL, &rect);
+    rect.x += 16;
+    SDL_RenderCopy(act->renderer, stamp_surface[66], NULL, &rect);
+    rect.x += 16;
+    SDL_RenderCopy(act->renderer, stamp_surface[67], NULL, &rect);
+    SDL_RenderPresent(act->renderer); //updates the renderer
 
-    cairo_destroy(cr);
-#endif
+    SDL_DestroyRenderer(tempRenderer);
 }
 

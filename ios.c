@@ -4,10 +4,11 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "act.h"
 #include "ios.h"
 #include "psg.h"
-//#include "leds.h"
-//#include "lcd.h"
+#include "leds.h"
+#include "lcd.h"
 
 #define PORTLEDS        0x00
 #define PORTBUTTONS     0x00

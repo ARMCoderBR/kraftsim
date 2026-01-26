@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <ncurses.h>
+#include <SDL2/SDL.h>
 
 #include "leds.h"
 
@@ -21,7 +22,7 @@ void leds_refresh(void *userdata){
 
     activate_data_t *act = userdata;
 
-    if (leds_port == leds_port_old);
+    if (leds_port == leds_port_old) return;
 
     uint8_t mask = 0x80;
     for (int i = 0; i < 8; i++){
