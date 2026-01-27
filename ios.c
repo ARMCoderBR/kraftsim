@@ -44,6 +44,12 @@ psg_t *psg;
 
 main_data_t *maindata;
 
+
+uint8_t ps2_queue[16];
+int ps2_head;
+int ps2_tail;
+
+
 ////////////////////////////////////////////////////////////////////////////////
 void default_out_callback (uint8_t port, uint8_t value){}
 
@@ -113,7 +119,9 @@ uint8_t new_in_callback (uint8_t port){
             return fpga_status;
 
         case PORTKEY:
+            pthread_mutex_lock(&ios_mutex);
             fpga_status &= ~0x01;
+            pthread_mutex_unlock(&ios_mutex);
             return 0xFF;
 
         case PORTTIMER:
@@ -141,6 +149,7 @@ struct timeval tv;
 pthread_t serialthread;
 pthread_t timerthread;
 pthread_t psgthread;
+pthread_t ps2thread;
 int initted = 0;
 int endthreads = 0;
 
@@ -195,6 +204,53 @@ void *thread_psg(void *arg){
     return NULL;
 }
 
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+void *thread_keyb_ps2(void *arg){
+
+    SDL_Event event;
+
+    for (;!endthreads;){
+
+        while (SDL_PollEvent(&event)) {
+            //printf("poll\n");
+            if (event.type == SDL_QUIT) {
+                // Handle quit event
+            } else if (event.type == SDL_KEYDOWN) {
+                printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
+                switch (event.key.keysym.sym) {
+
+                    case SDLK_UP:
+                        // Handle up arrow key press
+                        break;
+                    case SDLK_DOWN:
+                        // Handle down arrow key press
+                        break;
+                    case SDLK_a:
+                        // Handle 'a' key press
+                        break;
+                    // ... more keys
+                }
+            } else if (event.type == SDL_KEYUP) {
+                printf("UP:EventSym:%d\n",event.key.keysym.sym);
+                switch (event.key.keysym.sym) {
+                    case SDLK_ESCAPE:
+                        // Handle escape key release
+                        break;
+                    // ... more keys
+                }
+            }
+        }
+        usleep(10000);
+    }
+
+    return NULL;
+}
+
+
 int presc = 0;
 ////////////////////////////////////////////////////////////////////////////////
 void new_hw_run(void){
@@ -203,9 +259,12 @@ void new_hw_run(void){
 
         psg = psg_init();
 
+        ps2_head = ps2_tail = 0;
+
         pthread_create(&serialthread, NULL, thread_serial, NULL);
         pthread_create(&timerthread, NULL, thread_timer, NULL);
         pthread_create(&psgthread, NULL, thread_psg, NULL);
+        pthread_create(&ps2thread, NULL, thread_keyb_ps2, NULL);
 
         initted = 1;
     }

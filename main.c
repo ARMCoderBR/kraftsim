@@ -26,7 +26,6 @@
 #include "main.h"
 #include "lcd.h"
 #include "leds.h"
-#include "keyb.h"
 #include "vga.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,7 +40,11 @@ void *z80runner(main_data_t *maindata){
 
     for (;!maindata->z.halted;){
 
-        keyb_run(maindata);
+        leds_refresh(maindata->leds,0);
+        lcd_refresh(maindata->lcd, 0);
+        vga_refresh(maindata->vga, 0);
+
+        //keyb_run(maindata);
 
         sched_yield();
 
@@ -218,7 +221,6 @@ int main (int argc, char *argv[]){
 #define LCD_X_OFFSET 5
 #define LEDS_X_OFFSET 380
 
-    keyb_init(&maindata);
     ios_init(&maindata);
     maindata.lcd = lcd_init(LCD_X_OFFSET, maindata.height-56, maindata.sdl->renderer);
     maindata.leds = leds_init(LEDS_X_OFFSET, maindata.height-25, maindata.sdl->renderer);
