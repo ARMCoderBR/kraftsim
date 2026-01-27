@@ -231,29 +231,77 @@ void ps2_insert(uint8_t code){
     pthread_mutex_unlock(&ios_mutex);
 }
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+const uint8_t xlataz[] = { 0x1c, 0x32, 0x21, 0x23, 0x24, 0x2b, 0x34, 0x33,
+                           0x43, 0x3b, 0x42, 0x4b, 0x3a, 0x31, 0x44, 0x4D,
+                           0x15, 0x2d, 0x1b, 0x2c, 0x3c, 0x2a, 0x1d, 0x22,
+                           0x35, 0x1a };
+
+const uint8_t xlat09[] = { 0x45, 0x16, 0x1e, 0x26, 0x25, 0x2e, 0x3d, 0x3e,
+                           0x3e, 0x46 };
+
+
 void proc_keydown(uint8_t asccode){
 
     switch(asccode){
-    case 'g':
-        ps2_insert(0x34);
-        break;
-    case 13:
-        ps2_insert(0x5A);
-        break;
+
+        case 8:
+            ps2_insert(0x66);
+            break;
+
+        case 13:
+            ps2_insert(0x5A);
+            break;
+
+        case 32:
+            ps2_insert(0x29);
+            break;
+
+        default:
+            if ((asccode >= 'a') && (asccode <= 'z')){
+                ps2_insert(xlataz[asccode-'a']);
+            }
+            else
+            if ((asccode >= '0') && (asccode <= '9')){
+                ps2_insert(xlat09[asccode-'0']);
+            }
+            break;
     }
 }
 
 void proc_keyup(uint8_t asccode){
 
     switch(asccode){
-    case 'g':
-        ps2_insert(0xF0);
-        ps2_insert(0x34);
-        break;
-    case 13:
-        ps2_insert(0xF0);
-        ps2_insert(0x5A);
-        break;
+
+        case 8:
+            ps2_insert(0xF0);
+            ps2_insert(0x66);
+            break;
+
+        case 13:
+            ps2_insert(0xF0);
+            ps2_insert(0x5A);
+            break;
+
+        case 32:
+            ps2_insert(0xF0);
+            ps2_insert(0x29);
+            break;
+
+        default:
+            if ((asccode >= 'a') && (asccode <= 'z')){
+                ps2_insert(0xf0);
+                ps2_insert(xlataz[asccode-'a']);
+            }
+            else
+            if ((asccode >= '0') && (asccode <= '9')){
+                ps2_insert(0xf0);
+                ps2_insert(xlat09[asccode-'0']);
+            }
+            break;
     }
 }
 
