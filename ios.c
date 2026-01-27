@@ -400,8 +400,13 @@ void *thread_keyb_ps2(void *arg){
     for (;!endthreads;){
 
         while (SDL_PollEvent(&event)) {
-            //printf("poll\n");
-            if (event.type == SDL_QUIT) {
+
+            if (event.type == SDL_WINDOWEVENT){
+                if (event.window.event == SDL_WINDOWEVENT_RESTORED){
+                    //printf("REPAINT WINDOW\n");
+                    maindata->repaint_window = 1;
+                }
+            } else if (event.type == SDL_QUIT) {
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {
                 //printf("DOWN:EventSym:%d\n",event.key.keysym.sym);

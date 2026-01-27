@@ -229,14 +229,18 @@ lcd_t *lcd_init(int x, int y, SDL_Renderer* renderer) {
 ////////////////////////////////////////////////////////////////////////////////
 void lcd_refresh(lcd_t *lcd, int force){
 
-    if (!lcd->lcdTick) return;
+    if (force)
+        draw_lcdback(lcd->renderer, lcd->baseX, lcd->baseY);
+    else
+        if (!lcd->lcdTick) return;
+
     lcd->lcdTick = 0;
 
     for (int i = 0; i < 16; i++){
 
         int addr = i;
 
-        if (lcd->lcd_row1[i] != lcd->ddram[addr]){
+        if (force||(lcd->lcd_row1[i] != lcd->ddram[addr])){
 
             lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY, lcd->ddram[addr]);
             lcd->lcd_row1[i] = lcd->ddram[addr];
@@ -247,7 +251,7 @@ void lcd_refresh(lcd_t *lcd, int force){
 
         int addr = 64+i;
 
-        if (lcd->lcd_row2[i] != lcd->ddram[addr]){
+        if (force||(lcd->lcd_row2[i] != lcd->ddram[addr])){
 
             lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY+27, lcd->ddram[addr]);
             lcd->lcd_row2[i] = lcd->ddram[addr];

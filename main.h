@@ -29,6 +29,7 @@ typedef struct {
     z80_t z;
     pthread_t z80thread;
 
+    int repaint_window;
     leds_t *leds;
     lcd_t *lcd;
     vga_t *vga;

@@ -36,15 +36,18 @@ leds_t *leds_init(int x, int y, SDL_Renderer* renderer){
 ////////////////////////////////////////////////////////////////////////////////
 void leds_refresh(leds_t *leds, int force){
 
-    if (!leds->ledsTick) return;
-    leds->ledsTick = 0;
+    if (!force){
 
-    if (leds->leds_port == leds->leds_port_old) return;
+        if (!leds->ledsTick) return;
+        if (leds->leds_port == leds->leds_port_old) return;
+    }
+
+    leds->ledsTick = 0;
 
     uint8_t mask = 0x80;
     for (int i = 0; i < 8; i++){
 
-        if ((leds->leds_port ^ leds->leds_port_old) & mask){
+        if (force||((leds->leds_port ^ leds->leds_port_old) & mask)){
 
             SDL_Rect rect;
             rect.x = leds->baseX+20*i;

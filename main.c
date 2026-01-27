@@ -40,10 +40,19 @@ void *z80runner(main_data_t *maindata){
 
     for (;!maindata->z.halted;){
 
-        leds_refresh(maindata->leds,0);
-        lcd_refresh(maindata->lcd, 0);
-        vga_refresh(maindata->vga, 0);
+        if (maindata->repaint_window){
 
+            leds_refresh(maindata->leds,1);
+            lcd_refresh(maindata->lcd, 1);
+            vga_refresh(maindata->vga, 1);
+            maindata->repaint_window = 0;
+        }
+        else{
+
+            leds_refresh(maindata->leds,0);
+            lcd_refresh(maindata->lcd, 0);
+            vga_refresh(maindata->vga, 0);
+        }
         //keyb_run(maindata);
 
         sched_yield();
