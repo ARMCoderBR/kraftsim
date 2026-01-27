@@ -323,28 +323,28 @@ void proc_keydown(int asccode){
     switch(asccode){
 
         case SDLK_F1:
-            buttons_state &= ~0b10000000;
+            buttons_state &= ~0b00000001;
             break;
         case SDLK_F2:
-            buttons_state &= ~0b01000000;
-            break;
-        case SDLK_F3:
-            buttons_state &= ~0b00100000;
-            break;
-        case SDLK_F4:
-            buttons_state &= ~0b00010000;
-            break;
-        case SDLK_F5:
-            buttons_state &= ~0b00001000;
-            break;
-        case SDLK_F6:
-            buttons_state &= ~0b00000100;
-            break;
-        case SDLK_F7:
             buttons_state &= ~0b00000010;
             break;
+        case SDLK_F3:
+            buttons_state &= ~0b00000100;
+            break;
+        case SDLK_F4:
+            buttons_state &= ~0b00001000;
+            break;
+        case SDLK_F5:
+            buttons_state &= ~0b00010000;
+            break;
+        case SDLK_F6:
+            buttons_state &= ~0b00100000;
+            break;
+        case SDLK_F7:
+            buttons_state &= ~0b01000000;
+            break;
         case SDLK_F8:
-            buttons_state &= ~0b00000001;
+            buttons_state &= ~0b10000000;
             break;
 
         default:
@@ -363,28 +363,28 @@ void proc_keyup(int asccode){
     switch(asccode){
 
         case SDLK_F1:
-            buttons_state |= 0b10000000;
+            buttons_state |= 0b00000001;
             break;
         case SDLK_F2:
-            buttons_state |= 0b01000000;
-            break;
-        case SDLK_F3:
-            buttons_state |= 0b00100000;
-            break;
-        case SDLK_F4:
-            buttons_state |= 0b00010000;
-            break;
-        case SDLK_F5:
-            buttons_state |= 0b00001000;
-            break;
-        case SDLK_F6:
-            buttons_state |= 0b00000100;
-            break;
-        case SDLK_F7:
             buttons_state |= 0b00000010;
             break;
+        case SDLK_F3:
+            buttons_state |= 0b00000100;
+            break;
+        case SDLK_F4:
+            buttons_state |= 0b00001000;
+            break;
+        case SDLK_F5:
+            buttons_state |= 0b00010000;
+            break;
+        case SDLK_F6:
+            buttons_state |= 0b00100000;
+            break;
+        case SDLK_F7:
+            buttons_state |= 0b01000000;
+            break;
         case SDLK_F8:
-            buttons_state |= 0b00000001;
+            buttons_state |= 0b10000000;
             break;
         default:
             const kcode_t *k = find_kcode(asccode);
