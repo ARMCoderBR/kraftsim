@@ -235,15 +235,77 @@ void ps2_insert(uint8_t code){
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//
+//const uint8_t xlataz[] = { 0x1c, 0x32, 0x21, 0x23, 0x24, 0x2b, 0x34, 0x33,
+//                           0x43, 0x3b, 0x42, 0x4b, 0x3a, 0x31, 0x44, 0x4D,
+//                           0x15, 0x2d, 0x1b, 0x2c, 0x3c, 0x2a, 0x1d, 0x22,
+//                           0x35, 0x1a };
+//
+//const uint8_t xlat09[] = { 0x45, 0x16, 0x1e, 0x26, 0x25, 0x2e, 0x3d, 0x3e,
+//                           0x3e, 0x46 };
 
-const uint8_t xlataz[] = { 0x1c, 0x32, 0x21, 0x23, 0x24, 0x2b, 0x34, 0x33,
-                           0x43, 0x3b, 0x42, 0x4b, 0x3a, 0x31, 0x44, 0x4D,
-                           0x15, 0x2d, 0x1b, 0x2c, 0x3c, 0x2a, 0x1d, 0x22,
-                           0x35, 0x1a };
+typedef struct {
 
-const uint8_t xlat09[] = { 0x45, 0x16, 0x1e, 0x26, 0x25, 0x2e, 0x3d, 0x3e,
-                           0x3e, 0x46 };
+    int keycode;
+    uint8_t scancode1;
+    uint8_t scancode2;
+} kcode_t;
 
+const kcode_t kcodes[] = {
+        {'0',0x45,0x00},
+        {'1',0x16,0x00},
+        {'2',0x1e,0x00},
+        {'3',0x26,0x00},
+        {'4',0x25,0x00},
+        {'5',0x2e,0x00},
+        {'6',0x3d,0x00},
+        {'7',0x3e,0x00},
+        {'8',0x3e,0x00},
+        {'9',0x46,0x00},
+        {'a',0x1c,0x00},
+        {'b',0x32,0x00},
+        {'c',0x21,0x00},
+        {'d',0x23,0x00},
+        {'e',0x24,0x00},
+        {'f',0x2b,0x00},
+        {'g',0x34,0x00},
+        {'h',0x33,0x00},
+        {'i',0x43,0x00},
+        {'j',0x3b,0x00},
+        {'k',0x42,0x00},
+        {'l',0x4b,0x00},
+        {'m',0x3a,0x00},
+        {'n',0x31,0x00},
+        {'o',0x44,0x00},
+        {'p',0x4D,0x00},
+        {'q',0x15,0x00},
+        {'r',0x2d,0x00},
+        {'s',0x1b,0x00},
+        {'t',0x2c,0x00},
+        {'u',0x3c,0x00},
+        {'v',0x2a,0x00},
+        {'w',0x1d,0x00},
+        {'x',0x22,0x00},
+        {'y',0x35,0x00},
+        {'z',0x1a,0x00},
+        {SDLK_BACKSPACE,0x66,0x00},
+        {SDLK_RETURN,0x5a,0x00},
+        {SDLK_SPACE,0x29,0x00},
+        {0x00,0x00,0x00}
+};
+
+const kcode_t *find_kcode(int keycode){
+
+    const kcode_t *k = kcodes;
+
+    for (;k->keycode;){
+
+        if (k->keycode == keycode) return k;
+        k++;
+    }
+
+    return NULL;
+}
 
 void proc_keydown(int asccode){
 
@@ -274,25 +336,12 @@ void proc_keydown(int asccode){
             buttons_state &= ~0b00000001;
             break;
 
-        case 8:
-            ps2_insert(0x66);
-            break;
-
-        case 13:
-            ps2_insert(0x5A);
-            break;
-
-        case 32:
-            ps2_insert(0x29);
-            break;
-
         default:
-            if ((asccode >= 'a') && (asccode <= 'z')){
-                ps2_insert(xlataz[asccode-'a']);
-            }
-            else
-            if ((asccode >= '0') && (asccode <= '9')){
-                ps2_insert(xlat09[asccode-'0']);
+            const kcode_t *k = find_kcode(asccode);
+            if (k){
+                ps2_insert(k->scancode1);
+                if (k->scancode2)
+                    ps2_insert(k->scancode2);
             }
             break;
     }
@@ -326,31 +375,18 @@ void proc_keyup(int asccode){
         case SDLK_F8:
             buttons_state |= 0b00000001;
             break;
-
-        case 8:
-            ps2_insert(0xF0);
-            ps2_insert(0x66);
-            break;
-
-        case 13:
-            ps2_insert(0xF0);
-            ps2_insert(0x5A);
-            break;
-
-        case 32:
-            ps2_insert(0xF0);
-            ps2_insert(0x29);
-            break;
-
         default:
-            if ((asccode >= 'a') && (asccode <= 'z')){
-                ps2_insert(0xf0);
-                ps2_insert(xlataz[asccode-'a']);
-            }
-            else
-            if ((asccode >= '0') && (asccode <= '9')){
-                ps2_insert(0xf0);
-                ps2_insert(xlat09[asccode-'0']);
+            const kcode_t *k = find_kcode(asccode);
+            if (k){
+                if (!k->scancode2){
+                    ps2_insert(0xF0);
+                    ps2_insert(k->scancode1);
+                }
+                else{
+                    ps2_insert(k->scancode1);
+                    ps2_insert(0xF0);
+                    ps2_insert(k->scancode2);
+                }
             }
             break;
     }
@@ -368,30 +404,11 @@ void *thread_keyb_ps2(void *arg){
             if (event.type == SDL_QUIT) {
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {
-                printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
+                //printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
                 proc_keydown(event.key.keysym.sym);
-//                switch (event.key.keysym.sym) {
-//
-//                    case SDLK_UP:
-//                        // Handle up arrow key press
-//                        break;
-//                    case SDLK_DOWN:
-//                        // Handle down arrow key press
-//                        break;
-//                    case SDLK_a:
-//                        // Handle 'a' key press
-//                        break;
-//                    // ... more keys
-//                }
             } else if (event.type == SDL_KEYUP) {
-                printf("UP:EventSym:%d\n",event.key.keysym.sym);
+                //printf("UP:EventSym:%d\n",event.key.keysym.sym);
                 proc_keyup(event.key.keysym.sym);
-//                switch (event.key.keysym.sym) {
-//                    case SDLK_ESCAPE:
-//                        // Handle escape key release
-//                        break;
-//                    // ... more keys
-//                }
             }
         }
         usleep(10000);
