@@ -40,6 +40,8 @@ uint8_t portserdata = 0;
 uint8_t portserctl = 0;
 uint8_t psgaddr = 0;
 
+uint8_t buttons_state = 0xff;
+
 psg_t *psg;
 
 main_data_t *maindata;
@@ -109,8 +111,7 @@ uint8_t new_in_callback (uint8_t port){
             return vga_in(maindata->vga, port);
 
         case PORTBUTTONS:
-            //return 0x7f;
-            return 0xff;
+            return buttons_state;
 
         case PORTSERSTATUS:
             return 0;
@@ -244,9 +245,34 @@ const uint8_t xlat09[] = { 0x45, 0x16, 0x1e, 0x26, 0x25, 0x2e, 0x3d, 0x3e,
                            0x3e, 0x46 };
 
 
-void proc_keydown(uint8_t asccode){
+void proc_keydown(int asccode){
 
     switch(asccode){
+
+        case SDLK_F1:
+            buttons_state &= ~0b10000000;
+            break;
+        case SDLK_F2:
+            buttons_state &= ~0b01000000;
+            break;
+        case SDLK_F3:
+            buttons_state &= ~0b00100000;
+            break;
+        case SDLK_F4:
+            buttons_state &= ~0b00010000;
+            break;
+        case SDLK_F5:
+            buttons_state &= ~0b00001000;
+            break;
+        case SDLK_F6:
+            buttons_state &= ~0b00000100;
+            break;
+        case SDLK_F7:
+            buttons_state &= ~0b00000010;
+            break;
+        case SDLK_F8:
+            buttons_state &= ~0b00000001;
+            break;
 
         case 8:
             ps2_insert(0x66);
@@ -272,9 +298,34 @@ void proc_keydown(uint8_t asccode){
     }
 }
 
-void proc_keyup(uint8_t asccode){
+void proc_keyup(int asccode){
 
     switch(asccode){
+
+        case SDLK_F1:
+            buttons_state |= 0b10000000;
+            break;
+        case SDLK_F2:
+            buttons_state |= 0b01000000;
+            break;
+        case SDLK_F3:
+            buttons_state |= 0b00100000;
+            break;
+        case SDLK_F4:
+            buttons_state |= 0b00010000;
+            break;
+        case SDLK_F5:
+            buttons_state |= 0b00001000;
+            break;
+        case SDLK_F6:
+            buttons_state |= 0b00000100;
+            break;
+        case SDLK_F7:
+            buttons_state |= 0b00000010;
+            break;
+        case SDLK_F8:
+            buttons_state |= 0b00000001;
+            break;
 
         case 8:
             ps2_insert(0xF0);
@@ -355,6 +406,8 @@ int presc = 0;
 void new_hw_run(void){
 
     if (!initted){
+
+        buttons_state = 0xff;
 
         psg = psg_init();
 
