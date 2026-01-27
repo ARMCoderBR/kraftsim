@@ -93,6 +93,7 @@ vga_t *vga_init(SDL_Renderer* renderer){
          );
 
     vga->renderer = renderer;
+    vga->displayBuffer = NULL;
 
     SDL_Rect rect;
     rect.w = 2;
@@ -150,7 +151,7 @@ vga_t *vga_init(SDL_Renderer* renderer){
 
     vga_set_textmode(vga);
 
-    vga->vgaTimer = SDL_AddTimer(33, vga_set_tick, vga);
+    vga->vgaTimer = SDL_AddTimer(50, vga_set_tick, vga);
 
     return vga;
 }
@@ -276,11 +277,15 @@ void vga_out(vga_t *vga, uint8_t port, uint8_t value){
             vga->rdaddr |= (value << 8);
             break;
         case PORTMODE:
-            if (value == 0)
-                vga_set_textmode(vga);
+            if (value == 0){
+                if (vga->mode != 0)
+                    vga_set_textmode(vga);
+            }
             else
-            if(value == 1)
-                vga_set_graphmode(vga);
+            if(value == 1){
+                if (vga->mode != 1)
+                    vga_set_graphmode(vga);
+            }
             else
             if (value & 0x10){
                 vga->scrollreg &= ~0x0f;
