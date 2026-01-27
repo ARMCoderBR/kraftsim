@@ -48,7 +48,7 @@ main_data_t *maindata;
 uint8_t ps2_queue[16];
 int ps2_head;
 int ps2_tail;
-
+int ps2_qty;
 
 ////////////////////////////////////////////////////////////////////////////////
 void default_out_callback (uint8_t port, uint8_t value){}
@@ -120,9 +120,18 @@ uint8_t new_in_callback (uint8_t port){
 
         case PORTKEY:
             pthread_mutex_lock(&ios_mutex);
-            fpga_status &= ~0x01;
+            uint8_t val = 0xff;
+            if (ps2_qty){
+
+                val = ps2_queue[ps2_tail++];
+                if (ps2_tail == sizeof(ps2_queue))
+                    ps2_tail = 0;
+                ps2_qty--;
+            }
+            if (!ps2_qty)
+                fpga_status &= ~0x01;
             pthread_mutex_unlock(&ios_mutex);
-            return 0xFF;
+            return val;
 
         case PORTTIMER:
             fpga_status &= ~0x02;
@@ -204,9 +213,22 @@ void *thread_psg(void *arg){
     return NULL;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ps2_insert(uint8_t code){
 
+    pthread_mutex_lock(&ios_mutex);
 
+    if (ps2_qty < sizeof(ps2_queue)){
 
+        ps2_queue[ps2_head++] = code;
+        if (ps2_head == sizeof(ps2_queue))
+            ps2_head = 0;
+
+        fpga_status |= 0x01;
+    }
+
+    pthread_mutex_unlock(&ios_mutex);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void *thread_keyb_ps2(void *arg){
@@ -259,7 +281,7 @@ void new_hw_run(void){
 
         psg = psg_init();
 
-        ps2_head = ps2_tail = 0;
+        ps2_head = ps2_tail = ps2_qty = 0;
 
         pthread_create(&serialthread, NULL, thread_serial, NULL);
         pthread_create(&timerthread, NULL, thread_timer, NULL);
