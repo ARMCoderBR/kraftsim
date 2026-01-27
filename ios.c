@@ -225,9 +225,36 @@ void ps2_insert(uint8_t code){
             ps2_head = 0;
 
         fpga_status |= 0x01;
+        ps2_qty++;
     }
 
     pthread_mutex_unlock(&ios_mutex);
+}
+
+void proc_keydown(uint8_t asccode){
+
+    switch(asccode){
+    case 'g':
+        ps2_insert(0x34);
+        break;
+    case 13:
+        ps2_insert(0x5A);
+        break;
+    }
+}
+
+void proc_keyup(uint8_t asccode){
+
+    switch(asccode){
+    case 'g':
+        ps2_insert(0xF0);
+        ps2_insert(0x34);
+        break;
+    case 13:
+        ps2_insert(0xF0);
+        ps2_insert(0x5A);
+        break;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -243,27 +270,29 @@ void *thread_keyb_ps2(void *arg){
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {
                 printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
-                switch (event.key.keysym.sym) {
-
-                    case SDLK_UP:
-                        // Handle up arrow key press
-                        break;
-                    case SDLK_DOWN:
-                        // Handle down arrow key press
-                        break;
-                    case SDLK_a:
-                        // Handle 'a' key press
-                        break;
-                    // ... more keys
-                }
+                proc_keydown(event.key.keysym.sym);
+//                switch (event.key.keysym.sym) {
+//
+//                    case SDLK_UP:
+//                        // Handle up arrow key press
+//                        break;
+//                    case SDLK_DOWN:
+//                        // Handle down arrow key press
+//                        break;
+//                    case SDLK_a:
+//                        // Handle 'a' key press
+//                        break;
+//                    // ... more keys
+//                }
             } else if (event.type == SDL_KEYUP) {
                 printf("UP:EventSym:%d\n",event.key.keysym.sym);
-                switch (event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        // Handle escape key release
-                        break;
-                    // ... more keys
-                }
+                proc_keyup(event.key.keysym.sym);
+//                switch (event.key.keysym.sym) {
+//                    case SDLK_ESCAPE:
+//                        // Handle escape key release
+//                        break;
+//                    // ... more keys
+//                }
             }
         }
         usleep(10000);
