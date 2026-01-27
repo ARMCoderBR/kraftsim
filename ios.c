@@ -9,10 +9,17 @@
 #include "leds.h"
 #include "lcd.h"
 #include "main.h"
+#include "vga.h"
 
 #define PORTLEDS        0x00
 #define PORTBUTTONS     0x00
 #define PORTDISP        0x10
+
+#define PORTDATA        0x50    // Video ports
+#define PORTADDRL       0x51
+#define PORTADDRH       0x52
+#define PORTMODE        0x53
+
 #define PORTTIMER       0x54    // TIMER ENABLE/EOI
 #define PORTKEY         0x55    // PS/2 DATA
 #define PORTAYADDR      0x56
@@ -56,6 +63,12 @@ void new_out_callback (uint8_t port, uint8_t value){
                 refresh();
             }
             break;
+        case PORTDATA:
+        case PORTADDRL:
+        case PORTADDRH:
+        case PORTMODE:
+            vga_out(maindata->vga, port, value);
+            break;
         case PORTTIMER:
             porttimer = value;
             break;
@@ -86,8 +99,12 @@ uint8_t new_in_callback (uint8_t port){
 
     switch (port){
 
+        case PORTDATA:
+            return vga_in(maindata->vga, port);
+
         case PORTBUTTONS:
-            return 0x7f;
+            //return 0x7f;
+            return 0xff;
 
         case PORTSERSTATUS:
             return 0;

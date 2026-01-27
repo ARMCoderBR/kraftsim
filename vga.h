@@ -15,12 +15,20 @@
 typedef struct {
 
     SDL_Texture *fontTexture[256];
+    uint8_t *displayBuffer;
+    SDL_Renderer* renderer;
+    uint8_t mode;
+    SDL_TimerID vgaTimer;
+    int vgaTick;
+    int rdaddr;
+    int wraddr;
+    int scrollreg;
 } vga_t;
 
 vga_t *vga_init(SDL_Renderer* renderer);
-
-void vga_out(uint8_t value);
-
+void vga_refresh(vga_t *vga, int force);
+void vga_out(vga_t *vga, uint8_t port, uint8_t value);
+uint8_t vga_in(vga_t *vga, uint8_t port);
 void vga_close(vga_t *vga);
 
 #endif /* VGA_H_ */
