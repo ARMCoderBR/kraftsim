@@ -13,6 +13,32 @@
 #define GCOLS 320
 #define GROWS 240
 
+typedef struct {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} color_t;
+
+const color_t colors[] = {
+
+        { 0x00, 0x00, 0x00},   // BLACK
+        { 0x00, 0x00, 0x0c},   // BLUE
+        { 0x00, 0x0a, 0x00},   // GREEN
+        { 0x00, 0x0c, 0x0c},   // CYAN
+        { 0x0a, 0x00, 0x00},   // RED
+        { 0x0c, 0x00, 0x0c},   // MAGENTA
+        { 0x0a, 0x06, 0x02},   // BROWN
+        { 0x0c, 0x0c, 0x0c},   // GRAY
+        { 0x08, 0x08, 0x08},   // DARK GRAY
+        { 0x00, 0x00, 0x0f},   // LIGHT BLUE
+        { 0x00, 0x0f, 0x00},   // LIGHT GREEN
+        { 0x00, 0x0f, 0x0f},   // LIGHT CYAN
+        { 0x0f, 0x00, 0x00},   // LIGHT RED
+        { 0x0f, 0x00, 0x0f},   // LIGHT MAGENTA
+        { 0x0f, 0x0f, 0x00},   // YELLOW
+        { 0x0f, 0x0f, 0x0f}    // WHITE
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 static void vga_set_textmode(vga_t *vga){
 
@@ -126,18 +152,6 @@ vga_t *vga_init(SDL_Renderer* renderer){
 
     vga->vgaTimer = SDL_AddTimer(11, vga_set_tick, vga);
 
-//    rect.x = 0;
-//    rect.y = 0;
-//    rect.w = 16;
-//    rect.h = 16;
-//
-//    SDL_RenderCopy(renderer, vga->fontTexture[65], NULL, &rect);
-//    rect.x += 16;
-//    SDL_RenderCopy(renderer, vga->fontTexture[66], NULL, &rect);
-//    rect.x += 16;
-//    SDL_RenderCopy(renderer, vga->fontTexture[67], NULL, &rect);
-//    SDL_RenderPresent(renderer); //updates the renderer
-
     return vga;
 }
 
@@ -176,14 +190,35 @@ void vga_refresh(vga_t *vga, int force){
     }
     else{
 
+        rect.x = 0;
+        rect.y = 0;
+        rect.w = 2;
+        rect.h = 2;
 
+        int addr = 0;
 
+        for (int row = 0; row < GROWS; row++){
 
+            for (int col = 0; col < GCOLS; col+=2){
 
+                int b = vga->displayBuffer[addr];
+                int bh = b >> 4;
+                b &= 0x0f;
+                SDL_SetRenderDrawColor(vga->renderer, colors[bh].r, colors[bh].g, colors[bh].b, 255);
+                SDL_RenderFillRect(vga->renderer, &rect);
 
+                rect.x += 2;
 
+                SDL_SetRenderDrawColor(vga->renderer, colors[b].r, colors[b].g, colors[b].b, 255);
+                SDL_RenderFillRect(vga->renderer, &rect);
 
+                rect.x += 2;
+                addr++;
+            }
 
+            rect.x = 0;
+            rect.y += 2;
+        }
     }
 
     SDL_RenderPresent(vga->renderer);
@@ -199,13 +234,17 @@ void vga_out(vga_t *vga, uint8_t port, uint8_t value){
     switch (port){
 
         case PORTDATA:
-            vga->displayBuffer[vga->rdaddr++] = value;
+            vga->displayBuffer[vga->wraddr++] = value;
             break;
         case PORTADDRL:
+            vga->wraddr &= ~0xFF;
+            vga->wraddr |= value;
             vga->rdaddr &= ~0xFF;
             vga->rdaddr |= value;
             break;
         case PORTADDRH:
+            vga->wraddr &= 0xFF;
+            vga->wraddr |= (value << 8);
             vga->rdaddr &= 0xFF;
             vga->rdaddr |= (value << 8);
             break;
