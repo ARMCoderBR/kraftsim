@@ -21,11 +21,11 @@ void keyb_run(main_data_t *maindata){
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
-        printf("poll\n");
+        //printf("poll\n");
         if (event.type == SDL_QUIT) {
             // Handle quit event
         } else if (event.type == SDL_KEYDOWN) {
-            printf("EventSym:%d\n",event.key.keysym.sym);
+            printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
             switch (event.key.keysym.sym) {
 
                 case SDLK_UP:
@@ -40,6 +40,7 @@ void keyb_run(main_data_t *maindata){
                 // ... more keys
             }
         } else if (event.type == SDL_KEYUP) {
+            printf("UP:EventSym:%d\n",event.key.keysym.sym);
             switch (event.key.keysym.sym) {
                 case SDLK_ESCAPE:
                     // Handle escape key release

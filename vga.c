@@ -156,13 +156,16 @@ void vga_refresh(vga_t *vga, int force){
         rect.w = 16;
         rect.h = 16;
 
-        int addr = 0;
+        int addr = vga->scrollreg * COLS;
 
         for (int row = 0; row < ROWS; row++){
 
             for (int col = 0; col < COLS; col++){
 
                 SDL_RenderCopy(vga->renderer, vga->fontTexture[vga->displayBuffer[addr++]], NULL, &rect);
+
+                if (addr >= (ROWS*COLS))
+                    addr = 0;
 
                 rect.x += 16;
             }
