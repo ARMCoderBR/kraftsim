@@ -16,6 +16,7 @@
 #include "leds.h"
 #include "sdlclient.h"
 #include "vga.h"
+#include "lcd.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct {
@@ -29,6 +30,7 @@ typedef struct {
     pthread_t z80thread;
 
     leds_t *leds;
+    lcd_t *lcd;
     vga_t *vga;
 } main_data_t;
 

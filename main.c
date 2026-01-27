@@ -208,20 +208,21 @@ int main (int argc, char *argv[]){
 
     maindata.width = 1280;
     maindata.height = 960 + 60;
+
     maindata.sdl = sdl_init (maindata.width, maindata.height);
     if (!maindata.sdl){
         printf("Erro iniciando SDL!\n");
         return -1;
     }
 
+#define LCD_X_OFFSET 5
 #define LEDS_X_OFFSET 380
 
     keyb_init(&maindata);
     ios_init(&maindata);
-    lcd_init(&maindata);
+    maindata.lcd = lcd_init(LCD_X_OFFSET, maindata.height-56, maindata.sdl->renderer);
     maindata.leds = leds_init(LEDS_X_OFFSET, maindata.height-25, maindata.sdl->renderer);
     maindata.vga = vga_init(maindata.sdl->renderer);
-
 
     ////////////////////////////////////////////////////////////////////////////
     maindata.rom = malloc(ROMSZ);

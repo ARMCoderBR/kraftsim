@@ -17,7 +17,7 @@ typedef struct {
     uint8_t leds_port_old;
     SDL_TimerID ledsTimer;
     int ledsTick;
-    int x,y;
+    int baseX,baseY;
     SDL_Renderer* renderer;
 } leds_t;
 

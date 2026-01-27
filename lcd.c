@@ -7,24 +7,21 @@
 
 #define DEBUG 0
 
-SDL_TimerID lcdTimer;
-int lcdTick;
-
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y) {
+static void draw_lcdback(SDL_Renderer* renderer, int x, int y) {
 
     SDL_Rect rect;
-    rect.x = 0;
-    rect.y = DIV_Y_POS;
-    rect.w = 640;
-    rect.h = 1;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &rect);
-    SDL_RenderPresent(renderer);
+//    rect.x = 0;
+//    rect.y = DIV_Y_POS;
+//    rect.w = 640;
+//    rect.h = 1;
+//    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+//    SDL_RenderFillRect(renderer, &rect);
+//    SDL_RenderPresent(renderer);
 
     rect.x = x;
-    rect.y = DIV_Y_POS+4+y;
+    rect.y = y;
     rect.w = (16*17);
     rect.h = (2*27);
 
@@ -35,16 +32,15 @@ void draw_lcdback(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y) {
 
 ////////////////////////////////////////////////////////////////////////////////
 /* Draw a rectangle on the surface at the given position */
-void draw_lcdpoint(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y, int onoff) {
+static void draw_lcdpoint(SDL_Renderer* renderer, int x, int y, int onoff) {
 
     SDL_Rect rect;
     rect.x = x;
-    rect.y = DIV_Y_POS+4+y;
+    rect.y = y;
     rect.w = 3;
     rect.h = 3;
     SDL_SetRenderDrawColor(renderer, 0, 179, 77, 255);
     SDL_RenderFillRect(renderer, &rect);
-    //SDL_RenderPresent(renderer);
 
     rect.w = 2;
     rect.h = 2;
@@ -55,11 +51,10 @@ void draw_lcdpoint(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y, int onof
         SDL_SetRenderDrawColor(renderer, 0, 204, 77, 255);
 
     SDL_RenderFillRect(renderer, &rect);
-    //SDL_RenderPresent(renderer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_out_symbol(main_data_t *act, int px, int py, uint8_t code){
+static void lcd_out_symbol(SDL_Renderer* renderer, int px, int py, uint8_t code){
 
     if (code > 0x7f) code = 0x20;
 
@@ -74,48 +69,31 @@ void lcd_out_symbol(main_data_t *act, int px, int py, uint8_t code){
             int state = 0;
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
-            draw_lcdpoint(act->sdl->renderer, act->height-64, px+3*col, py+3*row, state);
+            draw_lcdpoint(renderer, px+3*col, py+3*row, state);
 
             colmask >>= 1;
         }
 
         rom_ofs++;
     }
-    SDL_RenderPresent(act->sdl->renderer);
+    //SDL_RenderPresent(act->sdl->renderer);
 }
 
-uint8_t ddram[64+40];
-uint8_t cgram[64];
-uint8_t lcd_row1[16];
-uint8_t lcd_row2[16];
-
-uint8_t lcd_active;
-uint8_t ddram_addr;
-uint8_t cgram_addr;
-uint8_t modeset_id_s;
-uint8_t disp_control_d_c_b;
-uint8_t function_dl_n_f;
-uint8_t old_value;
-uint8_t last_addr_is_cg;
-uint8_t value8;
-uint8_t value8_state;
-
-main_data_t *lcdact;
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_refresh(main_data_t *prdata){
+void lcd_refresh(lcd_t *lcd, int force){
 
-    if (!lcdTick) return;
-    lcdTick = 0;
+    if (!lcd->lcdTick) return;
+    lcd->lcdTick = 0;
 
     for (int i = 0; i < 16; i++){
 
         int addr = i;
 
-        if (lcd_row1[i] != ddram[addr]){
+        if (lcd->lcd_row1[i] != lcd->ddram[addr]){
 
-            lcd_out_symbol(prdata, 1+i*17, 1+0, ddram[addr]);
-            lcd_row1[i] = ddram[addr];
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY, lcd->ddram[addr]);
+            lcd->lcd_row1[i] = lcd->ddram[addr];
         }
     }
 
@@ -123,46 +101,59 @@ void lcd_refresh(main_data_t *prdata){
 
         int addr = 64+i;
 
-        if (lcd_row2[i] != ddram[addr]){
+        if (lcd->lcd_row2[i] != lcd->ddram[addr]){
 
-            lcd_out_symbol(prdata, 1+i*17, 1+27, ddram[addr]);
-            lcd_row2[i] = ddram[addr];
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY+27, lcd->ddram[addr]);
+            lcd->lcd_row2[i] = lcd->ddram[addr];
         }
     }
+
+    SDL_RenderPresent(lcd->renderer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-Uint32 lcd_set_tick(Uint32 interval, void *param){
+static Uint32 lcd_set_tick(Uint32 interval, void *param){
 
-    lcdTick = 1;
+    lcd_t *lcd = param;
+
+    lcd->lcdTick = 1;
     return interval;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_init(main_data_t *prdata) {
+lcd_t *lcd_init(int x, int y, SDL_Renderer* renderer) {
 
-    memset(ddram,0x20,sizeof(ddram));
-    memset(cgram,0x00,sizeof(cgram));
-    memset(lcd_row1,0x00,sizeof(lcd_row1));
-    memset(lcd_row2,0x00,sizeof(lcd_row2));
-    lcd_active =
-    ddram_addr =
-    cgram_addr =
-    modeset_id_s =
-    disp_control_d_c_b =
-    old_value =
-    last_addr_is_cg =
-    value8_state = 0;
+    lcd_t *lcd = malloc(sizeof(lcd_t));
+    if (!lcd) return NULL;
 
-    function_dl_n_f = 0x10;
+    lcd->baseX = x;
+    lcd->baseY = y;
+    lcd->renderer = renderer;
 
-    draw_lcdback(prdata->sdl->renderer, prdata->height-64, 0, 0);
+    memset(lcd->ddram,0x20,sizeof(lcd->ddram));
+    memset(lcd->cgram,0x00,sizeof(lcd->cgram));
+    memset(lcd->lcd_row1,0x00,sizeof(lcd->lcd_row1));
+    memset(lcd->lcd_row2,0x00,sizeof(lcd->lcd_row2));
+    lcd->lcd_active =
+    lcd->ddram_addr =
+    lcd->cgram_addr =
+    lcd->modeset_id_s =
+    lcd->disp_control_d_c_b =
+    lcd->old_value =
+    lcd->last_addr_is_cg =
+    lcd->value8_state = 0;
 
-    lcdTimer = SDL_AddTimer(100, lcd_set_tick, NULL);
+    lcd->function_dl_n_f = 0x10;
+
+    draw_lcdback(renderer, x, y);
+
+    lcd->lcdTimer = SDL_AddTimer(100, lcd_set_tick, lcd);
+
+    return lcd;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int proc_cmd8(uint8_t value){
+static int proc_cmd8(lcd_t *lcd, uint8_t value){
 
 #if DEBUG
     char buf[100];
@@ -171,24 +162,24 @@ int proc_cmd8(uint8_t value){
 #endif
 
     if (value & 0x80){  // Sets DDRAM Addr
-        ddram_addr = value & 0x7f;
-        last_addr_is_cg = 0;
+        lcd->ddram_addr = value & 0x7f;
+        lcd->last_addr_is_cg = 0;
 #if DEBUG
         addstr(" =setDDRAM=\n");
 #endif
         }
     else
     if (value & 0x40){  // Sets CGRAM Addr
-        cgram_addr = value & 0x3f;
-        last_addr_is_cg = 1;
+        lcd->cgram_addr = value & 0x3f;
+        lcd->last_addr_is_cg = 1;
 #if DEBUG
         addstr(" =setCGRAM=\n");
 #endif
         }
     else
     if (value & 0x20){  // Sets DL, N and F
-        function_dl_n_f = value & 0x1f;
-        value8_state = 0;
+        lcd->function_dl_n_f = value & 0x1f;
+        lcd->value8_state = 0;
 #if DEBUG
         addstr(" =setDLNF=\n");
 #endif
@@ -206,11 +197,11 @@ int proc_cmd8(uint8_t value){
 #if DEBUG
         addstr(" =setDCB=\n");
 #endif
-        disp_control_d_c_b = value & 0x07;
+        lcd->disp_control_d_c_b = value & 0x07;
     }
     else
     if (value & 0x04){  // Sets Cursor move dir and disp shift during write
-        modeset_id_s = value & 0x03;
+        lcd->modeset_id_s = value & 0x03;
 #if DEBUG
         addstr(" =setIDS=\n");
 #endif
@@ -218,17 +209,17 @@ int proc_cmd8(uint8_t value){
     else
     if (value & 0x02){  // Return Home
 
-        ddram_addr = 0;
-        last_addr_is_cg = 0;
+        lcd->ddram_addr = 0;
+        lcd->last_addr_is_cg = 0;
 #if DEBUG
         addstr(" =ReturnHOME=\n");
 #endif
         }
     else
     if (value & 0x01){  // Clear Display
-        memset(ddram,0x20,sizeof(ddram));
-        ddram_addr = 0;
-        last_addr_is_cg = 0;
+        memset(lcd->ddram,0x20,sizeof(lcd->ddram));
+        lcd->ddram_addr = 0;
+        lcd->last_addr_is_cg = 0;
 #if DEBUG
         addstr(" =ClearDISP=\n");
 #endif
@@ -242,7 +233,7 @@ int proc_cmd8(uint8_t value){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void proc_data8(uint8_t value){
+static void proc_data8(lcd_t *lcd, uint8_t value){
 
 #if DEBUG
     char buf[100];
@@ -250,18 +241,18 @@ void proc_data8(uint8_t value){
     addstr(buf);
 #endif
 
-    if (last_addr_is_cg){
-        cgram[cgram_addr++] = value;
-        if (cgram_addr == sizeof(cgram))
-            cgram_addr = 0;
+    if (lcd->last_addr_is_cg){
+        lcd->cgram[lcd->cgram_addr++] = value;
+        if (lcd->cgram_addr == sizeof(lcd->cgram))
+            lcd->cgram_addr = 0;
 #if DEBUG
         addstr(" =writeCGRAM=\n");
 #endif
         }
     else{
-        ddram[ddram_addr++] = value;
-        if (ddram_addr == sizeof(ddram))
-            ddram_addr = 0;
+        lcd->ddram[lcd->ddram_addr++] = value;
+        if (lcd->ddram_addr == sizeof(lcd->ddram))
+            lcd->ddram_addr = 0;
 #if DEBUG
         addstr(" =writeDDRAM=\n");
 #endif
@@ -270,7 +261,7 @@ void proc_data8(uint8_t value){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_out(uint8_t value){
+void lcd_out(lcd_t *lcd, uint8_t value){
 
 /*
 D7 ... DB7
@@ -286,32 +277,32 @@ D0 ... RS
     addstr(buf);
 #endif
 
-    if ((value & 0x02) && !(old_value & 0x02)){ // E transitou de 0 para 1
+    if ((value & 0x02) && !(lcd->old_value & 0x02)){ // E transitou de 0 para 1
 
         int res = 0;
 
-        if (function_dl_n_f & 0x10){
+        if (lcd->function_dl_n_f & 0x10){
 
             if (value & 0x01)
-                proc_data8(value);
+                proc_data8(lcd, value);
             else
-                res = proc_cmd8(value);
+                res = proc_cmd8(lcd, value);
         }
         else{
-            if (!value8_state){
-                value8 = value & 0xF0;
+            if (!lcd->value8_state){
+                lcd->value8 = value & 0xF0;
             }
             else{
-                value8 |= (value >> 4);
+                lcd->value8 |= (value >> 4);
 
                 if (value & 0x01)
-                    proc_data8(value8);
+                    proc_data8(lcd, lcd->value8);
                 else
-                    res = proc_cmd8(value8);
+                    res = proc_cmd8(lcd, lcd->value8);
             }
-            if (!res) value8_state ^= 1;
+            if (!res) lcd->value8_state ^= 1;
         }
     }
 
-    old_value = value;
+    lcd->old_value = value;
 }

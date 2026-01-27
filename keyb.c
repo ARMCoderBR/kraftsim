@@ -15,7 +15,7 @@
 void keyb_run(main_data_t *maindata){
 
     leds_refresh(maindata->leds,0);
-    lcd_refresh(maindata);
+    lcd_refresh(maindata->lcd, 0);
 
     SDL_Event event;
 

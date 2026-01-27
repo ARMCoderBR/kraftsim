@@ -22,8 +22,8 @@ void leds_refresh(leds_t *leds, int force){
         if ((leds->leds_port ^ leds->leds_port_old) & mask){
 
             SDL_Rect rect;
-            rect.x = leds->x+20*i;
-            rect.y = leds->y;//act->height - 25;
+            rect.x = leds->baseX+20*i;
+            rect.y = leds->baseY;
             rect.w = 16;
             rect.h = 16;
 
@@ -57,8 +57,8 @@ leds_t *leds_init(int x, int y, SDL_Renderer* renderer){
 
     leds_t *leds = malloc(sizeof(leds_t));
 
-    leds->x = x;
-    leds->y = y;
+    leds->baseX = x;
+    leds->baseY = y;
     leds->renderer = renderer;
     leds->leds_port = 0;
     leds->leds_port_old = 0xff;
