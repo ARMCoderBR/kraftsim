@@ -30,7 +30,7 @@
 #include "vga.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-void *z80runner(main_data_t *act){
+void *z80runner(main_data_t *maindata){
 
     char buf[255];
 
@@ -39,28 +39,28 @@ void *z80runner(main_data_t *act){
 #define NBP 4
     uint16_t bp[1+NBP] = {0};
 
-    for (;!act->z.halted;){
+    for (;!maindata->z.halted;){
 
-        keyb_run(act);
+        keyb_run(maindata);
 
         sched_yield();
 
-        if (!act->z.running){
-            z80_dump_regs(&act->z);
+        if (!maindata->z.running){
+            z80_dump_regs(&maindata->z);
             sprintf(buf,"Step:%d\n",num_steps);
             addstr(buf);
         }
         else{
             for (int i = 0; i < 1+NBP; i++){
 
-                if ((act->z.pc == bp[i])&&bp[i]){
+                if ((maindata->z.pc == bp[i])&&bp[i]){
 
                     if (i == NBP)
                         bp[NBP] = 0;
 
-                    act->z.running = 0;
-                    z80_print(&act->z);
-                    z80_dump_regs(&act->z);
+                    maindata->z.running = 0;
+                    z80_print(&maindata->z);
+                    z80_dump_regs(&maindata->z);
                     sprintf(buf,"Step:%d\n",num_steps);
                     addstr(buf);
                     break;
@@ -68,12 +68,12 @@ void *z80runner(main_data_t *act){
             }
         }
 
-        z80_step(&act->z);
+        z80_step(&maindata->z);
         num_steps++;
 
         //printf("NextPC:%04x AfterPC:%04x\n",z.pc,z.afterPC);
 
-        if (act->z.running)
+        if (maindata->z.running)
             continue;
 prompt:
         buf[0] = buf[1] = 0;
@@ -111,8 +111,8 @@ prompt:
         buf[pbuf] = 0;
 
         if (!strncmp(buf,"rst",3)){
-             z80_reset(&act->z);
-             z80_print(&act->z);
+             z80_reset(&maindata->z);
+             z80_print(&maindata->z);
              num_steps = 0;
              continue;
         }
@@ -140,11 +140,11 @@ prompt:
 
             case 'd':
                 if (!isxdigit(buf[1]))
-                    z80_dump_mem(&act->z, RAMBASE,512);
+                    z80_dump_mem(&maindata->z, RAMBASE,512);
                 else{
                     int val;
                     sscanf(buf+1,"%04x",&val);
-                    z80_dump_mem(&act->z, val,512);
+                    z80_dump_mem(&maindata->z, val,512);
                 }
                 goto prompt;
 
@@ -180,15 +180,15 @@ listbp:
                 goto prompt;
 
             case 'g':
-                z80_noprint(&act->z);
-                act->z.running = 1;
+                z80_noprint(&maindata->z);
+                maindata->z.running = 1;
                 continue;
 
             case 's':
-                if (act->z.afterPC){
-                    bp[NBP] = act->z.afterPC;
-                    z80_noprint(&act->z);
-                    act->z.running = 1;
+                if (maindata->z.afterPC){
+                    bp[NBP] = maindata->z.afterPC;
+                    z80_noprint(&maindata->z);
+                    maindata->z.running = 1;
                     continue;
                 }
                 break;
@@ -261,12 +261,19 @@ int main (int argc, char *argv[]){
 
     z80runner(&maindata);
 
-    z80_dump_mem(&maindata.z, RAMBASE,512);
+    //z80_dump_mem(&maindata.z, RAMBASE,512);
 
-    getch();
+    free(maindata.rom);
+    free(maindata.ram);
+
+    leds_close(maindata.leds);
+    lcd_close(maindata.lcd);
+    vga_close(maindata.vga);
+    ///
+    sdl_close(maindata.sdl);
+
+    //getch();
     endwin();
-
-
 
     return 0;
 }

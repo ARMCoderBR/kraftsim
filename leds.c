@@ -9,6 +9,31 @@
 #define LEDS_X_OFFSET 380
 
 ////////////////////////////////////////////////////////////////////////////////
+static Uint32 leds_set_tick(Uint32 interval, void *param){
+
+    leds_t *leds = param;
+
+    leds->ledsTick = 1;
+    return interval;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+leds_t *leds_init(int x, int y, SDL_Renderer* renderer){
+
+    leds_t *leds = malloc(sizeof(leds_t));
+
+    leds->baseX = x;
+    leds->baseY = y;
+    leds->renderer = renderer;
+    leds->leds_port = 0;
+    leds->leds_port_old = 0xff;
+
+    leds->ledsTimer = SDL_AddTimer(11, leds_set_tick, leds);
+
+    return leds;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void leds_refresh(leds_t *leds, int force){
 
     if (!leds->ledsTick) return;
@@ -44,33 +69,15 @@ void leds_refresh(leds_t *leds, int force){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-static Uint32 leds_set_tick(Uint32 interval, void *param){
-
-    leds_t *leds = param;
-
-    leds->ledsTick = 1;
-    return interval;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-leds_t *leds_init(int x, int y, SDL_Renderer* renderer){
-
-    leds_t *leds = malloc(sizeof(leds_t));
-
-    leds->baseX = x;
-    leds->baseY = y;
-    leds->renderer = renderer;
-    leds->leds_port = 0;
-    leds->leds_port_old = 0xff;
-
-    leds->ledsTimer = SDL_AddTimer(11, leds_set_tick, leds);
-
-    return leds;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void leds_out(leds_t *leds, uint8_t value){
 
     leds->leds_port = value;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void leds_close(leds_t *leds){
+
+    SDL_RemoveTimer(leds->ledsTimer);
+
+    free(leds);
+}

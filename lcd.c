@@ -76,39 +76,6 @@ static void lcd_out_symbol(SDL_Renderer* renderer, int px, int py, uint8_t code)
 
         rom_ofs++;
     }
-    //SDL_RenderPresent(act->sdl->renderer);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-void lcd_refresh(lcd_t *lcd, int force){
-
-    if (!lcd->lcdTick) return;
-    lcd->lcdTick = 0;
-
-    for (int i = 0; i < 16; i++){
-
-        int addr = i;
-
-        if (lcd->lcd_row1[i] != lcd->ddram[addr]){
-
-            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY, lcd->ddram[addr]);
-            lcd->lcd_row1[i] = lcd->ddram[addr];
-        }
-    }
-
-    for (int i = 0; i < 16; i++){
-
-        int addr = 64+i;
-
-        if (lcd->lcd_row2[i] != lcd->ddram[addr]){
-
-            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY+27, lcd->ddram[addr]);
-            lcd->lcd_row2[i] = lcd->ddram[addr];
-        }
-    }
-
-    SDL_RenderPresent(lcd->renderer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,38 +85,6 @@ static Uint32 lcd_set_tick(Uint32 interval, void *param){
 
     lcd->lcdTick = 1;
     return interval;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-lcd_t *lcd_init(int x, int y, SDL_Renderer* renderer) {
-
-    lcd_t *lcd = malloc(sizeof(lcd_t));
-    if (!lcd) return NULL;
-
-    lcd->baseX = x;
-    lcd->baseY = y;
-    lcd->renderer = renderer;
-
-    memset(lcd->ddram,0x20,sizeof(lcd->ddram));
-    memset(lcd->cgram,0x00,sizeof(lcd->cgram));
-    memset(lcd->lcd_row1,0x00,sizeof(lcd->lcd_row1));
-    memset(lcd->lcd_row2,0x00,sizeof(lcd->lcd_row2));
-    lcd->lcd_active =
-    lcd->ddram_addr =
-    lcd->cgram_addr =
-    lcd->modeset_id_s =
-    lcd->disp_control_d_c_b =
-    lcd->old_value =
-    lcd->last_addr_is_cg =
-    lcd->value8_state = 0;
-
-    lcd->function_dl_n_f = 0x10;
-
-    draw_lcdback(renderer, x, y);
-
-    lcd->lcdTimer = SDL_AddTimer(100, lcd_set_tick, lcd);
-
-    return lcd;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,8 +191,70 @@ static void proc_data8(lcd_t *lcd, uint8_t value){
 #if DEBUG
         addstr(" =writeDDRAM=\n");
 #endif
-        //lcd_refresh(lcdact);
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+lcd_t *lcd_init(int x, int y, SDL_Renderer* renderer) {
+
+    lcd_t *lcd = malloc(sizeof(lcd_t));
+    if (!lcd) return NULL;
+
+    lcd->baseX = x;
+    lcd->baseY = y;
+    lcd->renderer = renderer;
+
+    memset(lcd->ddram,0x20,sizeof(lcd->ddram));
+    memset(lcd->cgram,0x00,sizeof(lcd->cgram));
+    memset(lcd->lcd_row1,0x00,sizeof(lcd->lcd_row1));
+    memset(lcd->lcd_row2,0x00,sizeof(lcd->lcd_row2));
+    lcd->lcd_active =
+    lcd->ddram_addr =
+    lcd->cgram_addr =
+    lcd->modeset_id_s =
+    lcd->disp_control_d_c_b =
+    lcd->old_value =
+    lcd->last_addr_is_cg =
+    lcd->value8_state = 0;
+
+    lcd->function_dl_n_f = 0x10;
+
+    draw_lcdback(renderer, x, y);
+
+    lcd->lcdTimer = SDL_AddTimer(100, lcd_set_tick, lcd);
+
+    return lcd;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void lcd_refresh(lcd_t *lcd, int force){
+
+    if (!lcd->lcdTick) return;
+    lcd->lcdTick = 0;
+
+    for (int i = 0; i < 16; i++){
+
+        int addr = i;
+
+        if (lcd->lcd_row1[i] != lcd->ddram[addr]){
+
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY, lcd->ddram[addr]);
+            lcd->lcd_row1[i] = lcd->ddram[addr];
+        }
+    }
+
+    for (int i = 0; i < 16; i++){
+
+        int addr = 64+i;
+
+        if (lcd->lcd_row2[i] != lcd->ddram[addr]){
+
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY+27, lcd->ddram[addr]);
+            lcd->lcd_row2[i] = lcd->ddram[addr];
+        }
+    }
+
+    SDL_RenderPresent(lcd->renderer);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -305,4 +302,12 @@ D0 ... RS
     }
 
     lcd->old_value = value;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void lcd_close(lcd_t *lcd){
+
+    SDL_RemoveTimer(lcd->lcdTimer);
+
+    free(lcd);
 }

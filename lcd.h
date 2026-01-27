@@ -37,10 +37,11 @@ typedef struct {
 
 } lcd_t;
 
+////////////////////////////////////////////////////////////////////////////////
+
 lcd_t *lcd_init(int x, int y, SDL_Renderer* renderer);
-
-void lcd_out(lcd_t *lcd, uint8_t value);
-
 void lcd_refresh(lcd_t *lcd, int force);
+void lcd_out(lcd_t *lcd, uint8_t value);
+void lcd_close(lcd_t *lcd);
 
 #endif /* LCD_H_ */
