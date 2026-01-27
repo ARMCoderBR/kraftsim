@@ -12,10 +12,10 @@
 
 #include "act.h"
 
-void lcd_init(activate_data_t *act);
+void lcd_init(main_data_t *act);
 
 void lcd_out(uint8_t value);
 
-void lcd_refresh(activate_data_t *act);
+void lcd_refresh(main_data_t *act);
 
 #endif /* LCD_H_ */

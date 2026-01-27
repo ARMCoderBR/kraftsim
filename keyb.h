@@ -8,7 +8,7 @@
 #ifndef KEYB_H_
 #define KEYB_H_
 
-void keyb_run(activate_data_t *act);
-int keyb_init(activate_data_t *act);
+void keyb_run(main_data_t *act);
+int keyb_init(main_data_t *act);
 
 #endif /* KEYB_H_ */

@@ -13,20 +13,23 @@
 #include <SDL2/SDL.h>
 
 #include "z80.h"
+#include "leds.h"
+#include "sdlclient.h"
+#include "vga.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct {
 
+    sdldata_t *sdl;
     int width;
     int height;
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture *fontTexture[256];
     uint8_t *rom;
     uint8_t *ram;
     z80_t z;
     pthread_t z80thread;
 
-} activate_data_t;
+    leds_t *leds;
+    vga_t *vga;
+} main_data_t;
 
 #endif /* ACT_H_ */

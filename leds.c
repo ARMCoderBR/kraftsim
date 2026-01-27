@@ -2,75 +2,75 @@
 #include <string.h>
 #include <ncurses.h>
 #include <SDL2/SDL.h>
+#include <malloc.h>
 
 #include "leds.h"
 
-
-uint8_t leds_port;
-uint8_t leds_port_old;
-SDL_TimerID ledsTimer;
-int ledsTick;
-
 #define LEDS_X_OFFSET 380
-//#define LEDS_Y_OFFSET 505
 
 ////////////////////////////////////////////////////////////////////////////////
-void leds_refresh(void *userdata){
+void leds_refresh(leds_t *leds, int force){
 
-    if (!ledsTick) return;
-    ledsTick = 0;
+    if (!leds->ledsTick) return;
+    leds->ledsTick = 0;
 
-    activate_data_t *act = userdata;
-
-    if (leds_port == leds_port_old) return;
+    if (leds->leds_port == leds->leds_port_old) return;
 
     uint8_t mask = 0x80;
     for (int i = 0; i < 8; i++){
 
-        if ((leds_port ^ leds_port_old) & mask){
+        if ((leds->leds_port ^ leds->leds_port_old) & mask){
 
             SDL_Rect rect;
-            rect.x = LEDS_X_OFFSET+20*i;
-            rect.y = act->height - 25;
+            rect.x = leds->x+20*i;
+            rect.y = leds->y;//act->height - 25;
             rect.w = 16;
             rect.h = 16;
 
-            if (leds_port & mask)
-                SDL_SetRenderDrawColor(act->renderer, 255, 255, 0, 255);
+            if (leds->leds_port & mask)
+                SDL_SetRenderDrawColor(leds->renderer, 255, 255, 0, 255);
             else
-                SDL_SetRenderDrawColor(act->renderer, 51, 51, 0, 255);
+                SDL_SetRenderDrawColor(leds->renderer, 51, 51, 0, 255);
 
-            SDL_RenderFillRect(act->renderer, &rect);
-            //act->ledsRender = 1;
+            SDL_RenderFillRect(leds->renderer, &rect);
         }
 
         mask >>= 1;
     }
 
-    SDL_RenderPresent(act->renderer);
+    SDL_RenderPresent(leds->renderer);
 
-    leds_port_old = leds_port;
+    leds->leds_port_old = leds->leds_port;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-Uint32 leds_set_tick(Uint32 interval, void *param){
+static Uint32 leds_set_tick(Uint32 interval, void *param){
 
-    ledsTick = 1;
+    leds_t *leds = param;
+
+    leds->ledsTick = 1;
     return interval;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void leds_init(activate_data_t *act){
+leds_t *leds_init(int x, int y, SDL_Renderer* renderer){
 
-    leds_port = 0;
-    leds_port_old = 0xff;
+    leds_t *leds = malloc(sizeof(leds_t));
 
-    ledsTimer = SDL_AddTimer(11, leds_set_tick, NULL);
+    leds->x = x;
+    leds->y = y;
+    leds->renderer = renderer;
+    leds->leds_port = 0;
+    leds->leds_port_old = 0xff;
+
+    leds->ledsTimer = SDL_AddTimer(11, leds_set_tick, leds);
+
+    return leds;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void leds_out(uint8_t value){
+void leds_out(leds_t *leds, uint8_t value){
 
-    leds_port = value;
+    leds->leds_port = value;
 }
 

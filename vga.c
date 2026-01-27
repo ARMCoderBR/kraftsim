@@ -1,13 +1,17 @@
 #include <stdint.h>
 #include <string.h>
-#include <ncurses.h>
+#include <malloc.h>
+
 #include <SDL2/SDL.h>
 
 #include "vga.h"
 #include "vgafont.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-void vga_init(activate_data_t *act){
+vga_t *vga_init(SDL_Renderer* renderer){
+
+    vga_t *vga = malloc(sizeof(vga_t));
+    if (!vga) return NULL;
 
     SDL_Surface* tempSurface = SDL_CreateRGBSurface
         (0,     /*Uint32 flags*/
@@ -68,7 +72,7 @@ void vga_init(activate_data_t *act){
         }
         vgafont_offset += 8;
 
-        act->fontTexture[charcode] = SDL_CreateTextureFromSurface(act->renderer, tempSurface);
+        vga->fontTexture[charcode] = SDL_CreateTextureFromSurface(renderer, tempSurface);
     }
 
     SDL_FreeSurface(tempSurface);
@@ -79,18 +83,21 @@ void vga_init(activate_data_t *act){
     rect.w = 16;
     rect.h = 16;
 
-    SDL_RenderCopy(act->renderer, act->fontTexture[65], NULL, &rect);
+    SDL_RenderCopy(renderer, vga->fontTexture[65], NULL, &rect);
     rect.x += 16;
-    SDL_RenderCopy(act->renderer, act->fontTexture[66], NULL, &rect);
+    SDL_RenderCopy(renderer, vga->fontTexture[66], NULL, &rect);
     rect.x += 16;
-    SDL_RenderCopy(act->renderer, act->fontTexture[67], NULL, &rect);
-    SDL_RenderPresent(act->renderer); //updates the renderer
+    SDL_RenderCopy(renderer, vga->fontTexture[67], NULL, &rect);
+    SDL_RenderPresent(renderer); //updates the renderer
+
+    return vga;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void vga_close(activate_data_t *act){
+void vga_close(vga_t *vga){
 
     for (int charcode = 0; charcode < 256; charcode++)
-        SDL_DestroyTexture(act->fontTexture[charcode]);
-}
+        SDL_DestroyTexture(vga->fontTexture[charcode]);
 
+    free(vga);
+}

@@ -25,4 +25,6 @@ void new_hw_run();
 int default_irq_sample(void);
 int new_irq_sample(void);
 
+void ios_init(void *act);
+
 #endif /* IOS_H_ */

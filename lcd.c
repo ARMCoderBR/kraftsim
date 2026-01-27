@@ -59,7 +59,7 @@ void draw_lcdpoint(SDL_Renderer* renderer, int DIV_Y_POS, int x, int y, int onof
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
+void lcd_out_symbol(main_data_t *act, int px, int py, uint8_t code){
 
     if (code > 0x7f) code = 0x20;
 
@@ -74,14 +74,14 @@ void lcd_out_symbol(activate_data_t *act, int px, int py, uint8_t code){
             int state = 0;
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
-            draw_lcdpoint(act->renderer, act->height-64, px+3*col, py+3*row, state);
+            draw_lcdpoint(act->sdl->renderer, act->height-64, px+3*col, py+3*row, state);
 
             colmask >>= 1;
         }
 
         rom_ofs++;
     }
-    SDL_RenderPresent(act->renderer);
+    SDL_RenderPresent(act->sdl->renderer);
 }
 
 uint8_t ddram[64+40];
@@ -100,10 +100,10 @@ uint8_t last_addr_is_cg;
 uint8_t value8;
 uint8_t value8_state;
 
-activate_data_t *lcdact;
+main_data_t *lcdact;
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_refresh(activate_data_t *act){
+void lcd_refresh(main_data_t *prdata){
 
     if (!lcdTick) return;
     lcdTick = 0;
@@ -114,7 +114,7 @@ void lcd_refresh(activate_data_t *act){
 
         if (lcd_row1[i] != ddram[addr]){
 
-            lcd_out_symbol(act, 1+i*17, 1+0, ddram[addr]);
+            lcd_out_symbol(prdata, 1+i*17, 1+0, ddram[addr]);
             lcd_row1[i] = ddram[addr];
         }
     }
@@ -125,7 +125,7 @@ void lcd_refresh(activate_data_t *act){
 
         if (lcd_row2[i] != ddram[addr]){
 
-            lcd_out_symbol(act, 1+i*17, 1+27, ddram[addr]);
+            lcd_out_symbol(prdata, 1+i*17, 1+27, ddram[addr]);
             lcd_row2[i] = ddram[addr];
         }
     }
@@ -139,7 +139,7 @@ Uint32 lcd_set_tick(Uint32 interval, void *param){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_init(activate_data_t *act) {
+void lcd_init(main_data_t *prdata) {
 
     memset(ddram,0x20,sizeof(ddram));
     memset(cgram,0x00,sizeof(cgram));
@@ -156,7 +156,7 @@ void lcd_init(activate_data_t *act) {
 
     function_dl_n_f = 0x10;
 
-    draw_lcdback(act->renderer, act->height-64, 0, 0);
+    draw_lcdback(prdata->sdl->renderer, prdata->height-64, 0, 0);
 
     lcdTimer = SDL_AddTimer(100, lcd_set_tick, NULL);
 }

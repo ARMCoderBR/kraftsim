@@ -35,6 +35,7 @@ uint8_t psgaddr = 0;
 
 psg_t *psg;
 
+main_data_t *ios_act;
 
 ////////////////////////////////////////////////////////////////////////////////
 void default_out_callback (uint8_t port, uint8_t value){}
@@ -44,7 +45,7 @@ void new_out_callback (uint8_t port, uint8_t value){
 
     switch (port){
         case PORTLEDS:
-            leds_out(value);
+            leds_out(ios_act->leds,value);
             break;
         case PORTDISP:
             lcd_out(value);
@@ -210,4 +211,10 @@ int default_irq_sample(void){
 int new_irq_sample(void){
 
     return fpga_status & 0x07;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ios_init(void *act){
+
+    ios_act = act;
 }

@@ -10,12 +10,20 @@
 
 #include <stdint.h>
 
-#include "act.h"
+typedef struct {
 
-void leds_init(activate_data_t *act);
+    uint8_t leds_port;
+    uint8_t leds_port_old;
+    SDL_TimerID ledsTimer;
+    int ledsTick;
+    int x,y;
+    SDL_Renderer* renderer;
+} leds_t;
 
-void leds_out(uint8_t value);
+leds_t *leds_init(int x, int y, SDL_Renderer* renderer);
 
-void leds_refresh(void *userdata);
+void leds_out(leds_t *leds, uint8_t value);
+
+void leds_refresh(leds_t *leds, int force);
 
 #endif /* LEDS_H_ */

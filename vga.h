@@ -10,12 +10,17 @@
 
 #include <stdint.h>
 
-#include "act.h"
+#include "sdlclient.h"
 
-void vga_init(activate_data_t *act);
+typedef struct {
+
+    SDL_Texture *fontTexture[256];
+} vga_t;
+
+vga_t *vga_init(SDL_Renderer* renderer);
 
 void vga_out(uint8_t value);
 
-void vga_close(activate_data_t *act);
+void vga_close(vga_t *vga);
 
 #endif /* VGA_H_ */

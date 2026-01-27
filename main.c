@@ -30,7 +30,7 @@
 #include "vga.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-void *z80runner(activate_data_t *act){
+void *z80runner(main_data_t *act){
 
     char buf[255];
 
@@ -202,34 +202,35 @@ listbp:
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void init(activate_data_t *act){
-
-    keyb_init(act);
-    lcd_init(act);
-    leds_init(act);
-    vga_init(act);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
 
-    activate_data_t act;
+    main_data_t prdata;
 
-    act.width = 1280;
-    act.height = 960 + 60;
+    prdata.width = 1280;
+    prdata.height = 960 + 60;
+    prdata.sdl = sdl_init (prdata.width, prdata.height);
+    if (!prdata.sdl){
+        printf("Erro iniciando SDL!\n");
+        return -1;
+    }
 
-    init(&act);
+#define LEDS_X_OFFSET 380
 
-    act.rom = malloc(ROMSZ);
-    act.ram = malloc(RAMSZ);
+    keyb_init(&prdata);
+    ios_init(&prdata);
+    lcd_init(&prdata);
+    prdata.leds = leds_init(LEDS_X_OFFSET, prdata.height-25, prdata.sdl->renderer);
+    prdata.vga = vga_init(prdata.sdl->renderer);
 
-    char procname[100];
-    sprintf(procname, "kraftsim-%d.br.com.cpstecnologia", getpid());
 
-    memset(act.rom,0xff,ROMSZ);
-    memset(act.ram,0x00,RAMSZ);
+    ////////////////////////////////////////////////////////////////////////////
+    prdata.rom = malloc(ROMSZ);
+    prdata.ram = malloc(RAMSZ);
 
-    if (romprog(act.rom,ROMSZ,act.ram,RAMBASE,RAMSZ) < 0){
+    memset(prdata.rom,0xff,ROMSZ);
+    memset(prdata.ram,0x00,RAMSZ);
+
+    if (romprog(prdata.rom,ROMSZ,prdata.ram,RAMBASE,RAMSZ) < 0){
 
         addstr("Error loading ROM!\n");
         return -1;
@@ -243,23 +244,23 @@ int main (int argc, char *argv[]){
 
     //addstr("\n=== RUN ===\n\n"); refresh();
 
-    z80_initialize(&act.z, act.rom, ROMSZ, act.ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
+    z80_initialize(&prdata.z, prdata.rom, ROMSZ, prdata.ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
 
-    z80_reset(&act.z);
+    z80_reset(&prdata.z);
 
 #if RUN
-    z80_noprint(&act.z);
-    act.z.running = 1;
+    z80_noprint(&prdata.z);
+    prdata.z.running = 1;
 #else
-    z80_print(&act.z);
-    act->z.running = 0;
+    z80_print(&prdata.z);
+    prdata->z.running = 0;
 #endif
 
     //addstr("\n=== LOOP ===\n\n");
 
-    z80runner(&act);
+    z80runner(&prdata);
 
-    z80_dump_mem(&act.z, RAMBASE,512);
+    z80_dump_mem(&prdata.z, RAMBASE,512);
 
     getch();
     endwin();
