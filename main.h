@@ -5,8 +5,8 @@
  *      Author: milton
  */
 
-#ifndef ACT_H_
-#define ACT_H_
+#ifndef MAIN_H_
+#define MAIN_H_
 
 #include <stdint.h>
 #include <pthread.h>
@@ -32,4 +32,4 @@ typedef struct {
     vga_t *vga;
 } main_data_t;
 
-#endif /* ACT_H_ */
+#endif /* MAIN_H_ */

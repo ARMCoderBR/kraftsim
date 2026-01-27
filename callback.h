@@ -8,6 +8,8 @@
 #ifndef CALLBACK_H_
 #define CALLBACK_H_
 
+#include <stdint.h>
+
 typedef void (*outcallback_t)(uint8_t port, uint8_t value);
 typedef uint8_t (*incallback_t)(uint8_t port);
 typedef void (*hw_run_t)(void);

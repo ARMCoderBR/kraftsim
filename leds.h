@@ -9,6 +9,7 @@
 #define LEDS_H_
 
 #include <stdint.h>
+#include <SDL2/SDL.h>
 
 typedef struct {
 

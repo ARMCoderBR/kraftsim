@@ -100,7 +100,7 @@ typedef struct {
 #define _f _af.r8.l
 
 #define _i _ir.r8.h
-#define _r _ir.r8.l
+#define _r_ _ir.r8.l
 
 #define _ixh _ix.r8.h
 #define _ixl _ix.r8.l

@@ -6,16 +6,16 @@
  */
 
 
-#include "act.h"
 #include "leds.h"
 #include "lcd.h"
+#include "main.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
-void keyb_run(main_data_t *act){
+void keyb_run(main_data_t *maindata){
 
-    leds_refresh(act->leds,0);
-    lcd_refresh(act);
+    leds_refresh(maindata->leds,0);
+    lcd_refresh(maindata);
 
     SDL_Event event;
 
@@ -50,7 +50,7 @@ void keyb_run(main_data_t *act){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int keyb_init(main_data_t *act){
+int keyb_init(main_data_t *maindata){
 
     return 0;
 }

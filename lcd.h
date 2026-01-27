@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#include "act.h"
+#include "main.h"
 
 void lcd_init(main_data_t *act);
 

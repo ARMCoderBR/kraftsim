@@ -53,7 +53,7 @@ interrupt status to Mode 0
 void z80_reset (z80_t *z){
 
     z->iff1 = z->iff2 = 0;
-    z->_i = z->_r = 0;
+    z->_i = z->_r_ = 0;
     z->im = 0;
     z->pc = 0;
     z->code_prefix = 0;
@@ -95,10 +95,10 @@ void z80_write(z80_t *z, uint16_t addr, uint8_t byte){
 ////////////////////////////////////////////////////////////////////////////////
 void z80_refresh_up(z80_t *z){
 
-    uint8_t r8 = z->_r & 0x80;
-    z->_r++;
-    z->_r &= 0x7F;
-    z->_r |= r8;
+    uint8_t r8 = z->_r_ & 0x80;
+    z->_r_++;
+    z->_r_ &= 0x7F;
+    z->_r_ |= r8;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1048,7 +1048,7 @@ void z80_exec_ed(z80_t *z){
 
     if (opcode == 0x5F){                                // LD A,R
 
-        z->_a = z->_r;
+        z->_a = z->_r_;
         z->_f &= FLG_C;
         if (z->_a & 0x80)
             z->_f |= FLG_S;
@@ -1069,7 +1069,7 @@ void z80_exec_ed(z80_t *z){
 
     if (opcode == 0x4F){                                // LD R,A
 
-        z->_r = z->_a;
+        z->_r_ = z->_a;
         return;
     }
 
