@@ -16,6 +16,7 @@
 #include <getopt.h>
 
 #define RUN 1
+#define DEBUGPROMPT 0
 #define ROMSZ 16384
 #define RAMBASE 16384
 #define RAMSZ 48*1024
@@ -69,7 +70,9 @@ void editprompt(char *buf, int size){
 ////////////////////////////////////////////////////////////////////////////////
 void *z80runner(main_data_t *maindata){
 
+#if DEBUGPROMPT
     char buf[255];
+#endif
 
     int num_steps = 0;
 
@@ -98,7 +101,9 @@ void *z80runner(main_data_t *maindata){
         sched_yield();
 
         if (!maindata->z.running){
+#if DEBUG_PROMPT
             z80_dump_regs(&maindata->z);
+#endif
             //sprintf(buf,"Step:%d\n",num_steps);
             //addstr(buf);
         }
@@ -129,6 +134,7 @@ void *z80runner(main_data_t *maindata){
 
         if (maindata->z.running)
             continue;
+#if DEBUGPROMPT
 prompt:
         editprompt(buf,32);
 
@@ -214,10 +220,15 @@ listbp:
                 }
                 break;
         }
+#else
+        break;
+#endif //#if DEBUGPROMPT
     }
 
+#if DEBUGPROMPT
     sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
     addstr(buf);
+#endif
 
     return NULL;
 }
@@ -277,7 +288,7 @@ int main (int argc, char *argv[]){
             break;
 
         case COD_VERSION:
-            printf("KraftSim v1.0\n(c)2026 ARMCoder\n\n");
+            printf("\nKraftSim v1.0\n(c)2026-28-01 ARMCoder\n\n");
             return 0;
         }
     }
@@ -345,8 +356,10 @@ int main (int argc, char *argv[]){
     vga_close(maindata.vga);
     sdl_close(maindata.sdl);
 
+#if DEBUGPROMPT
     addstr("\n=== NORMAL END - PRESS ANY KEY ===\n\n"); refresh();
     getch();
+#endif
     endwin();
 
     return 0;
