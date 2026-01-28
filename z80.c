@@ -1633,38 +1633,41 @@ rescan:
 
     opcode = z->opcode = z80_fetch(z);
 
-    if ((opcode & 0b11000000) == 0b11000000){   // BASE 11xxxxxx
+    if (!(z->code_prefix & CODE_PREFIX_CB)){
 
-        ////////////////////////////////////////////////////////////////////////////
-        if (opcode == 0xDD){                             //DD Prefix (IX)
+        if ((opcode & 0b11000000) == 0b11000000){   // BASE 11xxxxxx
 
-            z->code_prefix |= CODE_PREFIX_DD;
-            z->code_prefix &= ~CODE_PREFIX_FD;
-            goto rescan;
-        }
+            ////////////////////////////////////////////////////////////////////////////
+            if (opcode == 0xDD){                             //DD Prefix (IX)
 
-        ////////////////////////////////////////////////////////////////////////////
-        if (opcode == 0xFD){                             //FD Prefix (IY)
+                z->code_prefix |= CODE_PREFIX_DD;
+                z->code_prefix &= ~CODE_PREFIX_FD;
+                goto rescan;
+            }
 
-            z->code_prefix |= CODE_PREFIX_FD;
-            z->code_prefix &= ~CODE_PREFIX_DD;
-            goto rescan;
-        }
+            ////////////////////////////////////////////////////////////////////////////
+            if (opcode == 0xFD){                             //FD Prefix (IY)
 
-        ////////////////////////////////////////////////////////////////////////////
-        if (opcode == 0xCB){                             //CB Prefix (bit ops)
+                z->code_prefix |= CODE_PREFIX_FD;
+                z->code_prefix &= ~CODE_PREFIX_DD;
+                goto rescan;
+            }
 
-            z->code_prefix |= CODE_PREFIX_CB;
-            z->code_prefix &= ~CODE_PREFIX_ED;
-            goto rescan;
-        }
+            ////////////////////////////////////////////////////////////////////////////
+            if (opcode == 0xCB){                             //CB Prefix (bit ops)
 
-        ////////////////////////////////////////////////////////////////////////////
-        if (opcode == 0xED){                             //ED Prefix (specials)
+                z->code_prefix |= CODE_PREFIX_CB;
+                z->code_prefix &= ~CODE_PREFIX_ED;
+                goto rescan;
+            }
 
-            z->code_prefix |= CODE_PREFIX_ED;
-            z->code_prefix &= ~CODE_PREFIX_CB;
-            goto rescan;
+            ////////////////////////////////////////////////////////////////////////////
+            if (opcode == 0xED){                             //ED Prefix (specials)
+
+                z->code_prefix |= CODE_PREFIX_ED;
+                z->code_prefix &= ~CODE_PREFIX_CB;
+                goto rescan;
+            }
         }
     }   // Fim da BASE 11xxxxxx
 
@@ -2464,7 +2467,8 @@ rescan:
         ////////////////////////////////////////////////////////////////////////////
         if (opcode == 0xFB){                             // EI
 
-            z->iff1 = z->iff2 = 1;
+            if (z->running)
+                z->iff1 = z->iff2 = 1;
             return;
         }
 
@@ -2739,4 +2743,18 @@ void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size){
     addstr("\n");
     refresh();
 }
+
+/*
+PC:4FFE  SP:FFB6  BC:0000  DE:8000  HL:0000  IX:FFCE  IY:FFB6  AF:0044  F:P Z  - PE OV - NC
+(4ffe)DD  (4fff)77  (5000)FF
+:
+
+PC:5001  SP:FFB6  BC:0000  DE:8000  HL:0000  IX:FFCE  IY:FFB6  AF:0044  F:P Z  - PE OV - NC
+(5001)06  (5002)07
+:
+
+PC:5003  SP:FFB6  BC:0700  DE:8000  HL:0000  IX:FFCE  IY:FFB6  AF:0044  F:P Z  - PE OV - NC
+(5003)DD  (5004)CB  (5005)FD  (5006)3E  (5007)DD
+:
+*/
 
