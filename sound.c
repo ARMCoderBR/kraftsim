@@ -9,7 +9,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 void *sound_thread(void *arg){
 
-    //printf("INIT RUN THREAD\n");
     sound_t *p = (sound_t*)arg;
 
     p->endthread = 0;
@@ -53,15 +52,12 @@ void *sound_thread(void *arg){
 ////////////////////////////////////////////////////////////////////////////////
 void start_sound_thread(sound_t *p){
 
-    //printf("START THREAD\n");
-
-    /*int res =*/ pthread_create(&p->mythread, NULL, sound_thread, p);
+    pthread_create(&p->mythread, NULL, sound_thread, p);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 void wait_thread(sound_t *p){
 
-    //printf("\nWaiting threads...\n");
     pthread_join(p->mythread,NULL);
 }
 
@@ -73,7 +69,7 @@ sound_t *sound_init(void){
 
     pa_buffer_attr pba;
     pba.fragsize = (uint32_t) -1;
-    pba.maxlength = 10000;//(uint32_t) -1;
+    pba.maxlength = 10000;
     pba.minreq = (uint32_t) -1;
     pba.prebuf = (uint32_t) -1;
     pba.tlength = (uint32_t) -1;
@@ -101,11 +97,7 @@ sound_t *sound_init(void){
     s->bufqty = 0;
     s->bufsize = PSGBUFSZ;
 
-    //printf("PSG INIT 1\n");
-
     pthread_mutex_init(&s->lock,NULL);
-
-    //printf("PSG INIT 2\n");
 
     start_sound_thread(s);
 
@@ -134,9 +126,6 @@ void sound_end(sound_t *s){
     pthread_mutex_destroy(&s->lock);
 
     pa_simple_drain(s->pa_driver,&s->pa_error);
-
-    //usleep(250000);
-
     pa_simple_free(s->pa_driver);
 
     free(s);

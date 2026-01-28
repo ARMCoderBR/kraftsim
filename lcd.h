@@ -31,7 +31,6 @@ typedef struct {
     uint8_t value8;
     uint8_t value8_state;
 
-    //main_data_t *lcdact;
     int baseX,baseY;
     SDL_Renderer* renderer;
 

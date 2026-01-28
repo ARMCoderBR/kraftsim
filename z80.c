@@ -13,7 +13,6 @@
 #include "z80.h"
 #include "ios.h"
 
-
 ////////////////////////////////////////////////////////////////////////////////
 void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, uint16_t rambase, uint16_t ramsz,
         outcallback_t ocb_fn, incallback_t icb_fn,
@@ -474,54 +473,7 @@ void full_sub8(full_adder8_t *a){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-//void z80_add_acc_old (z80_t *z, int8_t arg, uint8_t add_cy){
-//
-//    int16_t sum16 = (int16_t)arg; if (sum16 & 0x80) sum16 |= 0xFF00;
-//    int16_t acc16 = (int16_t)z->_a; if (acc16 & 0x80) acc16 |= 0xFF00;
-//    uint16_t usum16 = ((uint16_t)arg) & 0xff;
-//    uint16_t uacc16 = z->_a;
-//    int ovf = 0;
-//
-//    //printf("%04x: z80_add_acc(%d,%d, cy=%d)\n",z->pc,z->_a, arg, add_cy);
-//
-//    sum16 += acc16;
-//    if (add_cy && (z->_f & FLG_C))
-//        sum16++;
-//
-//    usum16 += uacc16;
-//    if (add_cy && (z->_f & FLG_C))
-//        usum16++;
-//
-//    if ((sum16 > 127) || (sum16 < -128)) ovf = 1;
-//
-//    z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_N|FLG_C);
-//
-//    if (usum16 & 0xFF00)
-//        z->_f |= FLG_C;
-//
-//    if (sum16 & 0x80)
-//        z->_f |= FLG_S;
-//
-//    if (!(sum16 & 0xFF))
-//        z->_f |= FLG_Z;
-//
-//    if ((z->_a & 0x0F) + (arg & 0x0F) + (add_cy?1:0) > 0x0F)
-//        z->_f |= FLG_H;
-//
-//    if (ovf)
-//        z->_f |= FLG_PV;
-//
-//    z->_f &= ~0x28;
-//    z->_f |= (sum16 & 0x28);
-//    z->_a = sum16 & 0xFF;
-//
-//    //printf("RES:%d FL:%02x\n",z->_a,z->_f);
-//}
-
-////////////////////////////////////////////////////////////////////////////////
 void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
-
-//    uint8_t save_a = z->_a, save_f = z->_f;
 
     full_adder8_t adder1;
     full_adder8_t adder2;
@@ -560,65 +512,10 @@ void z80_add_acc (z80_t *z, int8_t arg, uint8_t add_cy){
 
     z->_f &= ~0x28;
     z->_f |= (z->_a & 0x28);
-
-//    uint8_t copy_a = z->_a;
-//    uint8_t copy_f = z->_f;
-//
-//    z->_a = save_a;
-//    z->_f = save_f;
-//
-//    z80_add_acc_old (z, arg, add_cy);
-
-    //if ((z->_a != copy_a) || (z->_f != copy_f))
-    //    printf("ADD(%d,%d,%d): RES1:%d FL1:%02x RES2:%d FL2:%02x\n",save_a, arg, add_cy, copy_a,copy_f,z->_a,z->_f);
 }
-
-//void z80_sub_acc_old (z80_t *z, uint8_t arg, uint8_t sub_cy){
-//
-//    int16_t dif16 = (int16_t)arg; if (dif16 & 0x80) dif16 |= 0xFF00;
-//    int16_t acc16 = (int16_t)z->_a;  if (acc16 & 0x80) acc16 |= 0xFF00;
-//    uint16_t udif16 = (uint16_t)arg & 0xff;
-//    uint16_t uacc16 = z->_a;
-//    int ovf = 0;
-//    //printf("%04x: z80_sub_acc(%d,%d, cy=%d)\n",z->pc,z->_a, arg, sub_cy);
-//
-//    dif16 = acc16 - dif16;
-//    if (sub_cy && (z->_f & FLG_C))
-//        dif16--;
-//
-//    udif16 = uacc16 - udif16;
-//    if (sub_cy && (z->_f & FLG_C))
-//        udif16--;
-//
-//    if ((dif16 > 127) || (dif16 < -128)) ovf = 1;
-//
-//    z->_f &= ~(FLG_S|FLG_Z|FLG_H|FLG_PV|FLG_C);
-//    z->_f |= FLG_N;             // Indica op. subtração
-//
-//    if (udif16 & 0xFF00)
-//        z->_f |= FLG_C;
-//
-//    if (dif16 & 0x80)
-//        z->_f |= FLG_S;
-//
-//    if (!(dif16 & 0xFF))
-//        z->_f |= FLG_Z;
-//
-//    if ((z->_a & 0x0F) < (sub_cy?1:0)+(arg & 0x0F))
-//        z->_f |= FLG_H;
-//
-//    if (ovf)
-//        z->_f |= FLG_PV;
-//
-//    z->_f &= ~0x28;
-//    z->_f |= (dif16 & 0x28);
-//    z->_a = dif16 & 0xFF;
-//}
 
 ////////////////////////////////////////////////////////////////////////////////
 void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
-
-    //uint8_t save_a = z->_a, save_f = z->_f;
 
     full_adder8_t adder1;
     full_adder8_t adder2;
@@ -658,17 +555,6 @@ void z80_sub_acc (z80_t *z, uint8_t arg, uint8_t sub_cy){
 
     z->_f &= ~0x28;
     z->_f |= (z->_a & 0x28);
-
-//    uint8_t copy_a = z->_a;
-//    uint8_t copy_f = z->_f;
-//
-//    z->_a = save_a;
-//    z->_f = save_f;
-//
-//    z80_sub_acc_old (z, arg, sub_cy);
-
-    //if ((z->_a != copy_a) || (z->_f != copy_f))
-    //        printf("SUB(%02x)(%d,%d,%d): RES1:%d FL1:%02x RES2:%d FL2:%02x\n",z->opcode,save_a, arg, sub_cy, copy_a,copy_f,z->_a,z->_f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1400,14 +1286,14 @@ void z80_exec_ed(z80_t *z){
 
     if (z->opcode == 0x4D){                              // RETI
 
-        z->pc = z80_pop(z); // TODO: Estudar melhor como funciona
+        z->pc = z80_pop(z);
         return;
     }
 
     if (z->opcode == 0x45){                              // RETN
 
         z->iff1 = z->iff2;
-        z->pc = z80_pop(z); // TODO: Estudar melhor como funciona
+        z->pc = z80_pop(z);
         return;
     }
 }
@@ -1599,7 +1485,7 @@ int z80_exec_call(z80_t *z){
         z->pc = z->opcode & 0x38;
         break;
 
-//    case 0b11111111:    // RST 38h
+//    case 0b11111111:    // RST 38h - sequestrando opcode para fazer Breakpoint
 //        z->running = 0;
 //        z->print = 1;
 //        z->iff1 = z->iff2 = 0;
@@ -1614,13 +1500,8 @@ int z80_exec_call(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 int z80_exec_undoc_dd_fd(z80_t *z){
 
-    switch(z->opcode){
-
-
+    switch(z->opcode){  // Sem suporte por enquanto
     }
-
-
-
     return 1;
 }
 
@@ -2744,18 +2625,4 @@ void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size){
     addstr("\n");
     refresh();
 }
-
-/*
-PC:4FFE  SP:FFB6  BC:0000  DE:8000  HL:0000  IX:FFCE  IY:FFB6  AF:0044  F:P Z  - PE OV - NC
-(4ffe)DD  (4fff)77  (5000)FF
-:
-
-PC:5001  SP:FFB6  BC:0000  DE:8000  HL:0000  IX:FFCE  IY:FFB6  AF:0044  F:P Z  - PE OV - NC
-(5001)06  (5002)07
-:
-
-PC:5003  SP:FFB6  BC:0700  DE:8000  HL:0000  IX:FFCE  IY:FFB6  AF:0044  F:P Z  - PE OV - NC
-(5003)DD  (5004)CB  (5005)FD  (5006)3E  (5007)DD
-:
-*/
 

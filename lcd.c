@@ -8,18 +8,9 @@
 #define DEBUG 0
 
 ////////////////////////////////////////////////////////////////////////////////
-/* Draw a rectangle on the surface at the given position */
 static void draw_lcdback(SDL_Renderer* renderer, int x, int y) {
 
     SDL_Rect rect;
-//    rect.x = 0;
-//    rect.y = DIV_Y_POS;
-//    rect.w = 640;
-//    rect.h = 1;
-//    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-//    SDL_RenderFillRect(renderer, &rect);
-//    SDL_RenderPresent(renderer);
-
     rect.x = x;
     rect.y = y;
     rect.w = (16*17);
@@ -31,7 +22,6 @@ static void draw_lcdback(SDL_Renderer* renderer, int x, int y) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-/* Draw a rectangle on the surface at the given position */
 static void draw_lcdpoint(SDL_Renderer* renderer, int x, int y, int onoff) {
 
     SDL_Rect rect;

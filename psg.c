@@ -8,8 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 psg_t *psg_init(void){
 
-    //printf("PSG INIT\n");
-
     psg_t *p = malloc(sizeof(psg_t));
 
     p->r0 = p->r1 = p->r2 = p->r3 = p->r4 = p->r5 = p->r6 = p->r7 =

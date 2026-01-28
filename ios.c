@@ -82,7 +82,7 @@ uint8_t default_in_callback (ios_t *ios, uint8_t port){
     return 0xff;
 }
 
-pthread_mutex_t ios_mutex = PTHREAD_MUTEX_INITIALIZER;;
+pthread_mutex_t ios_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t new_in_callback (ios_t *ios, uint8_t port){
@@ -127,7 +127,7 @@ uint8_t new_in_callback (ios_t *ios, uint8_t port){
             ios->fpga_status &= ~0x04;
             if (ios->portserdata == 0x0a)
                 ios->portserdata = 0x0d;
-            //sprintf(buf,"RD FOM INT:%02x\n",portserdata); addstr(buf); refresh();
+
             pthread_mutex_unlock(&ios_mutex);
             return ios->portserdata;
     }
@@ -314,6 +314,7 @@ const kcode_t kcodes[] = {
         {0x00,0x00,0x00}
 };
 
+////////////////////////////////////////////////////////////////////////////////
 const kcode_t *find_kcode(int keycode){
 
     const kcode_t *k = kcodes;
@@ -327,6 +328,7 @@ const kcode_t *find_kcode(int keycode){
     return NULL;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void proc_keydown(ios_t *ios, int asccode){
 
     main_data_t *maindata = ios->maindata;
@@ -358,7 +360,6 @@ void proc_keydown(ios_t *ios, int asccode){
             ios->buttons_state &= ~0b10000000;
             break;
         case SDLK_F12:
-            //buttons_state &= ~0b10000000;
             z80_break(&maindata->z);
             break;
 
@@ -373,6 +374,7 @@ void proc_keydown(ios_t *ios, int asccode){
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void proc_keyup(ios_t *ios, int asccode){
 
     switch(asccode){
@@ -431,21 +433,17 @@ void *thread_sdl_events(void *arg){
 
             if (event.type == SDL_WINDOWEVENT){
                 if (event.window.event == SDL_WINDOWEVENT_RESTORED){
-                    //addstr("RESTORED! "); refresh();
                     maindata->sdl->wminimized = 0;
                     maindata->sdl->repaint_window = 1;
                 }
                 else if (event.window.event == SDL_WINDOWEVENT_MINIMIZED){
-                    //addstr("MINIMIZED! "); refresh();
                     maindata->sdl->wminimized = 1;
                 }
             } else if (event.type == SDL_QUIT) {
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {
-                //printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
                 proc_keydown(ios, event.key.keysym.sym);
             } else if (event.type == SDL_KEYUP) {
-                //printf("UP:EventSym:%d\n",event.key.keysym.sym);
                 proc_keyup(ios, event.key.keysym.sym);
             }
         }

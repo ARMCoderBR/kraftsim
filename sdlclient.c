@@ -35,7 +35,7 @@ sdldata_t *sdl_init(int width, int height){
         goto sdliniterr;
     }
 
-    // 2. Clear the entire screen/window to the set color
+    // Clear the entire screen/window to the set color
     if (SDL_RenderClear(sdl->renderer) < 0) {
         // Handle error (optional)
         SDL_Log("SDL_RenderClear failed: %s", SDL_GetError());
@@ -44,7 +44,7 @@ sdliniterr:
         return NULL;
     }
 
-    // 3. Update the screen with the rendering results
+    // Update the screen with the rendering results
     SDL_RenderPresent(sdl->renderer);
 
     sdl->wminimized = 0;

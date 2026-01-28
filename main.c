@@ -24,7 +24,6 @@
 #include "z80.h"
 #include "romprog.h"
 #include "ios.h"
-
 #include "main.h"
 #include "lcd.h"
 #include "leds.h"
@@ -71,13 +70,14 @@ void editprompt(char *buf, int size){
 void *z80runner(main_data_t *maindata){
 
 #if DEBUGPROMPT
-    char buf[255];
-#endif
 
-    int num_steps = 0;
+    char buf[255];
 
 #define NBP 4
     uint16_t bp[1+NBP] = {0};
+#endif
+
+    int num_steps = 0;
 
     for (;!maindata->z.halted;){
 
@@ -100,10 +100,9 @@ void *z80runner(main_data_t *maindata){
 
         sched_yield();
 
-        if (!maindata->z.running){
 #if DEBUG_PROMPT
+        if (!maindata->z.running){
             z80_dump_regs(&maindata->z);
-#endif
             //sprintf(buf,"Step:%d\n",num_steps);
             //addstr(buf);
         }
@@ -126,6 +125,7 @@ void *z80runner(main_data_t *maindata){
                 }
             }
         }
+#endif
 
         z80_step(&maindata->z, maindata->ios);
         num_steps++;

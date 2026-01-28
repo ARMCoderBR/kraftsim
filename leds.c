@@ -6,8 +6,6 @@
 
 #include "leds.h"
 
-#define LEDS_X_OFFSET 380
-
 ////////////////////////////////////////////////////////////////////////////////
 static Uint32 leds_set_tick(Uint32 interval, void *param){
 

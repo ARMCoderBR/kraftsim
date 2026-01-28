@@ -8,7 +8,6 @@ typedef struct {
     pa_simple *pa_driver;
     int pa_error;
 
-    ////////
     pthread_t mythread;
     int endthread;
     uint8_t *buf;
