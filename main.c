@@ -110,10 +110,12 @@ void *z80runner(main_data_t *maindata){
                         bp[NBP] = 0;
 
                     maindata->z.running = 0;
+                    maindata->z.iff1 = maindata->z.iff2 = 0;
+
                     z80_print(&maindata->z);
-                    //z80_dump_regs(&maindata->z);
+                    z80_dump_regs(&maindata->z);
                     //sprintf(buf,"Step:%d\n",num_steps);
-                    addstr(buf);
+                    //addstr(buf);
                     break;
                 }
             }

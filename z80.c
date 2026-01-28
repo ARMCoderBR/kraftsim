@@ -108,13 +108,14 @@ void z80_refresh_up(z80_t *z){
 ////////////////////////////////////////////////////////////////////////////////
 uint8_t z80_fetch(z80_t *z){
 
-    uint8_t b = z80_read(z,z->pc++);
+    uint8_t b = z80_read(z,z->pc);
     if (z->print){
-        char buf[10];
-        sprintf(buf,"%02X ",b);
+        char buf[20];
+        sprintf(buf,"(%04x)%02X  ",z->pc,b);
         addstr(buf);
         refresh();
     }
+    z->pc++;
     z->afterPC = 0;
     return b;
 }
