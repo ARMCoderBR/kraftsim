@@ -162,14 +162,22 @@ void vga_refresh(vga_t *vga, int force){
     if (!vga->vgaTick) return;
     vga->vgaTick = 0;
 
+    vga->cursor++; if (vga->cursor > 16) vga->cursor = 0;
+
     SDL_Rect rect;
 
     if (vga->mode == 0){
+
+        if (vga->cursor & 1) return;
 
         rect.x = 0;
         rect.y = 0;
         rect.w = 16;
         rect.h = 16;
+        SDL_Rect rectcur;
+        rectcur.w = 16;
+        rectcur.h = 2;
+        SDL_SetRenderDrawColor(vga->renderer, 0, 255, 0, 255);
 
         int addr = vga->scrollreg * COLS;
 
@@ -177,8 +185,17 @@ void vga_refresh(vga_t *vga, int force){
 
             for (int col = 0; col < COLS; col++){
 
-                SDL_RenderCopy(vga->renderer, vga->fontTexture[vga->displayBuffer[addr++]], NULL, &rect);
+                SDL_RenderCopy(vga->renderer, vga->fontTexture[vga->displayBuffer[addr]], NULL, &rect);
 
+                if (addr == vga->wraddr){
+                    if (vga->cursor > 8){
+                        rectcur.x = rect.x;
+                        rectcur.y = rect.y+14;
+                        SDL_RenderFillRect(vga->renderer, &rectcur);
+                    }
+                }
+
+                addr++;
                 if (addr >= (ROWS*COLS))
                     addr = 0;
 
