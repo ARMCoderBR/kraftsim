@@ -225,8 +225,8 @@ int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramb
     //return memprog_readintelhex(ram, "../chiptunes.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../clock.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../clock2.ihx", rambase, ramsize);
-    //return memprog_readintelhex(ram, "../mandel.ihx", rambase, ramsize);
-    return memprog_readintelhex(ram, "../invaders.ihx", rambase, ramsize);
+    return memprog_readintelhex(ram, "../mandel.ihx", rambase, ramsize);
+    //return memprog_readintelhex(ram, "../invaders.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../kitt.ihx", rambase, ramsize);
 }
 
