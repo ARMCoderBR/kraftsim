@@ -122,7 +122,7 @@ void *z80runner(main_data_t *maindata){
             }
         }
 
-        z80_step(&maindata->z);
+        z80_step(&maindata->z, maindata->ios);
         num_steps++;
 
         //printf("NextPC:%04x AfterPC:%04x\n",z.pc,z.afterPC);
@@ -296,7 +296,7 @@ int main (int argc, char *argv[]){
 #define LCD_X_OFFSET 5
 #define LEDS_X_OFFSET 380
 
-    ios_init(&maindata);
+    maindata.ios = ios_init(&maindata);
     maindata.lcd = lcd_init(LCD_X_OFFSET, maindata.height-56, maindata.sdl->renderer);
     maindata.leds = leds_init(LEDS_X_OFFSET, maindata.height-25, maindata.sdl->renderer);
     maindata.vga = vga_init(maindata.sdl->renderer);
@@ -335,7 +335,8 @@ int main (int argc, char *argv[]){
     z80runner(&maindata);
 
     //z80_dump_mem(&maindata.z, RAMBASE,512);
-    ios_close();
+
+    ios_close(maindata.ios);
 
     free(maindata.rom);
     free(maindata.ram);

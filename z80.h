@@ -121,7 +121,7 @@ void z80_initialize(z80_t *z, const uint8_t *rom, uint16_t romsz, uint8_t *ram, 
 
 void z80_reset (z80_t *z);
 void z80_break (z80_t *z);
-void z80_step(z80_t *z);
+void z80_step(z80_t *z, ios_t *ios);
 void z80_dump_regs(z80_t *z);
 void z80_dump_mem(z80_t *z, uint16_t start, uint16_t size);
 void z80_print(z80_t *z);

@@ -28,6 +28,7 @@ typedef struct {
     uint8_t *ram;
     z80_t z;
     pthread_t z80thread;
+    ios_t *ios;
     leds_t *leds;
     lcd_t *lcd;
     vga_t *vga;

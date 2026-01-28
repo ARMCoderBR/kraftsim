@@ -10,6 +10,7 @@
 #include "lcd.h"
 #include "main.h"
 #include "vga.h"
+#include "main.h"
 
 #define PORTLEDS        0x00
 #define PORTBUTTONS     0x00
@@ -34,28 +35,12 @@
 #define PORTFPGASTATUS  0x5F
 
 ////////////////////////////////////////////////////////////////////////////////
-uint8_t fpga_status = 0;
-uint8_t porttimer = 0;
-uint8_t portserdata = 0;
-uint8_t portserctl = 0;
-uint8_t psgaddr = 0;
-
-uint8_t buttons_state = 0xff;
-
-psg_t *psg;
-
-main_data_t *maindata;
-
-uint8_t ps2_queue[16];
-int ps2_head;
-int ps2_tail;
-int ps2_qty;
+void default_out_callback (ios_t *ios, uint8_t port, uint8_t value){}
 
 ////////////////////////////////////////////////////////////////////////////////
-void default_out_callback (uint8_t port, uint8_t value){}
+void new_out_callback (ios_t *ios, uint8_t port, uint8_t value){
 
-////////////////////////////////////////////////////////////////////////////////
-void new_out_callback (uint8_t port, uint8_t value){
+    main_data_t *maindata = ios->maindata;
 
     switch (port){
         case PORTLEDS:
@@ -77,22 +62,22 @@ void new_out_callback (uint8_t port, uint8_t value){
             vga_out(maindata->vga, port, value, maindata->sdl->wminimized);
             break;
         case PORTTIMER:
-            porttimer = value;
+            ios->porttimer = value;
             break;
         case PORTSERCTL:
-            portserctl = value;
+            ios->portserctl = value;
             break;
         case PORTAYADDR:
-            psgaddr = value;
+            ios->psgaddr = value;
             break;
         case PORTAYDATA:
-            psg_outreg(psg, psgaddr, value);
+            psg_outreg(ios->psg, ios->psgaddr, value);
             break;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint8_t default_in_callback (uint8_t port){
+uint8_t default_in_callback (ios_t *ios, uint8_t port){
 
     return 0xff;
 }
@@ -100,9 +85,9 @@ uint8_t default_in_callback (uint8_t port){
 pthread_mutex_t ios_mutex = PTHREAD_MUTEX_INITIALIZER;;
 
 ////////////////////////////////////////////////////////////////////////////////
-uint8_t new_in_callback (uint8_t port){
+uint8_t new_in_callback (ios_t *ios, uint8_t port){
 
-    //char buf[128];
+    main_data_t *maindata = ios->maindata;
 
     switch (port){
 
@@ -110,65 +95,59 @@ uint8_t new_in_callback (uint8_t port){
             return vga_in(maindata->vga, port);
 
         case PORTBUTTONS:
-            return buttons_state;
+            return ios->buttons_state;
 
         case PORTSERSTATUS:
             return 0;
 
         case PORTFPGASTATUS:
-            return fpga_status;
+            return ios->fpga_status;
 
         case PORTKEY:
             pthread_mutex_lock(&ios_mutex);
             uint8_t val = 0xff;
-            if (ps2_qty){
+            if (ios->ps2_qty){
 
-                val = ps2_queue[ps2_tail++];
-                if (ps2_tail == sizeof(ps2_queue))
-                    ps2_tail = 0;
-                ps2_qty--;
+                val = ios->ps2_queue[ios->ps2_tail++];
+                if (ios->ps2_tail == sizeof(ios->ps2_queue))
+                    ios->ps2_tail = 0;
+                ios->ps2_qty--;
             }
-            if (!ps2_qty)
-                fpga_status &= ~0x01;
+            if (!ios->ps2_qty)
+                ios->fpga_status &= ~0x01;
             pthread_mutex_unlock(&ios_mutex);
             return val;
 
         case PORTTIMER:
-            fpga_status &= ~0x02;
+            ios->fpga_status &= ~0x02;
             return 0xFF;
 
         case PORTSERDATA:
             pthread_mutex_lock(&ios_mutex);
-            fpga_status &= ~0x04;
-            if (portserdata == 0x0a)
-                portserdata = 0x0d;
+            ios->fpga_status &= ~0x04;
+            if (ios->portserdata == 0x0a)
+                ios->portserdata = 0x0d;
             //sprintf(buf,"RD FOM INT:%02x\n",portserdata); addstr(buf); refresh();
             pthread_mutex_unlock(&ios_mutex);
-            return portserdata;
+            return ios->portserdata;
     }
 
     return 0xff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void default_hw_run(void){}
-
-fd_set readfds;
-struct timeval tv;
-pthread_t serialthread;
-pthread_t timerthread;
-pthread_t psgthread;
-pthread_t sdleventthread;
-int endthreads = 0;
+void default_hw_run(ios_t *ios){}
 
 ////////////////////////////////////////////////////////////////////////////////
 void *thread_timer(void *arg){
+
+    ios_t *ios = arg;
 
     time_t start = time(NULL);
     time_t now;
     int ticks = 0;
 
-    for (;!endthreads;){
+    for (;!ios->endthreads;){
 
         now = time(NULL);
 
@@ -196,8 +175,8 @@ void *thread_timer(void *arg){
 
         ticks++;
 
-        if (porttimer & 0x01)
-            fpga_status |= 0x02;
+        if (ios->porttimer & 0x01)
+            ios->fpga_status |= 0x02;
     }
     return NULL;
 }
@@ -205,10 +184,15 @@ void *thread_timer(void *arg){
 ////////////////////////////////////////////////////////////////////////////////
 void *thread_serial(void *arg){
 
-    for (;!endthreads;){
+    ios_t *ios = arg;
 
-        if ( ( (portserctl & (PORTSER_EN|PORTSER_RTSON)) == (PORTSER_EN|PORTSER_RTSON) )
-               &&  (!(fpga_status & 0x04) ) ){
+    fd_set readfds;
+    struct timeval tv;
+
+    for (;!ios->endthreads;){
+
+        if ( ( (ios->portserctl & (PORTSER_EN|PORTSER_RTSON)) == (PORTSER_EN|PORTSER_RTSON) )
+               &&  (!(ios->fpga_status & 0x04) ) ){
 
             FD_ZERO (&readfds);
             FD_SET (0,&readfds);
@@ -218,10 +202,9 @@ void *thread_serial(void *arg){
 
             if (FD_ISSET(0,&readfds)) {
                 pthread_mutex_lock(&ios_mutex);
-                portserdata = getch();
-                fpga_status |= 0x04;
+                ios->portserdata = getch();
+                ios->fpga_status |= 0x04;
                 pthread_mutex_unlock(&ios_mutex);
-                //addch(portserdata); refresh();
             }
         }
         else
@@ -234,33 +217,34 @@ void *thread_serial(void *arg){
 ////////////////////////////////////////////////////////////////////////////////
 void *thread_psg(void *arg){
 
-    for (;!endthreads;){
-        psg_run(psg);
+    ios_t *ios = arg;
+
+    for (;!ios->endthreads;){
+        psg_run(ios->psg);
     }
 
     return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ps2_insert(uint8_t code){
+void ps2_insert(ios_t *ios, uint8_t code){
 
     pthread_mutex_lock(&ios_mutex);
 
-    if (ps2_qty < sizeof(ps2_queue)){
+    if (ios->ps2_qty < sizeof(ios->ps2_queue)){
 
-        ps2_queue[ps2_head++] = code;
-        if (ps2_head == sizeof(ps2_queue))
-            ps2_head = 0;
+        ios->ps2_queue[ios->ps2_head++] = code;
+        if (ios->ps2_head == sizeof(ios->ps2_queue))
+            ios->ps2_head = 0;
 
-        fpga_status |= 0x01;
-        ps2_qty++;
+        ios->fpga_status |= 0x01;
+        ios->ps2_qty++;
     }
 
     pthread_mutex_unlock(&ios_mutex);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
 typedef struct {
 
     int keycode;
@@ -343,35 +327,36 @@ const kcode_t *find_kcode(int keycode){
     return NULL;
 }
 
-void proc_keydown(int asccode){
+void proc_keydown(ios_t *ios, int asccode){
+
+    main_data_t *maindata = ios->maindata;
 
     switch(asccode){
 
         case SDLK_F1:
-            buttons_state &= ~0b00000001;
+            ios->buttons_state &= ~0b00000001;
             break;
         case SDLK_F2:
-            buttons_state &= ~0b00000010;
+            ios->buttons_state &= ~0b00000010;
             break;
         case SDLK_F3:
-            buttons_state &= ~0b00000100;
+            ios->buttons_state &= ~0b00000100;
             break;
         case SDLK_F4:
-            buttons_state &= ~0b00001000;
+            ios->buttons_state &= ~0b00001000;
             break;
         case SDLK_F5:
-            buttons_state &= ~0b00010000;
+            ios->buttons_state &= ~0b00010000;
             break;
         case SDLK_F6:
-            buttons_state &= ~0b00100000;
+            ios->buttons_state &= ~0b00100000;
             break;
         case SDLK_F7:
-            buttons_state &= ~0b01000000;
+            ios->buttons_state &= ~0b01000000;
             break;
         case SDLK_F8:
-            buttons_state &= ~0b10000000;
+            ios->buttons_state &= ~0b10000000;
             break;
-
         case SDLK_F12:
             //buttons_state &= ~0b10000000;
             z80_break(&maindata->z);
@@ -380,53 +365,53 @@ void proc_keydown(int asccode){
         default:
             const kcode_t *k = find_kcode(asccode);
             if (k){
-                ps2_insert(k->scancode1);
+                ps2_insert(ios, k->scancode1);
                 if (k->scancode2)
-                    ps2_insert(k->scancode2);
+                    ps2_insert(ios, k->scancode2);
             }
             break;
     }
 }
 
-void proc_keyup(int asccode){
+void proc_keyup(ios_t *ios, int asccode){
 
     switch(asccode){
 
         case SDLK_F1:
-            buttons_state |= 0b00000001;
+            ios->buttons_state |= 0b00000001;
             break;
         case SDLK_F2:
-            buttons_state |= 0b00000010;
+            ios->buttons_state |= 0b00000010;
             break;
         case SDLK_F3:
-            buttons_state |= 0b00000100;
+            ios->buttons_state |= 0b00000100;
             break;
         case SDLK_F4:
-            buttons_state |= 0b00001000;
+            ios->buttons_state |= 0b00001000;
             break;
         case SDLK_F5:
-            buttons_state |= 0b00010000;
+            ios->buttons_state |= 0b00010000;
             break;
         case SDLK_F6:
-            buttons_state |= 0b00100000;
+            ios->buttons_state |= 0b00100000;
             break;
         case SDLK_F7:
-            buttons_state |= 0b01000000;
+            ios->buttons_state |= 0b01000000;
             break;
         case SDLK_F8:
-            buttons_state |= 0b10000000;
+            ios->buttons_state |= 0b10000000;
             break;
         default:
             const kcode_t *k = find_kcode(asccode);
             if (k){
                 if (!k->scancode2){
-                    ps2_insert(0xF0);
-                    ps2_insert(k->scancode1);
+                    ps2_insert(ios, 0xF0);
+                    ps2_insert(ios, k->scancode1);
                 }
                 else{
-                    ps2_insert(k->scancode1);
-                    ps2_insert(0xF0);
-                    ps2_insert(k->scancode2);
+                    ps2_insert(ios, k->scancode1);
+                    ps2_insert(ios, 0xF0);
+                    ps2_insert(ios, k->scancode2);
                 }
             }
             break;
@@ -436,9 +421,11 @@ void proc_keyup(int asccode){
 ////////////////////////////////////////////////////////////////////////////////
 void *thread_sdl_events(void *arg){
 
+    ios_t *ios = arg;
+    main_data_t *maindata = ios->maindata;
     SDL_Event event;
 
-    for (;!endthreads;){
+    for (;!ios->endthreads;){
 
         while (SDL_PollEvent(&event)) {
 
@@ -456,10 +443,10 @@ void *thread_sdl_events(void *arg){
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {
                 //printf("DOWN:EventSym:%d\n",event.key.keysym.sym);
-                proc_keydown(event.key.keysym.sym);
+                proc_keydown(ios, event.key.keysym.sym);
             } else if (event.type == SDL_KEYUP) {
                 //printf("UP:EventSym:%d\n",event.key.keysym.sym);
-                proc_keyup(event.key.keysym.sym);
+                proc_keyup(ios, event.key.keysym.sym);
             }
         }
         usleep(10000);
@@ -468,57 +455,69 @@ void *thread_sdl_events(void *arg){
     return NULL;
 }
 
-
-int presc = 0;
 ////////////////////////////////////////////////////////////////////////////////
-void new_hw_run(void){
+void new_hw_run(ios_t *ios){
 
-    if (!presc){
+    if (!ios->presc){
 
         usleep(20);
-        presc = 50;
+        ios->presc = 50;
     }
     else
-        --presc;
+        --ios->presc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int default_irq_sample(void){
+int default_irq_sample(ios_t *ios){
 
     return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
-int new_irq_sample(void){
+int new_irq_sample(ios_t *ios){
 
-    return fpga_status & 0x07;
+    return ios->fpga_status & 0x07;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ios_init(void *main){
+ios_t *ios_init(void *main){
 
-    maindata = main;
+    ios_t *ios = malloc(sizeof(ios_t));
+    if (!ios) return NULL;
 
-    buttons_state = 0xff;
+    ios->maindata = main;
 
-    psg = psg_init();
+    ios->fpga_status = 0;
+    ios->porttimer = 0;
+    ios->portserdata = 0;
+    ios->portserctl = 0;
+    ios->psgaddr = 0;
+    ios->buttons_state = 0xff;
+    ios->endthreads = 0;
+    ios->presc = 0;
 
-    ps2_head = ps2_tail = ps2_qty = 0;
+    ios->psg = psg_init();
 
-    pthread_create(&serialthread, NULL, thread_serial, NULL);
-    pthread_create(&timerthread, NULL, thread_timer, NULL);
-    pthread_create(&psgthread, NULL, thread_psg, NULL);
-    pthread_create(&sdleventthread, NULL, thread_sdl_events, NULL);
+    ios->ps2_head = ios->ps2_tail = ios->ps2_qty = 0;
+
+    pthread_create(&ios->serialthread, NULL, thread_serial, ios);
+    pthread_create(&ios->timerthread, NULL, thread_timer, ios);
+    pthread_create(&ios->psgthread, NULL, thread_psg, ios);
+    pthread_create(&ios->sdleventthread, NULL, thread_sdl_events, ios);
+
+    return ios;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ios_close(void){
+void ios_close(ios_t *ios){
 
-    endthreads = 1;
+    ios->endthreads = 1;
 
-    pthread_join(serialthread, NULL);
-    pthread_join(timerthread, NULL);
-    pthread_join(psgthread, NULL);
-    pthread_join(sdleventthread, NULL);
+    pthread_join(ios->serialthread, NULL);
+    pthread_join(ios->timerthread, NULL);
+    pthread_join(ios->psgthread, NULL);
+    pthread_join(ios->sdleventthread, NULL);
 
-    psg_end(psg);
+    psg_end(ios->psg);
+
+    free(ios);
 }

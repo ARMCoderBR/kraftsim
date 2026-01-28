@@ -1625,7 +1625,7 @@ int z80_exec_undoc_dd_fd(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void z80_step_in(z80_t *z){
+void z80_step_in(z80_t *z, ios_t *ios){
 
     uint8_t opcode;
 
@@ -2445,7 +2445,7 @@ rescan:
         if (opcode == 0xDB){                             // IN A,(n)
 
             uint8_t port = z80_fetch(z);
-            z->_a = z->in_callback(port);
+            z->_a = z->in_callback(ios, port);
             return;
         }
 
@@ -2453,7 +2453,7 @@ rescan:
         if (opcode == 0xD3){                             // OUT (n),A
 
             uint8_t port = z80_fetch(z);
-            z->out_callback(port,z->_a);
+            z->out_callback(ios, port, z->_a);
             return;
         }
 
@@ -2654,18 +2654,19 @@ void z80_break(z80_t *z){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void z80_step(z80_t *z){
+void z80_step(z80_t *z, ios_t *ios){
 
-    z->hw_run();
+    z->hw_run(ios);
+
     if (z->iff1)
-        if (z->irq_sample()){
+        if (z->irq_sample(ios)){
 
             z->iff1 = z->iff2 = 0;
             z80_push(z, z->pc);
             z->pc = 0x38;   // IM 1 apenas por enquanto!
         }
 
-    z80_step_in(z);
+    z80_step_in(z, ios);
     z->code_prefix = 0;
 }
 
