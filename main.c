@@ -13,6 +13,7 @@
 #include <curses.h>
 #include <unistd.h>
 #include <SDL2/SDL.h>
+#include <getopt.h>
 
 #define RUN 1
 #define ROMSZ 16384
@@ -221,8 +222,65 @@ listbp:
     return NULL;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+typedef enum {
+
+    COD_VERSION = 1,
+    COD_IMGFILE = 2,
+} cod_option;
+
+struct option longopts[] = {
+        {
+            "l",               //const char *name;
+            required_argument,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_IMGFILE,            //int         val;
+        },
+        {
+            "v",                    //const char *name;
+            0,                      //int         has_arg;
+            0,                      //int        *flag;
+            COD_VERSION,            //int         val;
+        },
+        {
+            0,                      //const char *name;
+            0,                      //int         has_arg;
+            0,                      //int        *flag;
+            0,                      //int         val;
+        }
+    };
+
 ////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
+
+    int res;
+    int longindex;
+    char filename[256] = {0};
+
+    for (;;) {
+
+        res = getopt_long_only(argc, argv, "", longopts, &longindex);
+
+        if ((res == -1) || (res == 63))
+            break;
+
+        //printf("res:%d longindex:%d\n",res,longindex);
+        int val = longopts[longindex].val;
+
+        switch (val) {
+
+        case COD_IMGFILE:
+            if (optarg)
+                strncpy(filename,optarg,sizeof(filename));
+            break;
+
+        case COD_VERSION:
+            printf("KraftSim v1.0\n(c)2026 ARMCoder\n\n");
+            return 0;
+        }
+    }
 
     main_data_t maindata;
 
@@ -250,7 +308,7 @@ int main (int argc, char *argv[]){
     memset(maindata.rom,0xff,ROMSZ);
     memset(maindata.ram,0x00,RAMSZ);
 
-    if (romprog(maindata.rom,ROMSZ,maindata.ram,RAMBASE,RAMSZ) < 0){
+    if (romprog_kraftsim(maindata.rom,ROMSZ,maindata.ram,RAMBASE,RAMSZ,filename) < 0){
 
         addstr("Error loading ROM!\n");
         return -1;
