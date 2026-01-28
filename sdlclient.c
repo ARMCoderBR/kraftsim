@@ -55,6 +55,8 @@ sdliniterr:
 ////////////////////////////////////////////////////////////////////////////////
 void sdl_close(sdldata_t *sdl){
 
+    SDL_DestroyRenderer(sdl->renderer);
+    SDL_DestroyWindow(sdl->window);
     SDL_Quit();
     free(sdl);
 }

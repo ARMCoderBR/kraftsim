@@ -3,7 +3,7 @@
 #include <sys/select.h>
 #include <pthread.h>
 #include <unistd.h>
-
+#include "z80.h"
 #include "ios.h"
 #include "psg.h"
 #include "leds.h"
@@ -345,6 +345,11 @@ void proc_keydown(int asccode){
             break;
         case SDLK_F8:
             buttons_state &= ~0b10000000;
+            break;
+
+        case SDLK_F12:
+            //buttons_state &= ~0b10000000;
+            z80_break(&maindata->z);
             break;
 
         default:

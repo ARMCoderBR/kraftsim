@@ -64,7 +64,7 @@ int proclineintelhex (uint8_t *mem, uint16_t membase, uint16_t memsize, char *bu
         return -1;
     }
 
-    printf("size:%02x addr:%04x type:%02x - %s\n",size,addr,type,buf);
+    //printf("size:%02x addr:%04x type:%02x - %s\n",size,addr,type,buf);
 
     if (type == 0){ // data
 
@@ -179,7 +179,7 @@ int romprog_readplainhex(uint8_t *rom, char *fname, uint16_t size){
             if (buf[len-1] == '\n')
                 buf[len-1] = 0;
 
-            printf("Programming %04x Data:%s\n",pc, buf);
+            //printf("Programming %04x Data:%s\n",pc, buf);
             len = proclineplainhex(rom, size, buf, pc);
 
             if (len <= 0) break;
@@ -225,8 +225,8 @@ int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramb
     //return memprog_readintelhex(ram, "../chiptunes.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../clock.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../clock2.ihx", rambase, ramsize);
-    //return memprog_readintelhex(ram, "../mandel.ihx", rambase, ramsize);
-    return memprog_readintelhex(ram, "../invaders.ihx", rambase, ramsize);
+    return memprog_readintelhex(ram, "../mandel.ihx", rambase, ramsize);
+    //return memprog_readintelhex(ram, "../invaders.ihx", rambase, ramsize);
     //return memprog_readintelhex(ram, "../kitt.ihx", rambase, ramsize);
 }
 

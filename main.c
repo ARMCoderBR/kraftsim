@@ -29,6 +29,45 @@
 #include "vga.h"
 
 ////////////////////////////////////////////////////////////////////////////////
+void editprompt(char *buf, int size){
+
+    buf[0] = buf[1] = 0;
+    addstr("\n:");
+    refresh();
+
+    //fgets(buf,sizeof(buf),stdin);
+    int pbuf = 0;
+    char cbuf[32];
+    for (;;){
+
+        //read (1,cbuf,sizeof(cbuf));
+        cbuf[0] = getch();
+
+        if ((cbuf[0] == 8)||
+            (cbuf[0] == 127)){
+            if (pbuf) --pbuf;
+            else continue;
+        }
+        else
+        if (cbuf[0] == 10){
+            addstr("\n");
+            break;
+        }
+        else
+            if (pbuf < size)
+                buf[pbuf++] = cbuf[0];
+        if (cbuf[0] == 127){
+            addch(8);addch(' ');addch(8);
+        }
+        else
+            addch(cbuf[0]);
+        refresh();
+    }
+
+    buf[pbuf] = 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void *z80runner(main_data_t *maindata){
 
     char buf[255];
@@ -59,8 +98,8 @@ void *z80runner(main_data_t *maindata){
 
         if (!maindata->z.running){
             z80_dump_regs(&maindata->z);
-            sprintf(buf,"Step:%d\n",num_steps);
-            addstr(buf);
+            //sprintf(buf,"Step:%d\n",num_steps);
+            //addstr(buf);
         }
         else{
             for (int i = 0; i < 1+NBP; i++){
@@ -72,8 +111,8 @@ void *z80runner(main_data_t *maindata){
 
                     maindata->z.running = 0;
                     z80_print(&maindata->z);
-                    z80_dump_regs(&maindata->z);
-                    sprintf(buf,"Step:%d\n",num_steps);
+                    //z80_dump_regs(&maindata->z);
+                    //sprintf(buf,"Step:%d\n",num_steps);
                     addstr(buf);
                     break;
                 }
@@ -88,39 +127,7 @@ void *z80runner(main_data_t *maindata){
         if (maindata->z.running)
             continue;
 prompt:
-        buf[0] = buf[1] = 0;
-        addstr("\n:");
-        refresh();
-
-        //fgets(buf,sizeof(buf),stdin);
-        int pbuf = 0;
-        char cbuf[32];
-        for (;;){
-
-            //read (1,cbuf,sizeof(cbuf));
-            cbuf[0] = getch();
-
-            if ((cbuf[0] == 8)||
-                (cbuf[0] == 127)){
-                if (pbuf) --pbuf;
-                else continue;
-            }
-            else
-            if (cbuf[0] == 10){
-                addstr("\n");
-                break;
-            }
-            else
-                buf[pbuf++] = cbuf[0];
-            if (cbuf[0] == 127){
-                addch(8);addch(' ');addch(8);
-            }
-            else
-                addch(cbuf[0]);
-            refresh();
-        }
-
-        buf[pbuf] = 0;
+        editprompt(buf,32);
 
         if (!strncmp(buf,"rst",3)){
              z80_reset(&maindata->z);
@@ -134,8 +141,9 @@ prompt:
             case 'q':
                 sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
                 addstr(buf);
-                endwin();
-                exit(0);
+                //endwin();
+                //exit(0);
+                return NULL;
 
             case 'h':
                 addstr("  # HELP #\n");
@@ -180,8 +188,8 @@ listbp:
                     case 's':
                         if ((buf[2] >= '0') && (buf[2] <= '3')){
                             addstr("Enter BP val hhhh:");
-                            char buf2[8];
-                            fgets(buf2,sizeof(buf2),stdin);
+                            char buf2[32];
+                            editprompt(buf2,10);
                             int val;
                             sscanf(buf2,"%04x",&val);
                             bp[buf[2]-'0'] = val;
@@ -274,16 +282,22 @@ int main (int argc, char *argv[]){
 
     //z80_dump_mem(&maindata.z, RAMBASE,512);
 
+    //addstr("\n=== FINISHING ===\n"); refresh();
+
     free(maindata.rom);
+    //addstr("\n=== FINISHING (1) ===\n"); refresh();
     free(maindata.ram);
 
     leds_close(maindata.leds);
+    //addstr("\n=== FINISHING (2) ===\n"); refresh();
     lcd_close(maindata.lcd);
+    //addstr("\n=== FINISHING (3) ===\n"); refresh();
     vga_close(maindata.vga);
-    ///
+    //addstr("\n=== FINISHING (4) ===\n"); refresh();
     sdl_close(maindata.sdl);
+    addstr("\n=== FINISHED OK ===\n\n"); refresh();
 
-    //getch();
+    getch();
     endwin();
 
     return 0;
