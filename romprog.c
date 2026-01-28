@@ -212,7 +212,7 @@ int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize, char *fname){
+int apprun_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize, char *app_fname){
 
     memset(rom,0xff,romsize);
 
@@ -221,25 +221,17 @@ int romprog_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramb
     res = memprog_readintelhex(rom, "../bas32k.ihx", 0, romsize);
     if (res < 0) return res;
 
-    if (fname)
-        if (fname[0])
-            return memprog_readintelhex(ram, fname, rambase, ramsize);
+    if (app_fname)
+        if (app_fname[0])
+            return memprog_readintelhex(ram, app_fname, rambase, ramsize);
 
     return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize){
+int romrun_kraftsim(uint8_t *rom, uint16_t romsize, char *rom_fname){
 
-    //return romprog_picalc_old(rom, size);
-    //return romprog_picalc_kraft(rom, romsize);
-//#define FNAME "../wolfram.ihx"
-//#define FNAME "../chiptunes2.ihx"
-//#define FNAME "../chiptunes.ihx"
-//#define FNAME "../clock.ihx"
-//#define FNAME "../clock2.ihx"
-//#define FNAME "../mandel.ihx"
-#define FNAME "../invaders.ihx"
-//#define FNAME "../kitt.ihx"
-    return romprog_kraftsim(rom, romsize, ram, rambase, ramsize, FNAME);
+    memset(rom,0xff,romsize);
+
+    return memprog_readintelhex(rom, rom_fname, 0, romsize);
 }

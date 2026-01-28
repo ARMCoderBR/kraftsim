@@ -240,7 +240,9 @@ typedef enum {
 
     COD_VERSION = 1,
     COD_IMGFILE = 2,
-} cod_option;
+    COD_ROMFILE = 3,
+    COD_WAITKEY = 4,
+} cod_option_t;
 
 struct option longopts[] = {
         {
@@ -248,6 +250,18 @@ struct option longopts[] = {
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_IMGFILE,            //int         val;
+        },
+        {
+            "w",               //const char *name;
+            0,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_WAITKEY,            //int         val;
+        },
+        {
+            "r",               //const char *name;
+            required_argument,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_ROMFILE,            //int         val;
         },
         {
             "v",                    //const char *name;
@@ -264,11 +278,19 @@ struct option longopts[] = {
     };
 
 ////////////////////////////////////////////////////////////////////////////////
+void error1(){
+
+    printf("Commands -l and -r cannot be used simultaneously.\n");
+}
+
+////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
 
     int res;
     int longindex;
     char filename[256] = {0};
+    cod_option_t option = 0;
+    int waitkey = 0;
 
     for (;;) {
 
@@ -282,7 +304,26 @@ int main (int argc, char *argv[]){
 
         switch (val) {
 
+        case COD_WAITKEY:
+            waitkey = 1;
+            break;
+
         case COD_IMGFILE:
+            if (filename[0]){
+                error1();
+                return 0;
+            }
+            option = val;
+            if (optarg)
+                strncpy(filename,optarg,sizeof(filename));
+            break;
+
+        case COD_ROMFILE:
+            if (filename[0]){
+                error1();
+                return 0;
+            }
+            option = val;
             if (optarg)
                 strncpy(filename,optarg,sizeof(filename));
             break;
@@ -319,9 +360,15 @@ int main (int argc, char *argv[]){
     memset(maindata.rom,0xff,ROMSZ);
     memset(maindata.ram,0x00,RAMSZ);
 
-    if (romprog_kraftsim(maindata.rom,ROMSZ,maindata.ram,RAMBASE,RAMSZ,filename) < 0){
-
-        addstr("Error loading ROM!\n");
+    if (option == COD_ROMFILE){
+        if (romrun_kraftsim(maindata.rom,ROMSZ, filename)<0){
+            addstr("Error loading ROM image!\n");
+            return -1;
+        }
+    }
+    else
+    if (apprun_kraftsim(maindata.rom,ROMSZ,maindata.ram,RAMBASE,RAMSZ,filename) < 0){
+        addstr("Error loading BIOS or APP image!\n");
         return -1;
     }
 
@@ -354,12 +401,14 @@ int main (int argc, char *argv[]){
     leds_close(maindata.leds);
     lcd_close(maindata.lcd);
     vga_close(maindata.vga);
+
+    if (waitkey){
+        addstr("\n=== NORMAL END - PRESS ANY KEY ===\n\n"); refresh();
+        getch();
+    }
+
     sdl_close(maindata.sdl);
 
-#if DEBUGPROMPT
-    addstr("\n=== NORMAL END - PRESS ANY KEY ===\n\n"); refresh();
-    getch();
-#endif
     endwin();
 
     return 0;
