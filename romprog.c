@@ -193,25 +193,6 @@ int romprog_readplainhex(uint8_t *rom, char *fname, uint16_t size){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int romprog_picalc_old(uint8_t *rom, uint16_t size){
-
-    //system("z80asm ../test.asm -o - | xxd -ps -c 16 > test.hex");
-    if (system("z80asm ../picalc.asm -lpicalc.lst -o - | xxd -ps -c 16 > test.hex")) exit (0);
-    // Para DEBUG if (system("z80asm picalc.asm -o - | xxd -ps -c 16 > test.hex")) exit (0);
-
-    return romprog_readplainhex(rom, "test.hex", size);
-}
-
-
-////////////////////////////////////////////////////////////////////////////////
-int romprog_picalc_kraft(uint8_t *rom, uint16_t size){
-
-    if (system ("sdasz80 -o -l -s -g ../picalc.s")) exit(0);    // Roda no display LCD, falta simular no Hardware!
-    if (system ("sdcc -mz80 --no-std-crt0 ../picalc.rel")) exit(0);
-    return memprog_readintelhex(rom, "picalc.ihx", 0, size);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 int apprun_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize, char *app_fname){
 
     memset(rom,0xff,romsize);
