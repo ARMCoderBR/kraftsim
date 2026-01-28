@@ -277,6 +277,7 @@ int main (int argc, char *argv[]){
     z80runner(&maindata);
 
     //z80_dump_mem(&maindata.z, RAMBASE,512);
+    ios_close();
 
     free(maindata.rom);
     free(maindata.ram);

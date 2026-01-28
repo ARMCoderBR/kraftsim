@@ -231,8 +231,6 @@ void ps2_insert(uint8_t code){
     pthread_mutex_unlock(&ios_mutex);
 }
 
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef struct {
@@ -484,7 +482,20 @@ int new_irq_sample(void){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ios_init(void *act){
+void ios_init(void *main){
 
-    maindata = act;
+    maindata = main;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void ios_close(void){
+
+    endthreads = 1;
+
+    pthread_join(serialthread, NULL);
+    pthread_join(timerthread, NULL);
+    pthread_join(psgthread, NULL);
+    pthread_join(sdleventthread, NULL);
+
+    psg_end(psg);
 }
