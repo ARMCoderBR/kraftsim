@@ -46,7 +46,6 @@ psg_t *psg;
 
 main_data_t *maindata;
 
-
 uint8_t ps2_queue[16];
 int ps2_head;
 int ps2_tail;
@@ -75,7 +74,7 @@ void new_out_callback (uint8_t port, uint8_t value){
         case PORTADDRL:
         case PORTADDRH:
         case PORTMODE:
-            vga_out(maindata->vga, port, value);
+            vga_out(maindata->vga, port, value, maindata->sdl->wminimized);
             break;
         case PORTTIMER:
             porttimer = value;
@@ -159,7 +158,7 @@ struct timeval tv;
 pthread_t serialthread;
 pthread_t timerthread;
 pthread_t psgthread;
-pthread_t ps2thread;
+pthread_t sdleventthread;
 int initted = 0;
 int endthreads = 0;
 
@@ -409,7 +408,7 @@ void proc_keyup(int asccode){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void *thread_keyb_ps2(void *arg){
+void *thread_sdl_events(void *arg){
 
     SDL_Event event;
 
@@ -419,8 +418,13 @@ void *thread_keyb_ps2(void *arg){
 
             if (event.type == SDL_WINDOWEVENT){
                 if (event.window.event == SDL_WINDOWEVENT_RESTORED){
-                    //printf("REPAINT WINDOW\n");
-                    maindata->repaint_window = 1;
+                    //addstr("RESTORED! "); refresh();
+                    maindata->sdl->wminimized = 0;
+                    maindata->sdl->repaint_window = 1;
+                }
+                else if (event.window.event == SDL_WINDOWEVENT_MINIMIZED){
+                    //addstr("MINIMIZED! "); refresh();
+                    maindata->sdl->wminimized = 1;
                 }
             } else if (event.type == SDL_QUIT) {
                 // Handle quit event
@@ -454,7 +458,7 @@ void new_hw_run(void){
         pthread_create(&serialthread, NULL, thread_serial, NULL);
         pthread_create(&timerthread, NULL, thread_timer, NULL);
         pthread_create(&psgthread, NULL, thread_psg, NULL);
-        pthread_create(&ps2thread, NULL, thread_keyb_ps2, NULL);
+        pthread_create(&sdleventthread, NULL, thread_sdl_events, NULL);
 
         initted = 1;
     }

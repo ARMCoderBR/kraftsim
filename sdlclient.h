@@ -14,6 +14,8 @@ typedef struct {
 
     SDL_Window* window;
     SDL_Renderer* renderer;
+    int wminimized;
+    int repaint_window;
 } sdldata_t;
 
 sdldata_t *sdl_init(int width, int height);

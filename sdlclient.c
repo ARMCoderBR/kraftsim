@@ -15,11 +15,11 @@ sdldata_t *sdl_init(int width, int height){
 
     sdl->window = SDL_CreateWindow(
             "Kraft80 Monitor",           // Window title
-            SDL_WINDOWPOS_UNDEFINED,        // Initial x position
-            SDL_WINDOWPOS_UNDEFINED,        // Initial y position
-            width,                            // Width in pixels
-            height,                            // Height in pixels
-            SDL_WINDOW_SHOWN                // Flags (SDL_WINDOW_SHOWN is default)
+            SDL_WINDOWPOS_UNDEFINED,     // Initial x position
+            SDL_WINDOWPOS_UNDEFINED,     // Initial y position
+            width,                       // Width in pixels
+            height,                      // Height in pixels
+            SDL_WINDOW_SHOWN             // Flags (SDL_WINDOW_SHOWN is default)
         );
 
     sdl->renderer = SDL_CreateRenderer(sdl->window, 0, SDL_RENDERER_ACCELERATED);
@@ -47,7 +47,10 @@ sdliniterr:
     // 3. Update the screen with the rendering results
     SDL_RenderPresent(sdl->renderer);
 
-    printf("SDL Init OK\n");
+    sdl->wminimized = 0;
+    sdl->repaint_window = 0;
+
+    //printf("SDL Init OK\n");
 
     return sdl;
 }

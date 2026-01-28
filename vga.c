@@ -62,7 +62,7 @@ static void vga_set_graphmode(vga_t *vga){
     vga->rdaddr = vga->wraddr = 0;
 
     vga->displayBuffer = malloc(GCOLS*GROWS/2);
-    memset(vga->displayBuffer,0x00,GCOLS*GROWS);
+    memset(vga->displayBuffer,0x00,GCOLS*GROWS/2);
     vga->mode = 1;
 }
 
@@ -151,7 +151,7 @@ vga_t *vga_init(SDL_Renderer* renderer){
 
     vga_set_textmode(vga);
 
-    vga->vgaTimer = SDL_AddTimer(50, vga_set_tick, vga);
+    vga->vgaTimer = SDL_AddTimer(33, vga_set_tick, vga);
 
     return vga;
 }
@@ -190,7 +190,6 @@ void vga_refresh(vga_t *vga, int force){
         }
     }
     else{
-
         if (force){
             rect.x = 0;
             rect.y = 0;
@@ -251,7 +250,7 @@ void vga_update(vga_t *vga){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void vga_out(vga_t *vga, uint8_t port, uint8_t value){
+void vga_out(vga_t *vga, uint8_t port, uint8_t value, int wminimized){
 #define PORTDATA        0x50    // Video ports
 #define PORTADDRL       0x51
 #define PORTADDRH       0x52
@@ -261,7 +260,8 @@ void vga_out(vga_t *vga, uint8_t port, uint8_t value){
 
         case PORTDATA:
             vga->displayBuffer[vga->wraddr] = value;
-            vga_update(vga);
+            if (!wminimized)
+                vga_update(vga);
             vga->wraddr++;
             break;
         case PORTADDRL:

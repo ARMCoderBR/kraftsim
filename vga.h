@@ -27,7 +27,7 @@ typedef struct {
 
 vga_t *vga_init(SDL_Renderer* renderer);
 void vga_refresh(vga_t *vga, int force);
-void vga_out(vga_t *vga, uint8_t port, uint8_t value);
+void vga_out(vga_t *vga, uint8_t port, uint8_t value, int wminimized);
 uint8_t vga_in(vga_t *vga, uint8_t port);
 void vga_close(vga_t *vga);
 

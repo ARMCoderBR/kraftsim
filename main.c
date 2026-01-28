@@ -35,12 +35,10 @@ void editprompt(char *buf, int size){
     addstr("\n:");
     refresh();
 
-    //fgets(buf,sizeof(buf),stdin);
     int pbuf = 0;
     char cbuf[32];
     for (;;){
 
-        //read (1,cbuf,sizeof(cbuf));
         cbuf[0] = getch();
 
         if ((cbuf[0] == 8)||
@@ -79,20 +77,22 @@ void *z80runner(main_data_t *maindata){
 
     for (;!maindata->z.halted;){
 
-        if (maindata->repaint_window){
+        if (!maindata->sdl->wminimized){
 
-            leds_refresh(maindata->leds,1);
-            lcd_refresh(maindata->lcd, 1);
-            vga_refresh(maindata->vga, 1);
-            maindata->repaint_window = 0;
-        }
-        else{
+            if (maindata->sdl->repaint_window){
 
-            leds_refresh(maindata->leds,0);
-            lcd_refresh(maindata->lcd, 0);
-            vga_refresh(maindata->vga, 0);
+                leds_refresh(maindata->leds,1);
+                lcd_refresh(maindata->lcd, 1);
+                vga_refresh(maindata->vga, 1);
+                maindata->sdl->repaint_window = 0;
+            }
+            else{
+
+                leds_refresh(maindata->leds,0);
+                lcd_refresh(maindata->lcd, 0);
+                vga_refresh(maindata->vga, 0);
+            }
         }
-        //keyb_run(maindata);
 
         sched_yield();
 
@@ -141,8 +141,6 @@ prompt:
             case 'q':
                 sprintf(buf,"\n==== NUM STEPS:%d ====\n",num_steps);
                 addstr(buf);
-                //endwin();
-                //exit(0);
                 return NULL;
 
             case 'h':
@@ -262,8 +260,6 @@ int main (int argc, char *argv[]){
     scrollok(stdscr,TRUE);
     noecho();
 
-    //addstr("\n=== RUN ===\n\n"); refresh();
-
     z80_initialize(&maindata.z, maindata.rom, ROMSZ, maindata.ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
 
     z80_reset(&maindata.z);
@@ -276,27 +272,18 @@ int main (int argc, char *argv[]){
     maindata->z.running = 0;
 #endif
 
-    //addstr("\n=== LOOP ===\n\n");
-
     z80runner(&maindata);
 
     //z80_dump_mem(&maindata.z, RAMBASE,512);
 
-    //addstr("\n=== FINISHING ===\n"); refresh();
-
     free(maindata.rom);
-    //addstr("\n=== FINISHING (1) ===\n"); refresh();
     free(maindata.ram);
-
     leds_close(maindata.leds);
-    //addstr("\n=== FINISHING (2) ===\n"); refresh();
     lcd_close(maindata.lcd);
-    //addstr("\n=== FINISHING (3) ===\n"); refresh();
     vga_close(maindata.vga);
-    //addstr("\n=== FINISHING (4) ===\n"); refresh();
     sdl_close(maindata.sdl);
-    addstr("\n=== FINISHED OK ===\n\n"); refresh();
 
+    addstr("\n=== NORMAL END - PRESS ANY KEY ===\n\n"); refresh();
     getch();
     endwin();
 
