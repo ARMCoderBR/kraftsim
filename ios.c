@@ -159,7 +159,6 @@ pthread_t serialthread;
 pthread_t timerthread;
 pthread_t psgthread;
 pthread_t sdleventthread;
-int initted = 0;
 int endthreads = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -445,22 +444,6 @@ int presc = 0;
 ////////////////////////////////////////////////////////////////////////////////
 void new_hw_run(void){
 
-    if (!initted){
-
-        buttons_state = 0xff;
-
-        psg = psg_init();
-
-        ps2_head = ps2_tail = ps2_qty = 0;
-
-        pthread_create(&serialthread, NULL, thread_serial, NULL);
-        pthread_create(&timerthread, NULL, thread_timer, NULL);
-        pthread_create(&psgthread, NULL, thread_psg, NULL);
-        pthread_create(&sdleventthread, NULL, thread_sdl_events, NULL);
-
-        initted = 1;
-    }
-
     if (!presc){
 
         usleep(20);
@@ -485,6 +468,17 @@ int new_irq_sample(void){
 void ios_init(void *main){
 
     maindata = main;
+
+    buttons_state = 0xff;
+
+    psg = psg_init();
+
+    ps2_head = ps2_tail = ps2_qty = 0;
+
+    pthread_create(&serialthread, NULL, thread_serial, NULL);
+    pthread_create(&timerthread, NULL, thread_timer, NULL);
+    pthread_create(&psgthread, NULL, thread_psg, NULL);
+    pthread_create(&sdleventthread, NULL, thread_sdl_events, NULL);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
