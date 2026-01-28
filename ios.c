@@ -164,9 +164,38 @@ int endthreads = 0;
 ////////////////////////////////////////////////////////////////////////////////
 void *thread_timer(void *arg){
 
+    time_t start = time(NULL);
+    time_t now;
+    int ticks = 0;
+
     for (;!endthreads;){
 
-        usleep(3333);   // 300Hz
+        now = time(NULL);
+
+        int deltaticks = 300 * (now - start);
+        if (labs(deltaticks) > (300*300)){
+            start = now;
+            ticks = deltaticks = 0;
+        }
+
+        int adjust = 0;
+        int delta2 = ticks - deltaticks;
+        if (delta2 < -200)
+            adjust = -133;
+        else
+        if (delta2 < -100)
+            adjust = -33;
+        else
+        if (delta2 > 200)
+            adjust = 133;
+        else
+        if (delta2 > 100)
+            adjust = 33;
+
+        usleep(3333+adjust);   // 300Hz
+
+        ticks++;
+
         if (porttimer & 0x01)
             fpga_status |= 0x02;
     }
