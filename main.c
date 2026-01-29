@@ -307,7 +307,6 @@ int main (int argc, char *argv[]){
     int res;
     int longindex;
     char filename[256] = {0};
-    cod_option_t option = 0;
     int waitkey = 0;
 
     int romSZ = ROMSZ_MODE0;
@@ -324,7 +323,7 @@ int main (int argc, char *argv[]){
 
         switch (val) {
         case COD_VERSION:
-            printf("\nKraftSim v1.0.0\n(c)2026-28-01 ARMCoder\n\n");
+            printf("\nKraftSim v1.0.0\n(c)2026-01-29 ARMCoderBR\n\n");
             return 0;
 
         case COD_WAITKEY:
@@ -344,6 +343,50 @@ int main (int argc, char *argv[]){
 
     main_data_t maindata;
 
+    ////////////////////////////////////////////////////////////////////////////
+    maindata.rom = malloc(romSZ);
+    maindata.ram = malloc(ramSZ);
+
+    memset(maindata.rom,0xff,romSZ);
+    memset(maindata.ram,0x00,ramSZ);
+
+    optind = 1; // Reinicia busca das opções
+
+    for (;;) {
+
+        res = getopt_long_only(argc, argv, "", longopts, &longindex);
+
+        if ((res == -1) || (res == 63))
+            break;
+
+        int val = longopts[longindex].val;
+
+        switch (val) {
+
+        case COD_RAMFILE:
+
+            if (optarg){
+                strncpy(filename,optarg,sizeof(filename));
+                res = memload(maindata.ram, ramBASE, ramSZ, filename);
+                if (res < 0){
+                    return -1;
+                }
+            }
+            break;
+
+        case COD_ROMFILE:
+
+            if (optarg){
+                strncpy(filename,optarg,sizeof(filename));
+                res = memload(maindata.rom, 0, romSZ, filename);
+                if (res < 0){
+                    return -1;
+                }
+            }
+            break;
+        }
+    }
+
     maindata.width = 1280;
     maindata.height = 960 + 60;
 
@@ -361,58 +404,6 @@ int main (int argc, char *argv[]){
     maindata.leds = leds_init(LEDS_X_OFFSET, maindata.height-25, maindata.sdl->renderer);
     maindata.vga = vga_init(maindata.sdl->renderer);
 
-    ////////////////////////////////////////////////////////////////////////////
-    maindata.rom = malloc(romSZ);
-    maindata.ram = malloc(ramSZ);
-
-    memset(maindata.rom,0xff,romSZ);
-    memset(maindata.ram,0x00,ramSZ);
-
-    optind = 1; // Reinicia busca das opções
-
-    for (;;) {
-
-        res = getopt_long_only(argc, argv, "", longopts, &longindex);
-
-        if ((res == -1) || (res == 63))
-            break;
-
-        //printf("res:%d longindex:%d\n",res,longindex);
-        int val = longopts[longindex].val;
-
-        switch (val) {
-
-        case COD_RAMFILE:
-
-            if (optarg){
-                strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.ram, ramBASE, ramSZ, filename);
-            }
-            break;
-
-        case COD_ROMFILE:
-
-            if (optarg){
-                strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.rom, 0, romSZ, filename);
-            }
-            break;
-        }
-    }
-
-
-//    if (option == COD_ROMFILE){
-//        if (romrun_kraftsim(maindata.rom,romSZ, filename)<0){
-//            addstr("Error loading ROM image!\n");
-//            return -1;
-//        }
-//    }
-//    else
-//    if (apprun_kraftsim(maindata.rom,romSZ,maindata.ram,ramBASE,ramSZ,filename) < 0){
-//        addstr("Error loading BIOS or APP image!\n");
-//        return -1;
-//    }
-
     initscr();
 
     idlok(stdscr,TRUE);
@@ -420,7 +411,6 @@ int main (int argc, char *argv[]){
     noecho();
 
     z80_initialize(&maindata.z, maindata.rom, romSZ, maindata.ram, ramBASE, ramSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
-
     z80_reset(&maindata.z);
 
 #if RUN
@@ -449,7 +439,6 @@ int main (int argc, char *argv[]){
     }
 
     sdl_close(maindata.sdl);
-
     endwin();
 
     return 0;
