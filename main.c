@@ -17,9 +17,14 @@
 
 #define RUN 1
 #define DEBUGPROMPT 0
-#define ROMSZ 16384
-#define RAMBASE 16384
-#define RAMSZ 48*1024
+
+#define ROMSZ_MODE0     16384
+#define RAMBASE_MODE0   16384
+#define RAMSZ_MODE0     48*1024
+
+#define ROMSZ_MODE1     8192
+#define RAMBASE_MODE1   8192
+#define RAMSZ_MODE1     56*1024
 
 #include "z80.h"
 #include "romprog.h"
@@ -239,29 +244,42 @@ listbp:
 typedef enum {
 
     COD_VERSION = 1,
-    COD_IMGFILE = 2,
+    COD_RAMFILE = 2,
     COD_ROMFILE = 3,
     COD_WAITKEY = 4,
+    COD_MMAP = 5,
 } cod_option_t;
 
 struct option longopts[] = {
         {
-            "l",               //const char *name;
+            "mmap",                 //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_IMGFILE,            //int         val;
+            COD_MMAP,               //int         val;
         },
         {
-            "w",               //const char *name;
-            0,      //int         has_arg;
+            "ram",              //const char *name;
+            required_argument,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_RAMFILE,            //int         val;
+        },
+        {
+            "waitkey",              //const char *name;
+            0,                      //int         has_arg;
             0,                      //int        *flag;
             COD_WAITKEY,            //int         val;
         },
         {
-            "r",               //const char *name;
+            "rom",              //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_ROMFILE,            //int         val;
+        },
+        {
+            "version",              //const char *name;
+            0,                      //int         has_arg;
+            0,                      //int        *flag;
+            COD_VERSION,            //int         val;
         },
         {
             "v",                    //const char *name;
@@ -292,45 +310,35 @@ int main (int argc, char *argv[]){
     cod_option_t option = 0;
     int waitkey = 0;
 
+    int romSZ = ROMSZ_MODE0;
+    int ramBASE = RAMBASE_MODE0;
+    int ramSZ = RAMSZ_MODE0;
+
     for (;;) {
 
         res = getopt_long_only(argc, argv, "", longopts, &longindex);
 
         if ((res == -1) || (res == 63))
             break;
-
-        //printf("res:%d longindex:%d\n",res,longindex);
         int val = longopts[longindex].val;
 
         switch (val) {
+        case COD_VERSION:
+            printf("\nKraftSim v1.0.0\n(c)2026-28-01 ARMCoder\n\n");
+            return 0;
 
         case COD_WAITKEY:
             waitkey = 1;
             break;
 
-        case COD_IMGFILE:
-            if (filename[0]){
-                error1();
-                return 0;
-            }
-            option = val;
+        case COD_MMAP:
             if (optarg)
-                strncpy(filename,optarg,sizeof(filename));
+                if (optarg[0] == '1'){
+                    romSZ = ROMSZ_MODE1;
+                    ramBASE = RAMBASE_MODE1;
+                    ramSZ = RAMSZ_MODE1;
+                }
             break;
-
-        case COD_ROMFILE:
-            if (filename[0]){
-                error1();
-                return 0;
-            }
-            option = val;
-            if (optarg)
-                strncpy(filename,optarg,sizeof(filename));
-            break;
-
-        case COD_VERSION:
-            printf("\nKraftSim v1.0\n(c)2026-28-01 ARMCoder\n\n");
-            return 0;
         }
     }
 
@@ -354,23 +362,56 @@ int main (int argc, char *argv[]){
     maindata.vga = vga_init(maindata.sdl->renderer);
 
     ////////////////////////////////////////////////////////////////////////////
-    maindata.rom = malloc(ROMSZ);
-    maindata.ram = malloc(RAMSZ);
+    maindata.rom = malloc(romSZ);
+    maindata.ram = malloc(ramSZ);
 
-    memset(maindata.rom,0xff,ROMSZ);
-    memset(maindata.ram,0x00,RAMSZ);
+    memset(maindata.rom,0xff,romSZ);
+    memset(maindata.ram,0x00,ramSZ);
 
-    if (option == COD_ROMFILE){
-        if (romrun_kraftsim(maindata.rom,ROMSZ, filename)<0){
-            addstr("Error loading ROM image!\n");
-            return -1;
+    optind = 1; // Reinicia busca das opções
+
+    for (;;) {
+
+        res = getopt_long_only(argc, argv, "", longopts, &longindex);
+
+        if ((res == -1) || (res == 63))
+            break;
+
+        //printf("res:%d longindex:%d\n",res,longindex);
+        int val = longopts[longindex].val;
+
+        switch (val) {
+
+        case COD_RAMFILE:
+
+            if (optarg){
+                strncpy(filename,optarg,sizeof(filename));
+                res = memload(maindata.ram, ramBASE, ramSZ, filename);
+            }
+            break;
+
+        case COD_ROMFILE:
+
+            if (optarg){
+                strncpy(filename,optarg,sizeof(filename));
+                res = memload(maindata.rom, 0, romSZ, filename);
+            }
+            break;
         }
     }
-    else
-    if (apprun_kraftsim(maindata.rom,ROMSZ,maindata.ram,RAMBASE,RAMSZ,filename) < 0){
-        addstr("Error loading BIOS or APP image!\n");
-        return -1;
-    }
+
+
+//    if (option == COD_ROMFILE){
+//        if (romrun_kraftsim(maindata.rom,romSZ, filename)<0){
+//            addstr("Error loading ROM image!\n");
+//            return -1;
+//        }
+//    }
+//    else
+//    if (apprun_kraftsim(maindata.rom,romSZ,maindata.ram,ramBASE,ramSZ,filename) < 0){
+//        addstr("Error loading BIOS or APP image!\n");
+//        return -1;
+//    }
 
     initscr();
 
@@ -378,7 +419,7 @@ int main (int argc, char *argv[]){
     scrollok(stdscr,TRUE);
     noecho();
 
-    z80_initialize(&maindata.z, maindata.rom, ROMSZ, maindata.ram, RAMBASE, RAMSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
+    z80_initialize(&maindata.z, maindata.rom, romSZ, maindata.ram, ramBASE, ramSZ, new_out_callback, new_in_callback, new_hw_run, new_irq_sample);
 
     z80_reset(&maindata.z);
 

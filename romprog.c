@@ -119,100 +119,80 @@ int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t m
     return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+//int proclineplainhex (uint8_t *rom, uint16_t romsize, char *buf, int pc){
+//
+//    int len = strlen(buf);
+//
+//    if (!len) return 0;
+//    if (buf[len-1] == '\n')
+//        --len;
+//
+//    if (!len) return 0;
+//
+//    if (len & 1){
+//        printf("Invalid line len\n");
+//        return -1;
+//    }
+//
+//    int i,j;
+//    for (i = 0,j = 0; i < len; i+=2, j++){
+//
+//        int b = parsehex8(buf+i);
+//        if (b < 0) {
+//
+//            printf("Error parsing Hex\n");
+//            return -1;
+//        }
+//
+//        if ((pc+j) < romsize)
+//            rom[pc+j] = b & 0xff;
+//        else{
+//            printf("ROM Overflow!\n");
+//            return -1;
+//        }
+//    }
+//
+//    return j;
+//}
+
+//////////////////////////////////////////////////////////////////////////////////
+//int romprog_readplainhex(uint8_t *rom, char *fname, uint16_t size){
+//
+//    char buf[128];
+//
+//    FILE *f = fopen (fname,"r");
+//    if (!f){
+//
+//        printf("File not found\n");
+//        return -1;
+//    }
+//
+//    int pc = 0;
+//
+//    while (!feof(f)){
+//
+//        if (fgets(buf, sizeof(buf), f)){
+//
+//            int len = strlen(buf);
+//            if (buf[len-1] == '\n')
+//                buf[len-1] = 0;
+//
+//            //printf("Programming %04x Data:%s\n",pc, buf);
+//            len = proclineplainhex(rom, size, buf, pc);
+//
+//            if (len <= 0) break;
+//            pc += len;
+//        }
+//    }
+//
+//    fclose(f);
+//
+//    return 0;
+//}
 
 ////////////////////////////////////////////////////////////////////////////////
-int proclineplainhex (uint8_t *rom, uint16_t romsize, char *buf, int pc){
+int memload(uint8_t *mem, uint16_t membase, uint16_t memsize, char *fname){
 
-    int len = strlen(buf);
-
-    if (!len) return 0;
-    if (buf[len-1] == '\n')
-        --len;
-
-    if (!len) return 0;
-
-    if (len & 1){
-        printf("Invalid line len\n");
-        return -1;
-    }
-
-    int i,j;
-    for (i = 0,j = 0; i < len; i+=2, j++){
-
-        int b = parsehex8(buf+i);
-        if (b < 0) {
-
-            printf("Error parsing Hex\n");
-            return -1;
-        }
-
-        if ((pc+j) < romsize)
-            rom[pc+j] = b & 0xff;
-        else{
-            printf("ROM Overflow!\n");
-            return -1;
-        }
-    }
-
-    return j;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-int romprog_readplainhex(uint8_t *rom, char *fname, uint16_t size){
-
-    char buf[128];
-
-    FILE *f = fopen (fname,"r");
-    if (!f){
-
-        printf("File not found\n");
-        return -1;
-    }
-
-    int pc = 0;
-
-    while (!feof(f)){
-
-        if (fgets(buf, sizeof(buf), f)){
-
-            int len = strlen(buf);
-            if (buf[len-1] == '\n')
-                buf[len-1] = 0;
-
-            //printf("Programming %04x Data:%s\n",pc, buf);
-            len = proclineplainhex(rom, size, buf, pc);
-
-            if (len <= 0) break;
-            pc += len;
-        }
-    }
-
-    fclose(f);
-
-    return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-int apprun_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t rambase, uint16_t ramsize, char *app_fname){
-
-    memset(rom,0xff,romsize);
-
-    int res = memprog_readintelhex(rom, "/usr/share/kraftsim/roms/kraftbios-v2.ihx", 0, romsize);
-    if (res < 0) return res;
-    res = memprog_readintelhex(rom, "/usr/share/kraftsim/roms/bas32k.ihx", 0, romsize);
-    if (res < 0) return res;
-
-    if (app_fname)
-        if (app_fname[0])
-            return memprog_readintelhex(ram, app_fname, rambase, ramsize);
-
-    return 0;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-int romrun_kraftsim(uint8_t *rom, uint16_t romsize, char *rom_fname){
-
-    memset(rom,0xff,romsize);
-
-    return memprog_readintelhex(rom, rom_fname, 0, romsize);
+    return memprog_readintelhex(mem, fname, membase, memsize);
 }
