@@ -291,6 +291,16 @@ const kcode_t kcodes[] = {
         {'z',0x1a,0x00},
         {'-',0x4e,0x00},
         {'=',0x55,0x00},
+        {',',0x41,0x00},
+        {'.',0x49,0x00},
+        {'/',0x51,0x00},
+        {'[',0x5b,0x00},
+        {']',0x5d,0x00},
+        {'\\',0x61,0x00},
+        {';',0x4a,0x00},
+        {'`',0x54,0x00},
+        {0x27,0x0e,0x00},
+        {'~',0x52,0x00},
         {SDLK_BACKSPACE,0x66,0x00},
         {SDLK_TAB,0x0d,0x00},
         {SDLK_RETURN,0x5a,0x00},
@@ -442,6 +452,15 @@ void *thread_sdl_events(void *arg){
             } else if (event.type == SDL_QUIT) {
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {
+//                char buf[80];
+//                sprintf(buf,"Event:%02x Scancode:%02x ",event.key.keysym.sym, event.key.keysym.scancode);
+//                addstr(buf); refresh();
+                if (event.key.keysym.sym == 0x40000000){
+                    if (event.key.keysym.scancode == 0x34)
+                        event.key.keysym.sym = '~';
+                    if (event.key.keysym.scancode == 0x2f)
+                        event.key.keysym.sym = '`';
+                }
                 proc_keydown(ios, event.key.keysym.sym);
             } else if (event.type == SDL_KEYUP) {
                 proc_keyup(ios, event.key.keysym.sym);
