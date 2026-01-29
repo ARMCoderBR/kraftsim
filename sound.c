@@ -1,4 +1,3 @@
-#include <pulse/simple.h>
 #include <pthread.h>
 #include <malloc.h>
 #include <string.h>
@@ -15,7 +14,7 @@ void *sound_thread(void *arg){
 
     uint8_t *bufplay = malloc(p->bufsize);
 
-    int lowlimit = p->bufsize>>1;
+    int lowlimit = p->bufsize>>2;
 
     while ((!p->endthread)||(p->bufqty)){
 
@@ -38,10 +37,15 @@ void *sound_thread(void *arg){
             p->bufqty = 0;
             pthread_mutex_unlock(&p->lock);
 
-            pa_simple_write(p->pa_driver,bufplay,qty,&p->pa_error);
+            SDL_QueueAudio(p->sdl_audio,  //SDL_AudioDeviceID dev,
+                           bufplay,       //const void *data,
+                           qty            //Uint32 len
+                           );
+
+            while (SDL_GetQueuedAudioSize(p->sdl_audio) > (SOUND_SAMPLES-30)) usleep(50);
         }
 
-       usleep(100);
+       usleep(10);
     }
 
     free (bufplay);
@@ -67,29 +71,38 @@ sound_t *sound_init(void){
     sound_t *s = malloc(sizeof(sound_t));
     memset(s,0,sizeof(sound_t));
 
-    pa_buffer_attr pba;
-    pba.fragsize = (uint32_t) -1;
-    pba.maxlength = 10000;
-    pba.minreq = (uint32_t) -1;
-    pba.prebuf = (uint32_t) -1;
-    pba.tlength = (uint32_t) -1;
+    SDL_AudioSpec sa_desired;
+    SDL_zero(sa_desired);
+    sa_desired.freq = 125000;
+    sa_desired.format = AUDIO_U8;
+    sa_desired.channels = 1;
+    sa_desired.samples = SOUND_SAMPLES;
+    sa_desired.callback = NULL;
+    sa_desired.userdata = NULL;
 
-    pa_sample_spec ss;
+    SDL_AudioSpec sa_obtained;
+    SDL_zero(sa_obtained);
 
-    ss.format = PA_SAMPLE_U8;
-    ss.channels = 1;
-    ss.rate = 125000;
+    s->sdl_audio = SDL_OpenAudioDevice(
+                              NULL, //const char *device,
+                              0,    //int iscapture,
+                              &sa_desired,  //const SDL_AudioSpec *desired,
+                              &sa_obtained, //SDL_AudioSpec *obtained,
+                              0     //int allowed_changes
+                              );
 
-    s->pa_driver = pa_simple_new(NULL,     // Use the default server.
-                      "Kraft80",           // Our application's name.
-                      PA_STREAM_PLAYBACK,
-                      NULL,               // Use the default device.
-                      "Sound",            // Description of our stream.
-                      &ss,                // Our sample format.
-                      NULL,               // Use default channel map
-                      &pba,               // Use default buffering attributes.
-                      NULL               // Ignore error code.
-                      );
+    printf("freq:%d\n",sa_obtained.freq);
+    printf("format:%d\n",sa_obtained.format);
+    printf("channels:%d\n",sa_obtained.channels);
+    printf("samples:%d\n",sa_obtained.samples);
+
+    if (s->sdl_audio < 0){
+
+        printf("AUDIO OPEN ERROR!\n");
+        exit(0);
+    }
+
+    SDL_PauseAudioDevice(s->sdl_audio, 0);
 
     s->buf = malloc(PSGBUFSZ);
     s->bufins = 0;
@@ -125,8 +138,7 @@ void sound_end(sound_t *s){
     wait_thread(s);
     pthread_mutex_destroy(&s->lock);
 
-    pa_simple_drain(s->pa_driver,&s->pa_error);
-    pa_simple_free(s->pa_driver);
+    SDL_CloseAudioDevice(s->sdl_audio);
 
     free(s);
 }

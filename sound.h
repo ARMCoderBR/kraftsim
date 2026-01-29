@@ -1,13 +1,14 @@
 #ifndef __SOUND_H__
 #define __SOUND_H__
 
-#define PSGBUFSZ 4000
+#include <SDL2/SDL.h>
+
+#define PSGBUFSZ      2000
+#define SOUND_SAMPLES 4096
 
 typedef struct {
 
-    pa_simple *pa_driver;
-    int pa_error;
-
+    SDL_AudioDeviceID sdl_audio;
     pthread_t mythread;
     int endthread;
     uint8_t *buf;
