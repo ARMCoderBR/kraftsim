@@ -197,9 +197,9 @@ int apprun_kraftsim(uint8_t *rom, uint16_t romsize, uint8_t *ram, uint16_t ramba
 
     memset(rom,0xff,romsize);
 
-    int res = memprog_readintelhex(rom, "../kraftbios-v2.ihx", 0, romsize);
+    int res = memprog_readintelhex(rom, "/usr/share/kraftsim/roms/kraftbios-v2.ihx", 0, romsize);
     if (res < 0) return res;
-    res = memprog_readintelhex(rom, "../bas32k.ihx", 0, romsize);
+    res = memprog_readintelhex(rom, "/usr/share/kraftsim/roms/bas32k.ihx", 0, romsize);
     if (res < 0) return res;
 
     if (app_fname)

@@ -1,0 +1,8 @@
+Package: kraftsim
+Version: 1.0
+Section: games
+Priority: optional
+Architecture: amd64
+Depends: libsdl2-2.0-0
+Maintainer: ARMCoderBR <milton@armcoder.com.br>
+Description: A simulator for the Kraft80, a homebrew computer based on the Z80 microprocessor.
