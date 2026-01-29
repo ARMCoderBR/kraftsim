@@ -91,11 +91,6 @@ sound_t *sound_init(void){
                               0     //int allowed_changes
                               );
 
-    printf("freq:%d\n",sa_obtained.freq);
-    printf("format:%d\n",sa_obtained.format);
-    printf("channels:%d\n",sa_obtained.channels);
-    printf("samples:%d\n",sa_obtained.samples);
-
     if (s->sdl_audio < 0){
 
         printf("AUDIO OPEN ERROR!\n");
