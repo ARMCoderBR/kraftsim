@@ -144,6 +144,29 @@ void envelope_start(psg_t *p){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+uint16_t filter_hipass(psg_t *p, uint16_t val){
+
+    for (int i = 0; i < (NUM_STAGES-1); i++)
+        p->values[i] = p->values[i+1];
+
+    p->values[NUM_STAGES-1] = val;
+
+    uint32_t avg = 0;
+
+    int coef = 1;
+    int divider = 0;
+    for (int i = 0; i < NUM_STAGES; i++){
+
+        avg += (uint32_t)p->values[i]*coef;
+        divider += coef;
+        coef++;
+    }
+
+    avg /= divider;
+    return val - (uint16_t)avg;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 void psg_run(psg_t *p){
 
     // Clock assumed: 2MHz
@@ -259,7 +282,8 @@ void psg_run(psg_t *p){
             if (!(r7&0x20)) outval += p->noiseOut*4*amp;
         }
 
-        sound_send_sample(p->s,outval>>1);
+        outval = filter_hipass(p, outval);
+        sound_send_sample(p->s,128+(outval>>2));
     }
 }
 

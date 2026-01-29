@@ -81,10 +81,10 @@ sound_t *sound_init(void){
     ss.rate = 125000;
 
     s->pa_driver = pa_simple_new(NULL,     // Use the default server.
-                      "Chiptune",           // Our application's name.
+                      "Kraft80",           // Our application's name.
                       PA_STREAM_PLAYBACK,
                       NULL,               // Use the default device.
-                      "Music",            // Description of our stream.
+                      "Sound",            // Description of our stream.
                       &ss,                // Our sample format.
                       NULL,               // Use default channel map
                       &pba,               // Use default buffering attributes.
