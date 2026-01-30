@@ -369,6 +369,9 @@ void proc_keydown(ios_t *ios, int asccode){
         case SDLK_F8:
             ios->buttons_state &= ~0b10000000;
             break;
+        case SDLK_F9:
+            z80_reset(&maindata->z);
+            break;
         case SDLK_F12:
             z80_break(&maindata->z);
             break;

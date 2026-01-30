@@ -24,6 +24,7 @@ typedef struct {
     int wraddr;
     int scrollreg;
     uint8_t cursor;
+    int resetmode;
 } vga_t;
 
 vga_t *vga_init(SDL_Renderer* renderer);

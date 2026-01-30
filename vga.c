@@ -19,6 +19,9 @@ typedef struct {
     uint8_t b;
 } color_t;
 
+#define PIXEL_SCALE_MODE0 2
+#define PIXEL_SCALE_MODE1 4
+
 const color_t colors[] = {
 
         { 0x00, 0x00, 0x00},   // BLACK
@@ -51,6 +54,7 @@ static void vga_set_textmode(vga_t *vga){
     vga->displayBuffer = malloc(COLS*ROWS);
     memset(vga->displayBuffer,0x20,COLS*ROWS);
     vga->mode = 0;
+    vga->resetmode = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +68,7 @@ static void vga_set_graphmode(vga_t *vga){
     vga->displayBuffer = malloc(GCOLS*GROWS/2);
     memset(vga->displayBuffer,0x00,GCOLS*GROWS/2);
     vga->mode = 1;
+    vga->resetmode = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,8 +88,8 @@ vga_t *vga_init(SDL_Renderer* renderer){
 
     SDL_Surface* tempSurface = SDL_CreateRGBSurface
         (0,     /*Uint32 flags*/
-         16,    /*int width*/
-         16,    /*int height*/
+         8*PIXEL_SCALE_MODE0,    /*int width*/
+         8*PIXEL_SCALE_MODE0,    /*int height*/
          32,    /*int depth*/
          0,     /*Uint32 Rmask*/
          0,     /*Uint32 Gmask*/
@@ -94,10 +99,11 @@ vga_t *vga_init(SDL_Renderer* renderer){
 
     vga->renderer = renderer;
     vga->displayBuffer = NULL;
+    vga->resetmode = 0;
 
     SDL_Rect rect;
-    rect.w = 2;
-    rect.h = 2;
+    rect.w = PIXEL_SCALE_MODE0;
+    rect.h = PIXEL_SCALE_MODE0;
 
     SDL_Renderer* tempRenderer = SDL_CreateSoftwareRenderer(tempSurface);
 
@@ -132,8 +138,8 @@ vga_t *vga_init(SDL_Renderer* renderer){
 
                 if (b & mask){
 
-                    rect.x = col*2;
-                    rect.y = row*2;
+                    rect.x = col*PIXEL_SCALE_MODE0;
+                    rect.y = row*PIXEL_SCALE_MODE0;
 
                     SDL_RenderFillRect(tempRenderer, &rect);
                 }
@@ -166,17 +172,28 @@ void vga_refresh(vga_t *vga, int force){
 
     SDL_Rect rect;
 
+    if (vga->resetmode){
+
+        rect.x = 0;
+        rect.y = 0;
+        rect.w = GCOLS*PIXEL_SCALE_MODE1;
+        rect.h = GROWS*PIXEL_SCALE_MODE1;
+        SDL_SetRenderDrawColor(vga->renderer, 0, 0, 0, 255);
+        SDL_RenderFillRect(vga->renderer, &rect);
+        vga->resetmode = 0;
+    }
+
     if (vga->mode == 0){
 
         if (vga->cursor & 1) return;
 
         rect.x = 0;
         rect.y = 0;
-        rect.w = 16;
-        rect.h = 16;
+        rect.w = 8*PIXEL_SCALE_MODE0;
+        rect.h = 8*PIXEL_SCALE_MODE0;
         SDL_Rect rectcur;
-        rectcur.w = 16;
-        rectcur.h = 2;
+        rectcur.w = 8*PIXEL_SCALE_MODE0;
+        rectcur.h = PIXEL_SCALE_MODE0;
         SDL_SetRenderDrawColor(vga->renderer, 0, 255, 0, 255);
 
         int addr = vga->scrollreg * COLS;
@@ -190,7 +207,7 @@ void vga_refresh(vga_t *vga, int force){
                 if (addr == vga->wraddr){
                     if (vga->cursor > 8){
                         rectcur.x = rect.x;
-                        rectcur.y = rect.y+14;
+                        rectcur.y = rect.y+(7*PIXEL_SCALE_MODE0);
                         SDL_RenderFillRect(vga->renderer, &rectcur);
                     }
                 }
@@ -199,19 +216,19 @@ void vga_refresh(vga_t *vga, int force){
                 if (addr >= (ROWS*COLS))
                     addr = 0;
 
-                rect.x += 16;
+                rect.x += 8*PIXEL_SCALE_MODE0;
             }
 
             rect.x = 0;
-            rect.y += 20;
+            rect.y += 10*PIXEL_SCALE_MODE0;
         }
     }
     else{
         if (force){
             rect.x = 0;
             rect.y = 0;
-            rect.w = 4;
-            rect.h = 4;
+            rect.w = PIXEL_SCALE_MODE1;
+            rect.h = PIXEL_SCALE_MODE1;
 
             int addr = 0;
 
@@ -225,17 +242,17 @@ void vga_refresh(vga_t *vga, int force){
                     SDL_SetRenderDrawColor(vga->renderer, colors[bh].r, colors[bh].g, colors[bh].b, 255);
                     SDL_RenderFillRect(vga->renderer, &rect);
 
-                    rect.x += 4;
+                    rect.x += PIXEL_SCALE_MODE1;
 
                     SDL_SetRenderDrawColor(vga->renderer, colors[b].r, colors[b].g, colors[b].b, 255);
                     SDL_RenderFillRect(vga->renderer, &rect);
 
-                    rect.x += 4;
+                    rect.x += PIXEL_SCALE_MODE1;
                     addr++;
                 }
 
                 rect.x = 0;
-                rect.y += 4;
+                rect.y += PIXEL_SCALE_MODE1;
             }
         }
     }
@@ -295,13 +312,11 @@ void vga_out(vga_t *vga, uint8_t port, uint8_t value, int wminimized){
             break;
         case PORTMODE:
             if (value == 0){
-                if (vga->mode != 0)
-                    vga_set_textmode(vga);
+                vga_set_textmode(vga);
             }
             else
             if(value == 1){
-                if (vga->mode != 1)
-                    vga_set_graphmode(vga);
+                vga_set_graphmode(vga);
             }
             else
             if (value & 0x10){
