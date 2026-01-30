@@ -248,6 +248,7 @@ typedef enum {
     COD_ROMFILE = 3,
     COD_WAITKEY = 4,
     COD_MMAP = 5,
+    COD_HELP = 6
 } cod_option_t;
 
 struct option longopts[] = {
@@ -258,7 +259,7 @@ struct option longopts[] = {
             COD_MMAP,               //int         val;
         },
         {
-            "ram",              //const char *name;
+            "ram",                  //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_RAMFILE,            //int         val;
@@ -270,7 +271,7 @@ struct option longopts[] = {
             COD_WAITKEY,            //int         val;
         },
         {
-            "rom",              //const char *name;
+            "rom",                  //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_ROMFILE,            //int         val;
@@ -288,6 +289,18 @@ struct option longopts[] = {
             COD_VERSION,            //int         val;
         },
         {
+            "h",                    //const char *name;
+            0,                      //int         has_arg;
+            0,                      //int        *flag;
+            COD_HELP,               //int         val;
+        },
+        {
+            "help",                 //const char *name;
+            0,                      //int         has_arg;
+            0,                      //int        *flag;
+            COD_HELP,               //int         val;
+        },
+        {
             0,                      //const char *name;
             0,                      //int         has_arg;
             0,                      //int        *flag;
@@ -302,6 +315,26 @@ void error1(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+void print_version(){
+
+    printf("\nKraftSim v1.0.0\n(c)2026-01-29 ARMCoderBR\n\n");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void print_help(){
+
+    print_version();
+    printf("Use:\n");
+    printf("  kraftsim -rom <imgfile> {-rom <imgfile>} {-ram <imgfile>} [-mmap n] [-w]\n");
+    printf("    At least one 'rom' image must be loaded and must start at 0x0000.\n");
+    printf("    Multiple 'rom' and/or 'ram' images can be loaded.\n");
+    printf("    All images must be in Intel HEX format.\n");
+    printf("    'ram' images only make sense if the program in the 'rom' image makes use of it.\n");
+    printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require mmap 1.\n");
+    printf("    'w' makes the program wait for a key before closing the main window on exit.\n");
+}
+
+////////////////////////////////////////////////////////////////////////////////
 int main (int argc, char *argv[]){
 
     int res;
@@ -313,17 +346,29 @@ int main (int argc, char *argv[]){
     int ramBASE = RAMBASE_MODE0;
     int ramSZ = RAMSZ_MODE0;
 
+    int loaded_rom = 0;
+
     for (;;) {
 
         res = getopt_long_only(argc, argv, "", longopts, &longindex);
 
-        if ((res == -1) || (res == 63))
-            break;
+        if (res == -1){
+            print_help();
+            return 0;
+        }
+
+        if (res == 63)
+            return -1;
+
         int val = longopts[longindex].val;
 
         switch (val) {
+        case COD_HELP:
+            print_help();
+            return 0;
+
         case COD_VERSION:
-            printf("\nKraftSim v1.0.0\n(c)2026-01-29 ARMCoderBR\n\n");
+            print_version();
             return 0;
 
         case COD_WAITKEY:
@@ -377,6 +422,7 @@ int main (int argc, char *argv[]){
         case COD_ROMFILE:
 
             if (optarg){
+                loaded_rom = 1;
                 strncpy(filename,optarg,sizeof(filename));
                 res = memload(maindata.rom, 0, romSZ, filename);
                 if (res < 0){
@@ -385,6 +431,11 @@ int main (int argc, char *argv[]){
             }
             break;
         }
+    }
+
+    if (!loaded_rom){
+        printf("You need to load at least one ROM image.\n");
+        return 0;
     }
 
     maindata.width = 1280;
