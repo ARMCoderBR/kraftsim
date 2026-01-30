@@ -78,9 +78,18 @@ IHX.
 
     - Demo:
 
-        - Cálculo do PI, escrito em ASM       ...     picalc.ihx
+        - Cálculo do PI, escrito em ASM.      ...     rom1-picalc.ihx
+          Utiliza o método BBP e executa os
+          cálculos com número arbitrário de
+          casas decimais (limitado pela 
+          memória e velocidade da CPU).
 
-        - Cálculo do PI, escrito em C         ...     rom1-pibbp-c.ihx
+        - Cálculo do PI, escrito em C.        ...     rom1-pibbp-c.ihx
+          Utiliza o método BBP e executa os
+          cálculos com precisão limitada
+          pela biblioteca numérica do
+          ambiente C. Menos preciso que a
+          versão em ASM.
 
     - Monitores:
 
@@ -89,17 +98,51 @@ IHX.
           o display LCD para inserir e
           executar pequenos programas. É
           baseado no Amon da WR Kits
-          (créditos no final)
+          (créditos no final).
 
         - Kraftmon, o monitor "oficial" de    ...     kraftbios-v2.ihx
           memória, carga e execução de
-          programas
+          programas. Também fornece o BIOS.
 
     - Linguagem BASIC:
 
-        - Basic 4.7b Microsoft (versão para
-          
+        - Basic 4.7b Microsoft (versão        ...     bas32k-standalone.ihx
+          solitária) - funciona como ROM
+          principal, sem monitor nem BIOS.
 
+        - Basic 4.7b Microsoft (versão        ...     bas32k.ihx
+          auxiliar do Kraftmon) - funciona
+          como segunda ROM quando tem o
+          Kraftmon instalado na primeira ROM.
+
+
+    Os aplicativos que rodam em RAM dependem da ROM do Kraftmon que precisa
+estar instalada no soquete da primeira ROM.
+
+        - Chiptunes 1 e 2: demo de som        ...     chiptunes.ihx
+          (músicas no PSG).                           chiptunes2.ihx
+
+        - Relógios 1 e 2: marcam as horas,    ...     clock.ihx
+          o primeiro apenas no LCD, o segundo         clock2.ihx
+          no LCD e também no monitor VGA.
+          Use os pushbuttons para acertar as
+          horas, minutos e segundos.
+
+        - Demos dos LEDs 1 e 2. Piscam os     ...     blinker.ihx
+          LEDs da placa.                              kitt.ihx
+
+        - Cálculo do PI, escrito em ASM.      ...     picalc.ihx
+          Utiliza o método BBP e executa os
+          cálculos com número arbitrário de
+          casas decimais (limitado pela 
+          memória e velocidade da CPU).
+
+        - Cálculo do PI, escrito em C.        ...     pibbp.ihx
+          Utiliza o método BBP e executa os
+          cálculos com precisão limitada
+          pela biblioteca numérica do
+          ambiente C. Menos preciso que a
+          versão em ASM.
 
 
 COMPARAÇÃO DO KRAFTSIM COM O KRAFT 80
