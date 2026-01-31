@@ -10,6 +10,7 @@ psg_t *psg_init(void){
 
     psg_t *p = malloc(sizeof(psg_t));
 
+    psg_reset(p);
     p->r0 = p->r1 = p->r2 = p->r3 = p->r4 = p->r5 = p->r6 = p->r7 =
     p->r8 = p->r9 = p->r10 = p->r11 = p->r12 = p->r13 = 0;
 
@@ -24,6 +25,21 @@ psg_t *psg_init(void){
     p->s = sound_init();
 
     return p;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void psg_reset(psg_t *p){
+
+    p->r0 = p->r1 = p->r2 = p->r3 = p->r4 = p->r5 = p->r6 = p->r7 =
+    p->r8 = p->r9 = p->r10 = p->r11 = p->r12 = p->r13 = 0;
+
+    p->toneACount = p->toneBCount = p->toneCCount = 0;
+    p->chanAOut = p->chanBOut = p->chanCOut = 0;
+
+    memset(p->sfr,0,sizeof(p->sfr));
+    p->sfr[0] = 1;
+    p->noiseCount = 0;
+    p->noiseOut = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

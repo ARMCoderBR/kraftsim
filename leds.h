@@ -26,6 +26,7 @@ typedef struct {
 leds_t *leds_init(int x, int y, SDL_Renderer* renderer);
 void leds_refresh(leds_t *leds, int force);
 void leds_out(leds_t *leds, uint8_t value);
+void leds_reset(leds_t *leds);
 void leds_close(leds_t *leds);
 
 #endif /* LEDS_H_ */

@@ -460,14 +460,18 @@ int main (int argc, char *argv[]){
         return 0;
     }
 
+#define LOWERBORDER 60
+
     maindata.width = 1280;
-    maindata.height = 960 + 60;
+    maindata.height = 960 + LOWERBORDER;
 
     maindata.sdl = sdl_init (maindata.width, maindata.height);
     if (!maindata.sdl){
         printf("Error starting SDL!\n");
         return -1;
     }
+
+    sdl_drawlowerborder(maindata.sdl, LOWERBORDER);
 
 #define LCD_X_OFFSET 5
 #define LEDS_X_OFFSET 380

@@ -12,6 +12,8 @@
 
 typedef struct {
 
+    int width;
+    int height;
     SDL_Window* window;
     SDL_Renderer* renderer;
     int wminimized;
@@ -19,6 +21,7 @@ typedef struct {
 } sdldata_t;
 
 sdldata_t *sdl_init(int width, int height);
+void sdl_drawlowerborder(sdldata_t *sdl, int bheight);
 
 void sdl_close(sdldata_t *sdl);
 

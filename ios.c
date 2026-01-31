@@ -371,6 +371,9 @@ void proc_keydown(ios_t *ios, int asccode){
             break;
         case SDLK_F9:
             z80_reset(&maindata->z);
+            leds_reset(maindata->leds);
+            psg_reset(ios->psg);
+            vga_reset(maindata->vga);
             break;
         case SDLK_F12:
             z80_break(&maindata->z);

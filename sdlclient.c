@@ -13,6 +13,9 @@ sdldata_t *sdl_init(int width, int height){
         return NULL; // Exit on error
     }
 
+    sdl->width = width;
+    sdl->height = height;
+
     sdl->window = SDL_CreateWindow(
             "Kraft80 Monitor",           // Window title
             SDL_WINDOWPOS_UNDEFINED,     // Initial x position
@@ -53,6 +56,20 @@ sdliniterr:
     //printf("SDL Init OK\n");
 
     return sdl;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void sdl_drawlowerborder(sdldata_t *sdl, int bheight){
+
+    SDL_Rect rect;
+    rect.x = 0;
+    rect.y = sdl->height - bheight;
+    rect.w = sdl->width;
+    rect.h = sdl->height;
+
+    SDL_SetRenderDrawColor(sdl->renderer, 32, 32, 32, 255);
+
+    SDL_RenderFillRect(sdl->renderer, &rect);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

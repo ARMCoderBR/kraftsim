@@ -31,6 +31,7 @@ typedef struct {
 
 
 psg_t *psg_init(void);
+void psg_reset(psg_t *p);
 void psg_run(psg_t *p);
 void psg_outreg(psg_t *p,int reg,int a);
 void psg_end(psg_t *p);
