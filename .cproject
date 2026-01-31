@@ -48,7 +48,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="kraftsim|linuxapp|picalc.asm|asm.c|test.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="kraftsim-1.0.0|kraftsim|linuxapp|picalc.asm|asm.c|test.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -95,7 +95,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="kraftsim|linuxapp|picalc.asm|asm.c|test.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="kraftsim-1.0.0|kraftsim|linuxapp|picalc.asm|asm.c|test.asm" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
