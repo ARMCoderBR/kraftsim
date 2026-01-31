@@ -244,11 +244,12 @@ listbp:
 typedef enum {
 
     COD_VERSION = 1,
-    COD_RAMFILE = 2,
-    COD_ROMFILE = 3,
-    COD_WAITKEY = 4,
-    COD_MMAP = 5,
-    COD_HELP = 6
+    COD_RAMLOAD = 2,
+    COD_ROM1LOAD = 3,
+    COD_ROM2LOAD = 4,
+    COD_WAITKEY = 5,
+    COD_MMAP = 6,
+    COD_HELP = 7
 } cod_option_t;
 
 struct option longopts[] = {
@@ -262,7 +263,7 @@ struct option longopts[] = {
             "ram",                  //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_RAMFILE,            //int         val;
+            COD_RAMLOAD,            //int         val;
         },
         {
             "waitkey",              //const char *name;
@@ -271,10 +272,16 @@ struct option longopts[] = {
             COD_WAITKEY,            //int         val;
         },
         {
-            "rom",                  //const char *name;
+            "rom1",                 //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_ROMFILE,            //int         val;
+            COD_ROM1LOAD,           //int         val;
+        },
+        {
+            "rom2",                 //const char *name;
+            required_argument,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_ROM2LOAD,           //int         val;
         },
         {
             "version",              //const char *name;
@@ -325,12 +332,12 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom <imgfile> {-rom <imgfile>} {-ram <imgfile>} [-mmap n] [-w]\n");
-    printf("    At least one 'rom' image must be loaded and must start at 0x0000.\n");
-    printf("    Multiple 'rom' and/or 'ram' images can be loaded.\n");
+    printf("  kraftsim -rom1 <imgfile> [-rom2 <imgfile>] [-ram <imgfile>] [-mmap n] [-w]\n");
+    printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
+    printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    All images must be in Intel HEX format.\n");
-    printf("    'ram' images only make sense if the program in the 'rom' image makes use of it.\n");
-    printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require mmap 1.\n");
+    printf("    'ram' images only make sense if the program in 'rom1' makes any use of it.\n");
+    printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
     printf("    'w' makes the program wait for a key before closing the main window on exit.\n");
 }
 
@@ -347,15 +354,13 @@ int main (int argc, char *argv[]){
     int ramSZ = RAMSZ_MODE0;
 
     int loaded_rom = 0;
+    int mmap = 0;
 
     for (;;) {
 
         res = getopt_long_only(argc, argv, "", longopts, &longindex);
 
-        if (res == -1){
-            print_help();
-            return 0;
-        }
+        if (res == -1) break;
 
         if (res == 63)
             return -1;
@@ -381,6 +386,7 @@ int main (int argc, char *argv[]){
                     romSZ = ROMSZ_MODE1;
                     ramBASE = RAMBASE_MODE1;
                     ramSZ = RAMSZ_MODE1;
+                    mmap = 1;
                 }
             break;
         }
@@ -408,23 +414,39 @@ int main (int argc, char *argv[]){
 
         switch (val) {
 
-        case COD_RAMFILE:
+        case COD_RAMLOAD:
 
             if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.ram, ramBASE, ramSZ, filename);
+                res = memload(maindata.ram, ramBASE, ramSZ, filename, 0x000);
                 if (res < 0){
                     return -1;
                 }
             }
             break;
 
-        case COD_ROMFILE:
+        case COD_ROM1LOAD:
 
             if (optarg){
                 loaded_rom = 1;
                 strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.rom, 0, romSZ, filename);
+                res = memload(maindata.rom, 0, romSZ, filename, 0x0000);
+                if (res < 0){
+                    return -1;
+                }
+            }
+            break;
+
+        case COD_ROM2LOAD:
+
+            if (mmap){
+                printf("ROM2 not allowed in mmap 1.\n");
+                return 0;
+            }
+
+            if (optarg){
+                strncpy(filename,optarg,sizeof(filename));
+                res = memload(maindata.rom, 0, romSZ, filename, 0x2000);
                 if (res < 0){
                     return -1;
                 }
@@ -434,7 +456,7 @@ int main (int argc, char *argv[]){
     }
 
     if (!loaded_rom){
-        printf("You need to load at least one ROM image.\n");
+        printf("You need to load at least one ROM1 image.\n");
         return 0;
     }
 
@@ -443,7 +465,7 @@ int main (int argc, char *argv[]){
 
     maindata.sdl = sdl_init (maindata.width, maindata.height);
     if (!maindata.sdl){
-        printf("Erro iniciando SDL!\n");
+        printf("Error starting SDL!\n");
         return -1;
     }
 

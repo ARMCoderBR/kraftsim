@@ -50,7 +50,7 @@ int parsehex16(char *s){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int proclineintelhex (uint8_t *mem, uint16_t membase, uint16_t memsize, char *buf){
+int proclineintelhex (uint8_t *mem, uint16_t membase, uint16_t memsize, uint16_t load_offset, char *buf){
 
     int type = parsehex8(buf+7);
     int addr = parsehex16(buf+3);
@@ -63,6 +63,8 @@ int proclineintelhex (uint8_t *mem, uint16_t membase, uint16_t memsize, char *bu
         printf("Invalid hex line!\n");
         return -1;
     }
+
+    addr += load_offset;
 
     //printf("size:%02x addr:%04x type:%02x - %s\n",size,addr,type,buf);
 
@@ -91,7 +93,7 @@ int proclineintelhex (uint8_t *mem, uint16_t membase, uint16_t memsize, char *bu
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t memsize){
+int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t memsize, uint16_t load_offset){
 
     char buf[128];
 
@@ -110,7 +112,7 @@ int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t m
             if (buf[len-1] == '\n')
                 buf[len-1] = 0;
 
-            if (proclineintelhex(mem, membase, memsize, buf) < 0) break;
+            if (proclineintelhex(mem, membase, memsize, load_offset, buf) < 0) break;
         }
     }
 
@@ -119,80 +121,8 @@ int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t m
     return 0;
 }
 
-//////////////////////////////////////////////////////////////////////////////////
-//int proclineplainhex (uint8_t *rom, uint16_t romsize, char *buf, int pc){
-//
-//    int len = strlen(buf);
-//
-//    if (!len) return 0;
-//    if (buf[len-1] == '\n')
-//        --len;
-//
-//    if (!len) return 0;
-//
-//    if (len & 1){
-//        printf("Invalid line len\n");
-//        return -1;
-//    }
-//
-//    int i,j;
-//    for (i = 0,j = 0; i < len; i+=2, j++){
-//
-//        int b = parsehex8(buf+i);
-//        if (b < 0) {
-//
-//            printf("Error parsing Hex\n");
-//            return -1;
-//        }
-//
-//        if ((pc+j) < romsize)
-//            rom[pc+j] = b & 0xff;
-//        else{
-//            printf("ROM Overflow!\n");
-//            return -1;
-//        }
-//    }
-//
-//    return j;
-//}
-
-//////////////////////////////////////////////////////////////////////////////////
-//int romprog_readplainhex(uint8_t *rom, char *fname, uint16_t size){
-//
-//    char buf[128];
-//
-//    FILE *f = fopen (fname,"r");
-//    if (!f){
-//
-//        printf("File not found\n");
-//        return -1;
-//    }
-//
-//    int pc = 0;
-//
-//    while (!feof(f)){
-//
-//        if (fgets(buf, sizeof(buf), f)){
-//
-//            int len = strlen(buf);
-//            if (buf[len-1] == '\n')
-//                buf[len-1] = 0;
-//
-//            //printf("Programming %04x Data:%s\n",pc, buf);
-//            len = proclineplainhex(rom, size, buf, pc);
-//
-//            if (len <= 0) break;
-//            pc += len;
-//        }
-//    }
-//
-//    fclose(f);
-//
-//    return 0;
-//}
-
 ////////////////////////////////////////////////////////////////////////////////
-int memload(uint8_t *mem, uint16_t membase, uint16_t memsize, char *fname){
+int memload(uint8_t *mem, uint16_t membase, uint16_t memsize, char *fname, uint16_t load_offset){
 
-    return memprog_readintelhex(mem, fname, membase, memsize);
+    return memprog_readintelhex(mem, fname, membase, memsize, load_offset);
 }
