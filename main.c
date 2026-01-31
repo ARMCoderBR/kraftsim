@@ -15,8 +15,18 @@
 #include <SDL2/SDL.h>
 #include <getopt.h>
 
-#define RUN 1
-#define DEBUGPROMPT 0
+#include "z80.h"
+#include "romprog.h"
+#include "ios.h"
+#include "main.h"
+#include "lcd.h"
+#include "leds.h"
+#include "vga.h"
+
+////////////////////////////////////////////////////////////////////////////////
+
+#define RUN             1
+#define DEBUGPROMPT     0
 
 #define ROMSZ_MODE0     16384
 #define RAMBASE_MODE0   16384
@@ -26,13 +36,13 @@
 #define RAMBASE_MODE1   8192
 #define RAMSZ_MODE1     56*1024
 
-#include "z80.h"
-#include "romprog.h"
-#include "ios.h"
-#include "main.h"
-#include "lcd.h"
-#include "leds.h"
-#include "vga.h"
+////////////////////////////////////////////////////////////////////////////////
+
+#define MAIN_WIDTH      1280
+#define MAIN_HEIGHT     960
+#define LOWERBORDER     60
+#define LCD_X_OFFSET    5
+#define LEDS_X_OFFSET   380
 
 ////////////////////////////////////////////////////////////////////////////////
 void editprompt(char *buf, int size){
@@ -90,6 +100,7 @@ void *z80runner(main_data_t *maindata){
 
             if (maindata->sdl->repaint_window){
 
+                sdl_drawlowerborder(maindata->sdl, LOWERBORDER);
                 leds_refresh(maindata->leds,1);
                 lcd_refresh(maindata->lcd, 1);
                 vga_refresh(maindata->vga, 1);
@@ -237,7 +248,6 @@ listbp:
 
     return NULL;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -460,10 +470,8 @@ int main (int argc, char *argv[]){
         return 0;
     }
 
-#define LOWERBORDER 60
-
-    maindata.width = 1280;
-    maindata.height = 960 + LOWERBORDER;
+    maindata.width = MAIN_WIDTH;
+    maindata.height = MAIN_HEIGHT + LOWERBORDER;
 
     maindata.sdl = sdl_init (maindata.width, maindata.height);
     if (!maindata.sdl){
@@ -472,9 +480,6 @@ int main (int argc, char *argv[]){
     }
 
     sdl_drawlowerborder(maindata.sdl, LOWERBORDER);
-
-#define LCD_X_OFFSET 5
-#define LEDS_X_OFFSET 380
 
     maindata.ios = ios_init(&maindata);
     maindata.lcd = lcd_init(LCD_X_OFFSET, maindata.height-56, maindata.sdl->renderer);
