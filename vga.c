@@ -171,7 +171,10 @@ vga_t *vga_init(SDL_Renderer* renderer){
 ////////////////////////////////////////////////////////////////////////////////
 void vga_refresh(vga_t *vga, int force){
 
-    if (!vga->vgaTick) return;
+    if (!force){
+        if (!vga->vgaTick) return;
+    }
+
     vga->vgaTick = 0;
 
     vga->cursor++; if (vga->cursor > 16) vga->cursor = 0;
@@ -191,7 +194,15 @@ void vga_refresh(vga_t *vga, int force){
 
     if (vga->mode == 0){
 
-        if (vga->cursor & 1) return;
+        if (force){
+            rect.x = 0;
+            rect.y = 0;
+            rect.w = GCOLS*PIXEL_SCALE_MODE1;
+            rect.h = GROWS*PIXEL_SCALE_MODE1;
+            SDL_SetRenderDrawColor(vga->renderer, 0, 0, 0, 255);
+            SDL_RenderFillRect(vga->renderer, &rect);
+        }
+        else if (vga->cursor & 1) return;
 
         rect.x = 0;
         rect.y = 0;

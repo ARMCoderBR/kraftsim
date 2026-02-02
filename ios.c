@@ -448,7 +448,9 @@ void *thread_sdl_events(void *arg){
         while (SDL_PollEvent(&event)) {
 
             if (event.type == SDL_WINDOWEVENT){
-                if (event.window.event == SDL_WINDOWEVENT_RESTORED){
+                if ((event.window.event == SDL_WINDOWEVENT_RESTORED)
+                   ||
+                    (event.window.event == SDL_WINDOWEVENT_MOVED)){
                     maindata->sdl->wminimized = 0;
                     maindata->sdl->repaint_window = 1;
                 }
