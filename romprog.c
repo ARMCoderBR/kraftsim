@@ -11,6 +11,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "romprog.h"
 
@@ -122,7 +123,33 @@ int memprog_readintelhex(uint8_t *mem, char *fname, uint16_t membase, uint16_t m
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int memload(uint8_t *mem, uint16_t membase, uint16_t memsize, char *fname, uint16_t load_offset){
+int memload_ihx(uint8_t *mem, uint16_t membase, uint16_t memsize, char *fname, uint16_t load_offset){
 
     return memprog_readintelhex(mem, fname, membase, memsize, load_offset);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int memload_bin(uint8_t *mem, uint16_t membase, uint16_t memsize, char *fname, uint16_t load_offset){
+
+    uint8_t buf[128];
+
+    FILE *f = fopen (fname,"rb");
+    if (!f){
+
+        printf("File not found\n");
+        return -1;
+    }
+
+    int addr = load_offset;
+
+    while (!feof(f)){
+
+        int nb = fread(buf,1,sizeof(buf),f);
+        memcpy(mem+addr-membase, buf, nb);
+        addr += nb;
+    }
+
+    fclose(f);
+
+    return 0;
 }

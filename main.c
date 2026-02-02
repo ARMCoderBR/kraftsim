@@ -254,12 +254,13 @@ listbp:
 typedef enum {
 
     COD_VERSION = 1,
-    COD_RAMLOAD = 2,
-    COD_ROM1LOAD = 3,
-    COD_ROM2LOAD = 4,
-    COD_WAITKEY = 5,
-    COD_MMAP = 6,
-    COD_HELP = 7
+    COD_RAMLOAD_IHX = 2,
+    COD_ROM1LOAD_IHX = 3,
+    COD_ROM2LOAD_IHX = 4,
+    COD_RAMLOAD_BIN = 5,
+    COD_WAITKEY = 6,
+    COD_MMAP = 7,
+    COD_HELP = 8
 } cod_option_t;
 
 struct option longopts[] = {
@@ -273,7 +274,13 @@ struct option longopts[] = {
             "ram",                  //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_RAMLOAD,            //int         val;
+            COD_RAMLOAD_IHX,        //int         val;
+        },
+        {
+            "loadx",                //const char *name;
+            required_argument,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_RAMLOAD_BIN,        //int         val;
         },
         {
             "waitkey",              //const char *name;
@@ -285,13 +292,13 @@ struct option longopts[] = {
             "rom1",                 //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_ROM1LOAD,           //int         val;
+            COD_ROM1LOAD_IHX,           //int         val;
         },
         {
             "rom2",                 //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_ROM2LOAD,           //int         val;
+            COD_ROM2LOAD_IHX,           //int         val;
         },
         {
             "version",              //const char *name;
@@ -342,11 +349,11 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom1 <imgfile> [-rom2 <imgfile>] [-ram <imgfile>] [-mmap n] [-w]\n");
+    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-ram <imgfile.ihx> | -loadx <imgfile.bin>] [-mmap n] [-w]\n");
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    All images must be in Intel HEX format.\n");
-    printf("    'ram' images only make sense if the program in 'rom1' makes any use of it.\n");
+    printf("    'ram' or 'loadx' images only make sense if the program in 'rom1' makes any use of it.\n");
     printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
     printf("    'w' makes the program wait for a key before closing the main window on exit.\n");
 }
@@ -424,30 +431,41 @@ int main (int argc, char *argv[]){
 
         switch (val) {
 
-        case COD_RAMLOAD:
+        case COD_RAMLOAD_IHX:
 
             if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.ram, ramBASE, ramSZ, filename, 0x000);
+                res = memload_ihx(maindata.ram, ramBASE, ramSZ, filename, 0x0000);
                 if (res < 0){
                     return -1;
                 }
             }
             break;
 
-        case COD_ROM1LOAD:
+        case COD_RAMLOAD_BIN:
+
+            if (optarg){
+                strncpy(filename,optarg,sizeof(filename));
+                res = memload_bin(maindata.ram, ramBASE, ramSZ, filename, 0x4200);
+                if (res < 0){
+                    return -1;
+                }
+            }
+            break;
+
+        case COD_ROM1LOAD_IHX:
 
             if (optarg){
                 loaded_rom = 1;
                 strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.rom, 0, romSZ, filename, 0x0000);
+                res = memload_ihx(maindata.rom, 0, romSZ, filename, 0x0000);
                 if (res < 0){
                     return -1;
                 }
             }
             break;
 
-        case COD_ROM2LOAD:
+        case COD_ROM2LOAD_IHX:
 
             if (mmap){
                 printf("ROM2 not allowed in mmap 1.\n");
@@ -456,7 +474,7 @@ int main (int argc, char *argv[]){
 
             if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
-                res = memload(maindata.rom, 0, romSZ, filename, 0x2000);
+                res = memload_ihx(maindata.rom, 0, romSZ, filename, 0x2000);
                 if (res < 0){
                     return -1;
                 }
