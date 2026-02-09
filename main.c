@@ -94,7 +94,7 @@ void *z80runner(main_data_t *maindata){
 
     int num_steps = 0;
 
-    for (;!maindata->z.halted;){
+    for (;/*!maindata->z.halted*/;){
 
         if (!maindata->sdl->wminimized){
 
@@ -258,9 +258,8 @@ typedef enum {
     COD_ROM1LOAD_IHX = 3,
     COD_ROM2LOAD_IHX = 4,
     COD_RAMLOAD_BIN = 5,
-    COD_WAITKEY = 6,
-    COD_MMAP = 7,
-    COD_HELP = 8
+    COD_MMAP = 6,
+    COD_HELP = 7
 } cod_option_t;
 
 struct option longopts[] = {
@@ -281,12 +280,6 @@ struct option longopts[] = {
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_RAMLOAD_BIN,        //int         val;
-        },
-        {
-            "waitkey",              //const char *name;
-            0,                      //int         has_arg;
-            0,                      //int        *flag;
-            COD_WAITKEY,            //int         val;
         },
         {
             "rom1",                 //const char *name;
@@ -343,12 +336,11 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n] [-w]\n");
+    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n]\n");
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.\n");
     printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
-    printf("    'w' makes the program wait for a key before closing the main window on exit.\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -357,7 +349,6 @@ int main (int argc, char *argv[]){
     int res;
     int longindex;
     char filename[256] = {0};
-    int waitkey = 0;
 
     int romSZ = ROMSZ_MODE0;
     int ramBASE = RAMBASE_MODE0;
@@ -385,10 +376,6 @@ int main (int argc, char *argv[]){
         case COD_VERSION:
             print_version();
             return 0;
-
-        case COD_WAITKEY:
-            waitkey = 1;
-            break;
 
         case COD_MMAP:
             if (optarg)
@@ -527,11 +514,6 @@ int main (int argc, char *argv[]){
     leds_close(maindata.leds);
     lcd_close(maindata.lcd);
     vga_close(maindata.vga);
-
-    if (waitkey){
-        addstr("\n=== NORMAL END - PRESS ANY KEY ===\n\n"); refresh();
-        getch();
-    }
 
     sdl_close(maindata.sdl);
     endwin();

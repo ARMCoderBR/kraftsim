@@ -254,8 +254,8 @@ seriais, apenas a "mágica" de a RAM já ser criada com os dados que queremos,
 essa é a vantagem de usar um simulador.
 
 
-EXEMPLOS PRÁTICOS
-=================
+PRIMEIROS COMANDOS
+==================
 
     Com o KraftSIM instalado, digite o comando:
 
@@ -280,14 +280,18 @@ que ser o espaço da ROM 1.
             Images cannot be loaded to 'rom2' when using 'mmap 1'.
             Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.
             'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.
-            'w' makes the program wait for a key before closing the main window on exit.
 
     Ou seja, ele mostra as diversas opções possíveis da execução do programa.
 
+
+EXEMPLOS PRÁTICOS
+=================
+
     Para rodar o exemplo do cálculo do PI, digite:
 
-        $ kraftsim -rom1 /usr/share/kraftsim/roms/rom1-pibbp-asm.ihx -w  <enter>
+        $ kraftsim -rom1 /usr/share/kraftsim/roms/rom1-pibbp-asm.ihx     <enter>
 
     Será aberta a janela do simulador com o display LCD mostrado na parte de 
 baixo. É nele que será mostrado o progresso do cálculo do PI.
+
 
