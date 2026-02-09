@@ -119,13 +119,13 @@ IHX.
 
     - Demo:
 
-        - Cálculo do PI, escrito em ASM.      ...   rom1-pibbp-asm.ihx
+        - Cálculo do PI, escrito em ASM.      ...    rom1-pibbp-asm.ihx
           Utiliza o método BBP e executa os
           cálculos com número arbitrário de
           casas decimais (limitado pela 
           memória e velocidade da CPU).
 
-        - Cálculo do PI, escrito em C.        ...   rom1-pibbp-c.ihx
+        - Cálculo do PI, escrito em C.        ...    rom1-pibbp-c.ihx
           Utiliza o método BBP e executa os
           cálculos com precisão limitada
           pela biblioteca numérica do
@@ -134,53 +134,54 @@ IHX.
 
     - Monitores:
 
-        - Amon2, um monitor de memória        ...   rom1-amon2.ihx
+        - Amon2, um monitor de memória        ...    rom1-amon2.ihx
           simples que usa os pushbuttons e
           o display LCD para inserir e
           executar pequenos programas. É
           baseado no Amon da WR Kits
           (créditos no final).
 
-        - Kraftmon, o monitor "oficial" de    ...   rom1-kraftmon.ihx
+        - Kraftmon, o monitor "oficial" de    ...    rom1-kraftmon.ihx
           memória, carga e execução de
           programas. Também fornece o BIOS.
 
     - Linguagem BASIC:
 
-        - Basic 4.7b Microsoft (versão        ...   rom1-bas32k-standalone.ihx
+        - Basic 4.7b Microsoft (versão        ...    rom1-bas32k-standalone.ihx
           solitária) - funciona como ROM
           principal, sem monitor nem BIOS.
 
-        - Basic 4.7b Microsoft (versão        ...   rom2-bas32k.ihx
+        - Basic 4.7b Microsoft (versão        ...    rom2-bas32k.ihx
           auxiliar do Kraftmon) - funciona
           como segunda ROM quando tem o
           Kraftmon instalado na primeira ROM.
 
 
     Os aplicativos que rodam em RAM dependem da ROM do Kraftmon que precisa
-estar instalada no soquete da primeira ROM. São fornecidos em formato Hex (ihx)
-e em binário (bin). O Kraft80 real usa apenas os arquivos "bin", para o KraftSIM
-podemos alternativamente usar os arquivos "ihx" também.
+estar instalada no soquete da primeira ROM. São fornecidos em formato binário
+(bin). Esses arquivos são gerados em binário porque o Kraft80 recebe esses
+arquivos pela porta serial (no protocolo XMODEM) e a transferência dos dados em
+binário é bem mais rápida do que se fosse feita em Hex.
 
-        - Chiptunes 1 e 2: demo de som        ...   chiptune.ihx, chiptune.bin
-          (músicas) no PSG.                         chiptune2.ihx, chiptune2.bin
+        - Chiptunes 1 e 2: demo de som        ...    chiptune.bin
+          (músicas) no PSG.                          chiptune2.bin
 
-        - Relógios 1 e 2: marcam as horas,    ...   clock.ihx, clock.bin
-          o primeiro apenas no LCD, o segundo       clock2.ihx, clock2.bin
+        - Relógios 1 e 2: marcam as horas,    ...    clock.bin
+          o primeiro apenas no LCD, o segundo        clock2.bin
           no LCD e também no monitor VGA.
           Use os pushbuttons para acertar as
           horas, minutos e segundos.
 
-        - Demos dos LEDs 1 e 2. Piscam os     ...   blinker.ihx. blinker.bin
-          LEDs da placa.                            kitt.ihx. kitt.bin
+        - Demos dos LEDs 1 e 2. Piscam os     ...    blinker.bin
+          LEDs da placa.                             kitt.bin
 
-        - Cálculo do PI, escrito em ASM.      ...   pibbp-asm.ihx, pibbp-asm.bin
+        - Cálculo do PI, escrito em ASM.      ...    pibbp-asm.bin
           Utiliza o método BBP e executa os
           cálculos com número arbitrário de
           casas decimais (limitado pela 
           memória e velocidade da CPU).
 
-        - Cálculo do PI, escrito em C.        ...   pibbp-c.ihx, pibbp-c.bin
+        - Cálculo do PI, escrito em C.        ...    pibbp-c.bin
           Utiliza o método BBP e executa os
           cálculos com precisão limitada
           pela biblioteca numérica do
@@ -188,7 +189,7 @@ podemos alternativamente usar os arquivos "ihx" também.
           versão em ASM.
 
 		- Jogo Invaders (em construção),
-		  inspirado no clássico Space         ...   invaders.ihx, invaders.bin
+		  inspirado no clássico Space         ...    invaders.bin
 		  Invaders.
 
 
@@ -241,16 +242,52 @@ reconhecida e equivale a opção nenhuma, já que resulta no uso do MAPA 0.
 APLICATIVOS EM RAM
 ==================
 
-    No Kraft80 real, o único jeito de instalar programas para rodar na RAM é
-usando o Kraftmon. Ele permite carregar os programas a partir da porta serial
-usando o protocolo XMODEM. Os arquivos devem ser passados no formato binário
-(são os arquivos "bin" mostrados acima).
+    No Kraft80 real, o único jeito de instalar os programas na memória RAM é
+através da porta serial, onde o Kraftmon implementa o protocolo XMODEM - e fica
+por conta do PC ter um outro programa com XMODEM, geralmente um emulador de
+terminal, para fazer a transmissão.
 
-    
+    No KraftSIM o processo é mais simples, pois na inicialização dele já podemos
+passar o arquivo binário e ele será carregado automaticamente para a área 
+correspondente da simulação da RAM. Não são necessários protocolos nem portas
+seriais, apenas a "mágica" de a RAM já ser criada com os dados que queremos,
+essa é a vantagem de usar um simulador.
 
-    
 
+EXEMPLOS PRÁTICOS
+=================
 
+    Com o KraftSIM instalado, digite o comando:
 
+        $ kraftsim                  <enter>
 
+    A resposta será:
+
+        You need to load at least one ROM1 image.
+
+    Ou seja, ele diz que é preciso instalar ao menos uma imagem de ROM, e tem 
+que ser o espaço da ROM 1.
+
+    Para ajuda, pode-se digitar:
+
+        $ kraftsim -h               <enter>
+
+    Resposta:
+
+        Use:
+          kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n] [-w]
+            At least one 'rom1' image must be loaded and must start at 0x0000.
+            Images cannot be loaded to 'rom2' when using 'mmap 1'.
+            Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.
+            'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.
+            'w' makes the program wait for a key before closing the main window on exit.
+
+    Ou seja, ele mostra as diversas opções possíveis da execução do programa.
+
+    Para rodar o exemplo do cálculo do PI, digite:
+
+        $ kraftsim -rom1 /usr/share/kraftsim/roms/rom1-pibbp-asm.ihx -w  <enter>
+
+    Será aberta a janela do simulador com o display LCD mostrado na parte de 
+baixo. É nele que será mostrado o progresso do cálculo do PI.
 

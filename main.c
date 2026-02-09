@@ -499,6 +499,8 @@ int main (int argc, char *argv[]){
 
     initscr();
 
+    usleep(1000000);
+
     idlok(stdscr,TRUE);
     scrollok(stdscr,TRUE);
     noecho();
