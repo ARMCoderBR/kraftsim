@@ -271,13 +271,13 @@ struct option longopts[] = {
             COD_MMAP,               //int         val;
         },
         {
-            "ram",                  //const char *name;
+            "loadramihx",           //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_RAMLOAD_IHX,        //int         val;
         },
         {
-            "loadx",                //const char *name;
+            "loadram",              //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
             COD_RAMLOAD_BIN,        //int         val;
@@ -333,15 +333,9 @@ struct option longopts[] = {
     };
 
 ////////////////////////////////////////////////////////////////////////////////
-void error1(){
-
-    printf("Commands -l and -r cannot be used simultaneously.\n");
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void print_version(){
 
-    printf("\nKraftSim v1.0.0\n(c)2026-01-29 ARMCoderBR\n\n");
+    printf("\nKraftSim v1.0.0\n(c)2026-02-09 ARMCoderBR\n\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -349,11 +343,10 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-ram <imgfile.ihx> | -loadx <imgfile.bin>] [-mmap n] [-w]\n");
+    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n] [-w]\n");
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
-    printf("    All images must be in Intel HEX format.\n");
-    printf("    'ram' or 'loadx' images only make sense if the program in 'rom1' makes any use of it.\n");
+    printf("    Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.\n");
     printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
     printf("    'w' makes the program wait for a key before closing the main window on exit.\n");
 }

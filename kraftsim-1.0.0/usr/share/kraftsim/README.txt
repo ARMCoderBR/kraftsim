@@ -109,7 +109,7 @@ imagem (20251105_183344.jpg) com a foto.
 SOFTWARE DO KRAFT 80
 ====================
 
-    Existem dois tipos de programas para ele: as ROM e os aplicativos que rodam
+    Existem dois tipos de programas para ele: as ROMs e os aplicativos que rodam
 a partir da RAM.
 
     Todos são fornecidos como arquivos no formato Intel Hex e possuem a extensão
@@ -119,13 +119,13 @@ IHX.
 
     - Demo:
 
-        - Cálculo do PI, escrito em ASM.      ...    rom1-pibbp-asm.ihx
+        - Cálculo do PI, escrito em ASM.      ...   rom1-pibbp-asm.ihx
           Utiliza o método BBP e executa os
           cálculos com número arbitrário de
           casas decimais (limitado pela 
           memória e velocidade da CPU).
 
-        - Cálculo do PI, escrito em C.        ...    rom1-pibbp-c.ihx
+        - Cálculo do PI, escrito em C.        ...   rom1-pibbp-c.ihx
           Utiliza o método BBP e executa os
           cálculos com precisão limitada
           pela biblioteca numérica do
@@ -134,51 +134,53 @@ IHX.
 
     - Monitores:
 
-        - Amon2, um monitor de memória        ...    rom1-amon2.ihx
+        - Amon2, um monitor de memória        ...   rom1-amon2.ihx
           simples que usa os pushbuttons e
           o display LCD para inserir e
           executar pequenos programas. É
           baseado no Amon da WR Kits
           (créditos no final).
 
-        - Kraftmon, o monitor "oficial" de    ...    rom1-kraftmon.ihx
+        - Kraftmon, o monitor "oficial" de    ...   rom1-kraftmon.ihx
           memória, carga e execução de
           programas. Também fornece o BIOS.
 
     - Linguagem BASIC:
 
-        - Basic 4.7b Microsoft (versão        ...    rom1-bas32k-standalone.ihx
+        - Basic 4.7b Microsoft (versão        ...   rom1-bas32k-standalone.ihx
           solitária) - funciona como ROM
           principal, sem monitor nem BIOS.
 
-        - Basic 4.7b Microsoft (versão        ...    rom2-bas32k.ihx
+        - Basic 4.7b Microsoft (versão        ...   rom2-bas32k.ihx
           auxiliar do Kraftmon) - funciona
           como segunda ROM quando tem o
           Kraftmon instalado na primeira ROM.
 
 
     Os aplicativos que rodam em RAM dependem da ROM do Kraftmon que precisa
-estar instalada no soquete da primeira ROM.
+estar instalada no soquete da primeira ROM. São fornecidos em formato Hex (ihx)
+e em binário (bin). O Kraft80 real usa apenas os arquivos "bin", para o KraftSIM
+podemos alternativamente usar os arquivos "ihx" também.
 
-        - Chiptunes 1 e 2: demo de som        ...    chiptune.ihx
-          (músicas) no PSG.                          chiptune2.ihx
+        - Chiptunes 1 e 2: demo de som        ...   chiptune.ihx, chiptune.bin
+          (músicas) no PSG.                         chiptune2.ihx, chiptune2.bin
 
-        - Relógios 1 e 2: marcam as horas,    ...    clock.ihx
-          o primeiro apenas no LCD, o segundo        clock2.ihx
+        - Relógios 1 e 2: marcam as horas,    ...   clock.ihx, clock.bin
+          o primeiro apenas no LCD, o segundo       clock2.ihx, clock2.bin
           no LCD e também no monitor VGA.
           Use os pushbuttons para acertar as
           horas, minutos e segundos.
 
-        - Demos dos LEDs 1 e 2. Piscam os     ...    blinker.ihx
-          LEDs da placa.                             kitt.ihx
+        - Demos dos LEDs 1 e 2. Piscam os     ...   blinker.ihx. blinker.bin
+          LEDs da placa.                            kitt.ihx. kitt.bin
 
-        - Cálculo do PI, escrito em ASM.      ...    pibbp-asm.ihx
+        - Cálculo do PI, escrito em ASM.      ...   pibbp-asm.ihx, pibbp-asm.bin
           Utiliza o método BBP e executa os
           cálculos com número arbitrário de
           casas decimais (limitado pela 
           memória e velocidade da CPU).
 
-        - Cálculo do PI, escrito em C.        ...    pibbp-c.ihx
+        - Cálculo do PI, escrito em C.        ...   pibbp-c.ihx, pibbp-c.bin
           Utiliza o método BBP e executa os
           cálculos com precisão limitada
           pela biblioteca numérica do
@@ -186,7 +188,7 @@ estar instalada no soquete da primeira ROM.
           versão em ASM.
 
 		- Jogo Invaders (em construção),
-		  inspirado no clássico Space         ...    invaders.ihx
+		  inspirado no clássico Space         ...   invaders.ihx, invaders.bin
 		  Invaders.
 
 
@@ -212,6 +214,9 @@ ser passado para o simulador pela opção '-rom1 <arquivo_hex>'.
 	De forma similar, o arquivo Hex que seria gravado no chip do soquete da ROM2
 pode ser passado para o simulador pela opção '-rom2 <arquivo_hex>'.
 
+    Atualmente há apenas uma imagem feita para a ROM2, que é o ambiente BASIC 
+que roda em conjunto com o BIOS do Kraftmon.
+ 
 
 MAPEAMENTO DE MEMÓRIA
 =====================
@@ -233,7 +238,17 @@ usado é o MAPA 0, para usar o MAPA 1 use a opção '-mmap 1'. A opção '-mmap 
 reconhecida e equivale a opção nenhuma, já que resulta no uso do MAPA 0.
 
 
+APLICATIVOS EM RAM
+==================
 
+    No Kraft80 real, o único jeito de instalar programas para rodar na RAM é
+usando o Kraftmon. Ele permite carregar os programas a partir da porta serial
+usando o protocolo XMODEM. Os arquivos devem ser passados no formato binário
+(são os arquivos "bin" mostrados acima).
+
+    
+
+    
 
 
 
