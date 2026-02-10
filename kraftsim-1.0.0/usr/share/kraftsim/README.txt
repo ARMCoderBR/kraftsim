@@ -188,9 +188,17 @@ binário é bem mais rápida do que se fosse feita em Hex.
           ambiente C. Menos preciso que a
           versão em ASM.
 
-		- Jogo Invaders (em construção),
-		  inspirado no clássico Space         ...    invaders.bin
-		  Invaders.
+        - Conjunto Fractal de Mandelbrot,     ...    mandel.bin
+          escrito em C. Desenha o famoso
+          conjunto de pontos no plano
+          complexo onde as cores são mapeadas
+          de acordo com a regra de cálculo
+          desse fractal. Gera um padrão de
+          pontos bastante curioso e intricado.
+
+        - Jogo Invaders (em construção),
+          inspirado no clássico Space         ...    invaders.bin
+          Invaders.
 
 
 COMPARAÇÃO DO KRAFTSIM COM O KRAFT 80
