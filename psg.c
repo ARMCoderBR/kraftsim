@@ -271,7 +271,8 @@ void psg_run(psg_t *p){
         int r7 = p->r7;
 
         if((r7 & 0x09) == 0x09){
-            outval += 12*p->enveValue;
+            if (p->r8&0x10)
+                outval += 12*p->enveValue;
         }
         else{
             int amp = p->r8&0x10? p->enveValue : p->r8&15;
@@ -280,7 +281,8 @@ void psg_run(psg_t *p){
         }
 
         if((r7 & 0x12) == 0x12){
-            outval += 12*p->enveValue;
+            if (p->r9&0x10)
+                outval += 12*p->enveValue;
         }
         else{
             int amp = p->r9&0x10? p->enveValue : p->r9&15;
@@ -290,7 +292,8 @@ void psg_run(psg_t *p){
         }
 
         if((r7 & 0x24) == 0x24){
-            outval += 12*p->enveValue;
+            if (p->r10&0x10)
+                outval += 12*p->enveValue;
         }
         else{
             int amp = p->r10&0x10? p->enveValue : p->r10&15;
