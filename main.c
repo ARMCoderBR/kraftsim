@@ -40,7 +40,6 @@
 
 #define MAIN_WIDTH      1280
 #define MAIN_HEIGHT     960
-#define LOWERBORDER     60
 #define LCD_X_OFFSET    5
 #define LEDS_X_OFFSET   380
 
@@ -96,21 +95,32 @@ void *z80runner(main_data_t *maindata){
 
     for (;/*!maindata->z.halted*/;){
 
-        if (!maindata->sdl->wminimized){
+        if (!maindata->sdl->wminimized_main){
 
-            if (maindata->sdl->repaint_window){
+            if (maindata->sdl->repaint_window_main){
 
-                sdl_drawlowerborder(maindata->sdl, LOWERBORDER);
+                vga_refresh(maindata->vga, 1);
+                maindata->sdl->repaint_window_main = 0;
+            }
+            else{
+
+                vga_refresh(maindata->vga, 0);
+            }
+        }
+
+        if (!maindata->sdl->wminimized_panel){
+
+            if (maindata->sdl->repaint_window_panel){
+
+                sdl_drawpanelback(maindata->sdl);
                 leds_refresh(maindata->leds,1);
                 lcd_refresh(maindata->lcd, 1);
-                vga_refresh(maindata->vga, 1);
-                maindata->sdl->repaint_window = 0;
+                maindata->sdl->repaint_window_panel = 0;
             }
             else{
 
                 leds_refresh(maindata->leds,0);
                 lcd_refresh(maindata->lcd, 0);
-                vga_refresh(maindata->vga, 0);
             }
         }
 
@@ -469,7 +479,7 @@ int main (int argc, char *argv[]){
     }
 
     maindata.width = MAIN_WIDTH;
-    maindata.height = MAIN_HEIGHT + LOWERBORDER;
+    maindata.height = MAIN_HEIGHT;
 
     maindata.sdl = sdl_init (maindata.width, maindata.height);
     if (!maindata.sdl){
@@ -477,12 +487,12 @@ int main (int argc, char *argv[]){
         return -1;
     }
 
-    sdl_drawlowerborder(maindata.sdl, LOWERBORDER);
+    sdl_drawpanelback(maindata.sdl);
 
     maindata.ios = ios_init(&maindata);
-    maindata.lcd = lcd_init(LCD_X_OFFSET, maindata.height-56, maindata.sdl->renderer);
-    maindata.leds = leds_init(LEDS_X_OFFSET, maindata.height-25, maindata.sdl->renderer);
-    maindata.vga = vga_init(maindata.sdl->renderer);
+    maindata.lcd = lcd_init(2/*LCD_X_OFFSET*/, 2/*maindata.height-56*/, maindata.sdl->renderer_panel);
+    maindata.leds = leds_init(2/*LEDS_X_OFFSET*/, 60/*maindata.height-25*/, maindata.sdl->renderer_panel);
+    maindata.vga = vga_init(maindata.sdl->renderer_main);
 
     initscr();
 

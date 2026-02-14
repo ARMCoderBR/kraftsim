@@ -59,7 +59,7 @@ void new_out_callback (ios_t *ios, uint8_t port, uint8_t value){
         case PORTADDRL:
         case PORTADDRH:
         case PORTMODE:
-            vga_out(maindata->vga, port, value, maindata->sdl->wminimized);
+            vga_out(maindata->vga, port, value, maindata->sdl->wminimized_main);
             break;
         case PORTTIMER:
             ios->porttimer = value;
@@ -448,15 +448,28 @@ void *thread_sdl_events(void *arg){
         while (SDL_PollEvent(&event)) {
 
             if (event.type == SDL_WINDOWEVENT){
+
+                Uint32 windowID = event.window.windowID;
+                SDL_Window* affectedWindow = SDL_GetWindowFromID(windowID); // Get the window pointer
+
                 if ((event.window.event == SDL_WINDOWEVENT_RESTORED)
                    ||
                     (event.window.event == SDL_WINDOWEVENT_MOVED)){
-                    maindata->sdl->wminimized = 0;
-                    maindata->sdl->repaint_window = 1;
+
+                    if (affectedWindow == maindata->sdl->window_main){
+                        maindata->sdl->wminimized_main = 0;
+                        maindata->sdl->repaint_window_main = 1;
+                    }
+                    else{
+                        maindata->sdl->wminimized_panel = 0;
+                        maindata->sdl->repaint_window_panel = 1;
+                    }
                 }
                 else if (event.window.event == SDL_WINDOWEVENT_MINIMIZED){
-                    maindata->sdl->wminimized = 1;
-                }
+                    if (affectedWindow == maindata->sdl->window_main)
+                        maindata->sdl->wminimized_main = 1;
+                    else
+                        maindata->sdl->wminimized_panel = 1;                }
             } else if (event.type == SDL_QUIT) {
                 // Handle quit event
             } else if (event.type == SDL_KEYDOWN) {

@@ -7,14 +7,19 @@
 
 #define DEBUG 0
 
+#define DOT_SPACE   3
+#define DOT_FILL    2
+#define CHAR_HSPACE (DOT_SPACE*6)
+#define CHAR_VSPACE (DOT_SPACE*9)
+
 ////////////////////////////////////////////////////////////////////////////////
 static void draw_lcdback(SDL_Renderer* renderer, int x, int y) {
 
     SDL_Rect rect;
     rect.x = x;
     rect.y = y;
-    rect.w = (16*17);
-    rect.h = (2*27);
+    rect.w = (16*CHAR_HSPACE);
+    rect.h = (2*CHAR_VSPACE);
 
     SDL_SetRenderDrawColor(renderer, 0, 204, 77, 255);
     SDL_RenderFillRect(renderer, &rect);
@@ -27,13 +32,13 @@ static void draw_lcdpoint(SDL_Renderer* renderer, int x, int y, int onoff) {
     SDL_Rect rect;
     rect.x = x;
     rect.y = y;
-    rect.w = 3;
-    rect.h = 3;
+    rect.w = DOT_SPACE;
+    rect.h = DOT_SPACE;
     SDL_SetRenderDrawColor(renderer, 0, 179, 77, 255);
     SDL_RenderFillRect(renderer, &rect);
 
-    rect.w = 2;
-    rect.h = 2;
+    rect.w = DOT_FILL;
+    rect.h = DOT_FILL;
 
     if (onoff)
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -59,7 +64,7 @@ static void lcd_out_symbol(SDL_Renderer* renderer, int px, int py, uint8_t code)
             int state = 0;
             if (lcdrom[rom_ofs] & colmask)
                 state = 1;
-            draw_lcdpoint(renderer, px+3*col, py+3*row, state);
+            draw_lcdpoint(renderer, px+DOT_SPACE*col, py+DOT_SPACE*row, state);
 
             colmask >>= 1;
         }
@@ -232,7 +237,7 @@ void lcd_refresh(lcd_t *lcd, int force){
 
         if (force||(lcd->lcd_row1[i] != lcd->ddram[addr])){
 
-            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY, lcd->ddram[addr]);
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*CHAR_HSPACE, 1+lcd->baseY, lcd->ddram[addr]);
             lcd->lcd_row1[i] = lcd->ddram[addr];
         }
     }
@@ -243,7 +248,7 @@ void lcd_refresh(lcd_t *lcd, int force){
 
         if (force||(lcd->lcd_row2[i] != lcd->ddram[addr])){
 
-            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*17, 1+lcd->baseY+27, lcd->ddram[addr]);
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*CHAR_HSPACE, 1+lcd->baseY+CHAR_VSPACE, lcd->ddram[addr]);
             lcd->lcd_row2[i] = lcd->ddram[addr];
         }
     }
