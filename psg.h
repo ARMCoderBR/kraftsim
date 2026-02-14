@@ -2,7 +2,6 @@
 #define __PSG_C__
 
 #include <stdint.h>
-#include <pulse/simple.h>
 #include <pthread.h>
 
 #include "sound.h"
