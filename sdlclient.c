@@ -37,14 +37,14 @@ sdldata_t *sdl_init(int width, int height){
             SDL_WINDOW_SHOWN             // Flags (SDL_WINDOW_SHOWN is default)
         );
 
-    sdl->renderer_main = SDL_CreateRenderer(sdl->window_main, 0, SDL_RENDERER_ACCELERATED);
+    sdl->renderer_main = SDL_CreateRenderer(sdl->window_main, -1, SDL_RENDERER_ACCELERATED);
     if (sdl->renderer_main == NULL) {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(sdl->window_main);
         goto sdliniterr;
     }
 
-    sdl->renderer_panel = SDL_CreateRenderer(sdl->window_panel, 0, SDL_RENDERER_ACCELERATED);
+    sdl->renderer_panel = SDL_CreateRenderer(sdl->window_panel, -1, SDL_RENDERER_ACCELERATED);
     if (sdl->renderer_panel == NULL) {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(sdl->window_main);
