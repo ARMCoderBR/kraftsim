@@ -96,6 +96,8 @@ void sdl_close(sdldata_t *sdl){
 
     SDL_DestroyRenderer(sdl->renderer_main);
     SDL_DestroyWindow(sdl->window_main);
+    SDL_DestroyRenderer(sdl->renderer_panel);
+    SDL_DestroyWindow(sdl->window_panel);
     SDL_Quit();
     free(sdl);
 }
