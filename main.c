@@ -491,12 +491,12 @@ int main (int argc, char *argv[]){
 
     maindata.ios = ios_init(&maindata);
     maindata.lcd = lcd_init(2/*LCD_X_OFFSET*/, 2/*maindata.height-56*/, maindata.sdl->renderer_panel);
-    maindata.leds = leds_init(2/*LEDS_X_OFFSET*/, 60/*maindata.height-25*/, maindata.sdl->renderer_panel);
+    maindata.leds = leds_init(68/*LEDS_X_OFFSET*/, 60/*maindata.height-25*/, maindata.sdl->renderer_panel);
     maindata.vga = vga_init(maindata.sdl->renderer_main);
 
     initscr();
 
-    usleep(1000000);
+    ////usleep(1000000);
 
     idlok(stdscr,TRUE);
     scrollok(stdscr,TRUE);

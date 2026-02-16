@@ -16,7 +16,7 @@ sdldata_t *sdl_init(int width, int height){
     sdl->width = width;
     sdl->height = height;
 
-    sdl->panel_width = 320;
+    sdl->panel_width = 290;
     sdl->panel_height = 80;
 
     sdl->window_main = SDL_CreateWindow(
