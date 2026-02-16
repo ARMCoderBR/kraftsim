@@ -115,6 +115,7 @@ void leds_out(leds_t *leds, uint8_t value){
 void leds_reset(leds_t *leds){
 
     leds->leds_port = 0;
+    leds->leds_port_old = 0xff;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
