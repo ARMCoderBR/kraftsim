@@ -18,6 +18,8 @@ sdldata_t *sdl_init(int width, int height){
 
     sdl->panel_width = 290;
     sdl->panel_height = 80;
+    //sdl->panel_width = 450;
+    //sdl->panel_height = 120;
 
     sdl->window_main = SDL_CreateWindow(
             "Kraft80 Monitor",           // Window title
