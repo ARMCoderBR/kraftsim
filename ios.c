@@ -370,6 +370,7 @@ void proc_keydown(ios_t *ios, int asccode){
             ios->buttons_state &= ~0b10000000;
             break;
         case SDLK_F9:
+            ios->buttons_state &= ~0b100000000;  // Reset
             z80_reset(&maindata->z);
             leds_reset(maindata->leds);
             psg_reset(ios->psg);
@@ -418,6 +419,9 @@ void proc_keyup(ios_t *ios, int asccode){
             break;
         case SDLK_F8:
             ios->buttons_state |= 0b10000000;
+            break;
+        case SDLK_F9:
+            ios->buttons_state |= 0b100000000;  // Reset
             break;
         default:
             const kcode_t *k = find_kcode(asccode);
@@ -483,8 +487,10 @@ void *thread_sdl_events(void *arg){
                         event.key.keysym.sym = '`';
                 }
                 proc_keydown(ios, event.key.keysym.sym);
+                buttons_update(maindata->buttons, ios->buttons_state);
             } else if (event.type == SDL_KEYUP) {
                 proc_keyup(ios, event.key.keysym.sym);
+                buttons_update(maindata->buttons, ios->buttons_state);
             }
         }
         usleep(10000);
@@ -529,7 +535,7 @@ ios_t *ios_init(void *main){
     ios->portserdata = 0;
     ios->portserctl = 0;
     ios->psgaddr = 0;
-    ios->buttons_state = 0xff;
+    ios->buttons_state = 0x1ff;
     ios->endthreads = 0;
     ios->presc = 0;
 

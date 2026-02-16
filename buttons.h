@@ -13,8 +13,8 @@
 
 typedef struct {
 
-    uint8_t buttons_state;
-    uint8_t buttons_state_old;
+    uint16_t buttons_state;
+    uint16_t buttons_state_old;
     SDL_TimerID buttonsTimer;
     int buttonsTick;
     int baseX,baseY;
@@ -25,7 +25,7 @@ typedef struct {
 
 buttons_t *buttons_init(int x, int y, SDL_Renderer* renderer);
 void buttons_refresh(buttons_t *buttons, int force);
-void buttons_out(buttons_t *buttons, uint8_t value);
+void buttons_update(buttons_t *buttons, uint16_t bstate);
 void buttons_reset(buttons_t *buttons);
 void buttons_close(buttons_t *buttons);
 

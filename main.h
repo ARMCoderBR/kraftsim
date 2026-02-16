@@ -17,6 +17,7 @@
 #include "sdlclient.h"
 #include "vga.h"
 #include "lcd.h"
+#include "buttons.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct {
@@ -32,6 +33,7 @@ typedef struct {
     leds_t *leds;
     lcd_t *lcd;
     vga_t *vga;
+    buttons_t *buttons;
 } main_data_t;
 
 #endif /* MAIN_H_ */

@@ -115,12 +115,14 @@ void *z80runner(main_data_t *maindata){
                 sdl_drawpanelback(maindata->sdl);
                 leds_refresh(maindata->leds,1);
                 lcd_refresh(maindata->lcd, 1);
+                buttons_refresh(maindata->buttons,1);
                 maindata->sdl->repaint_window_panel = 0;
             }
             else{
 
                 leds_refresh(maindata->leds,0);
                 lcd_refresh(maindata->lcd, 0);
+                buttons_refresh(maindata->buttons,0);
             }
         }
 
@@ -490,8 +492,9 @@ int main (int argc, char *argv[]){
     sdl_drawpanelback(maindata.sdl);
 
     maindata.ios = ios_init(&maindata);
-    maindata.lcd = lcd_init(2/*LCD_X_OFFSET*/, 2/*maindata.height-56*/, maindata.sdl->renderer_panel);
-    maindata.leds = leds_init(68/*LEDS_X_OFFSET*/, 60/*maindata.height-25*/, maindata.sdl->renderer_panel);
+    maindata.lcd = lcd_init(86, 8, maindata.sdl->renderer_panel);
+    maindata.leds = leds_init(86+68, 108, maindata.sdl->renderer_panel);
+    maindata.buttons = buttons_init(10, 140, maindata.sdl->renderer_panel);
     maindata.vga = vga_init(maindata.sdl->renderer_main);
 
     initscr();
@@ -524,6 +527,7 @@ int main (int argc, char *argv[]){
     leds_close(maindata.leds);
     lcd_close(maindata.lcd);
     vga_close(maindata.vga);
+    buttons_close(maindata.buttons);
 
     sdl_close(maindata.sdl);
     endwin();

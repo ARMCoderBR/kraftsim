@@ -11,18 +11,30 @@
 #define DOT_FILL    2
 #define CHAR_HSPACE (DOT_SPACE*6)
 #define CHAR_VSPACE (DOT_SPACE*9)
+#define LCDBORDER   16
 
 ////////////////////////////////////////////////////////////////////////////////
 static void draw_lcdback(SDL_Renderer* renderer, int x, int y) {
 
     SDL_Rect rect;
+
+
     rect.x = x;
     rect.y = y;
+    rect.w = (16*CHAR_HSPACE)+2*LCDBORDER;
+    rect.h = (2*CHAR_VSPACE)+2*LCDBORDER;
+
+    SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
+    SDL_RenderFillRect(renderer, &rect);
+
+    rect.x = x+LCDBORDER;
+    rect.y = y+LCDBORDER;
     rect.w = (16*CHAR_HSPACE);
     rect.h = (2*CHAR_VSPACE);
 
     SDL_SetRenderDrawColor(renderer, 0, 204, 77, 255);
     SDL_RenderFillRect(renderer, &rect);
+
     SDL_RenderPresent(renderer);
 }
 
@@ -237,7 +249,7 @@ void lcd_refresh(lcd_t *lcd, int force){
 
         if (force||(lcd->lcd_row1[i] != lcd->ddram[addr])){
 
-            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*CHAR_HSPACE, 1+lcd->baseY, lcd->ddram[addr]);
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*CHAR_HSPACE+LCDBORDER, 1+lcd->baseY+LCDBORDER, lcd->ddram[addr]);
             lcd->lcd_row1[i] = lcd->ddram[addr];
         }
     }
@@ -248,7 +260,7 @@ void lcd_refresh(lcd_t *lcd, int force){
 
         if (force||(lcd->lcd_row2[i] != lcd->ddram[addr])){
 
-            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*CHAR_HSPACE, 1+lcd->baseY+CHAR_VSPACE, lcd->ddram[addr]);
+            lcd_out_symbol(lcd->renderer, 1+lcd->baseX+i*CHAR_HSPACE+LCDBORDER, 1+lcd->baseY+CHAR_VSPACE+LCDBORDER, lcd->ddram[addr]);
             lcd->lcd_row2[i] = lcd->ddram[addr];
         }
     }

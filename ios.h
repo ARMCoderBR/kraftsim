@@ -22,7 +22,7 @@ typedef struct {
     uint8_t portserctl;
     uint8_t psgaddr;
 
-    uint8_t buttons_state;
+    uint16_t buttons_state;
 
     psg_t *psg;
 
