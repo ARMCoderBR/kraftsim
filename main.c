@@ -492,9 +492,9 @@ int main (int argc, char *argv[]){
     sdl_drawpanelback(maindata.sdl);
 
     maindata.ios = ios_init(&maindata);
-    maindata.lcd = lcd_init(86, 8, maindata.sdl->renderer_panel);
-    maindata.leds = leds_init(86+68, 108, maindata.sdl->renderer_panel);
-    maindata.buttons = buttons_init(10, 140, maindata.sdl->renderer_panel);
+    maindata.lcd = lcd_init(86, 40, maindata.sdl->renderer_panel);
+    maindata.leds = leds_init(16, 8, maindata.sdl->renderer_panel);
+    maindata.buttons = buttons_init(10, 180, maindata.sdl->renderer_panel);
     maindata.vga = vga_init(maindata.sdl->renderer_main);
 
     initscr();
