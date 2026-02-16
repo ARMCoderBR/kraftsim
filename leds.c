@@ -54,40 +54,45 @@ void leds_refresh(leds_t *leds, int force){
                 rect.y = leds->baseY+3;
                 rect.w = 16;
                 rect.h = 10;
-                SDL_SetRenderDrawColor(leds->renderer, 160, 160, 0, 160);
+                SDL_SetRenderDrawColor(leds->renderer, 180, 180, 0, 255);
                 SDL_RenderFillRect(leds->renderer, &rect);
                 rect.x = leds->baseX+20*i+3;
                 rect.y = leds->baseY;
                 rect.w = 10;
                 rect.h = 16;
-                SDL_SetRenderDrawColor(leds->renderer, 160, 160, 0, 160);
+                SDL_SetRenderDrawColor(leds->renderer, 180, 180, 0, 255);
                 SDL_RenderFillRect(leds->renderer, &rect);
                 rect.x = leds->baseX+20*i+3;
                 rect.y = leds->baseY+3;
                 rect.w = 10;
                 rect.h = 10;
-                SDL_SetRenderDrawColor(leds->renderer, 255, 255, 0, 255);
+                SDL_SetRenderDrawColor(leds->renderer, 255, 255, 210, 255);
                 SDL_RenderFillRect(leds->renderer, &rect);
-
             }
             else{
                 rect.x = leds->baseX+20*i;
                 rect.y = leds->baseY+3;
                 rect.w = 16;
                 rect.h = 10;
-                SDL_SetRenderDrawColor(leds->renderer, 51, 51, 0, 255);
+                SDL_SetRenderDrawColor(leds->renderer, 61, 61, 0, 255);
                 SDL_RenderFillRect(leds->renderer, &rect);
                 rect.x = leds->baseX+20*i+3;
                 rect.y = leds->baseY;
                 rect.w = 10;
                 rect.h = 16;
-                SDL_SetRenderDrawColor(leds->renderer, 51, 51, 0, 255);
+                SDL_SetRenderDrawColor(leds->renderer, 61, 61, 0, 255);
                 SDL_RenderFillRect(leds->renderer, &rect);
                 rect.x = leds->baseX+20*i+3;
                 rect.y = leds->baseY+3;
                 rect.w = 10;
                 rect.h = 10;
-                SDL_SetRenderDrawColor(leds->renderer, 45, 45, 0, 45);
+                SDL_SetRenderDrawColor(leds->renderer, 95, 95, 0, 255);
+                SDL_RenderFillRect(leds->renderer, &rect);
+                rect.x = leds->baseX+20*i+5;
+                rect.y = leds->baseY+5;
+                rect.w = 3;
+                rect.h = 3;
+                SDL_SetRenderDrawColor(leds->renderer, 180, 180, 160, 255);
                 SDL_RenderFillRect(leds->renderer, &rect);
             }
         }
