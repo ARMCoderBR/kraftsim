@@ -3,6 +3,6 @@ Version: 1.0.0
 Section: games
 Priority: optional
 Architecture: amd64
-Depends: libsdl2-2.0-0
+Depends: libsdl2-2.0-0, libsdl2-image-2.0-0
 Maintainer: ARMCoderBR <milton@armcoder.com.br>
 Description: A simulator for the Kraft80, a homebrew Z80 computer.
