@@ -491,6 +491,8 @@ void *thread_sdl_events(void *arg){
                 SDL_Window* affectedWindow = SDL_GetWindowFromID(windowID); // Get the window pointer
                 if (affectedWindow == maindata->sdl->window_main){
                     SDL_ShowWindow(maindata->panel->window_panel);
+                    maindata->panel->wminimized_panel = 0;
+                    maindata->panel->repaint_window_panel = 1;
                 }
             }
 //            else if (event.type == SDL_QUIT) {
