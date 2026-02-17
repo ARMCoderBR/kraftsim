@@ -14,16 +14,10 @@ typedef struct {
 
     int width;
     int height;
-    int panel_width;
-    int panel_height;
     SDL_Window* window_main;
-    SDL_Window* window_panel;
     SDL_Renderer* renderer_main;
-    SDL_Renderer* renderer_panel;
     int wminimized_main;
-    int wminimized_panel;
     int repaint_window_main;
-    int repaint_window_panel;
 } sdldata_t;
 
 sdldata_t *sdl_init(int width, int height);

@@ -44,10 +44,10 @@ void new_out_callback (ios_t *ios, uint8_t port, uint8_t value){
 
     switch (port){
         case PORTLEDS:
-            leds_out(maindata->leds,value);
+            leds_out(maindata->panel->leds,value);
             break;
         case PORTDISP:
-            lcd_out(maindata->lcd, value);
+            lcd_out(maindata->panel->lcd, value);
             break;
         case PORTSERDATA:
             if (value != 0x0d){
@@ -372,7 +372,7 @@ void proc_keydown(ios_t *ios, int asccode){
         case SDLK_F9:
             ios->buttons_state &= ~0b100000000;  // Reset
             z80_reset(&maindata->z);
-            leds_reset(maindata->leds);
+            leds_reset(maindata->panel->leds);
             psg_reset(ios->psg);
             vga_reset(maindata->vga);
             break;
@@ -465,15 +465,15 @@ void *thread_sdl_events(void *arg){
                         maindata->sdl->repaint_window_main = 1;
                     }
                     else{
-                        maindata->sdl->wminimized_panel = 0;
-                        maindata->sdl->repaint_window_panel = 1;
+                        maindata->panel->wminimized_panel = 0;
+                        maindata->panel->repaint_window_panel = 1;
                     }
                 }
                 else if (event.window.event == SDL_WINDOWEVENT_MINIMIZED){
                     if (affectedWindow == maindata->sdl->window_main)
                         maindata->sdl->wminimized_main = 1;
                     else
-                        maindata->sdl->wminimized_panel = 1;
+                        maindata->panel->wminimized_panel = 1;
                 }
                 else if (event.window.event == SDL_WINDOWEVENT_CLOSE){
 
@@ -490,7 +490,7 @@ void *thread_sdl_events(void *arg){
                 Uint32 windowID = event.window.windowID;
                 SDL_Window* affectedWindow = SDL_GetWindowFromID(windowID); // Get the window pointer
                 if (affectedWindow == maindata->sdl->window_main){
-                    SDL_ShowWindow(maindata->sdl->window_panel);
+                    SDL_ShowWindow(maindata->panel->window_panel);
                 }
             }
 //            else if (event.type == SDL_QUIT) {
@@ -516,10 +516,10 @@ void *thread_sdl_events(void *arg){
                         event.key.keysym.sym = '`';
                 }
                 proc_keydown(ios, event.key.keysym.sym);
-                buttons_update(maindata->buttons, ios->buttons_state);
+                buttons_update(maindata->panel->buttons, ios->buttons_state);
             } else if (event.type == SDL_KEYUP) {
                 proc_keyup(ios, event.key.keysym.sym);
-                buttons_update(maindata->buttons, ios->buttons_state);
+                buttons_update(maindata->panel->buttons, ios->buttons_state);
             }
         }
         usleep(10000);

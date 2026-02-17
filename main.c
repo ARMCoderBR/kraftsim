@@ -108,23 +108,7 @@ void *z80runner(main_data_t *maindata){
             }
         }
 
-        if (!maindata->sdl->wminimized_panel){
-
-            if (maindata->sdl->repaint_window_panel){
-
-                sdl_drawpanelback(maindata->sdl);
-                leds_refresh(maindata->leds,1);
-                lcd_refresh(maindata->lcd, 1);
-                buttons_refresh(maindata->buttons,1);
-                maindata->sdl->repaint_window_panel = 0;
-            }
-            else{
-
-                leds_refresh(maindata->leds,0);
-                lcd_refresh(maindata->lcd, 0);
-                buttons_refresh(maindata->buttons,0);
-            }
-        }
+        panel_check_refresh(maindata->panel);
 
         sched_yield();
 
@@ -489,13 +473,9 @@ int main (int argc, char *argv[]){
         return -1;
     }
 
-    sdl_drawpanelback(maindata.sdl);
-
-    maindata.ios = ios_init(&maindata);
-    maindata.lcd = lcd_init(64, 34, maindata.sdl->renderer_panel);
-    maindata.leds = leds_init(12, 8, maindata.sdl->renderer_panel);
-    maindata.buttons = buttons_init(10, 190, maindata.sdl->renderer_panel);
+    maindata.panel = panel_init();
     maindata.vga = vga_init(maindata.sdl->renderer_main);
+    maindata.ios = ios_init(&maindata);
 
     initscr();
 
@@ -524,10 +504,9 @@ int main (int argc, char *argv[]){
 
     free(maindata.rom);
     free(maindata.ram);
-    leds_close(maindata.leds);
-    lcd_close(maindata.lcd);
+
+    panel_close(maindata.panel);
     vga_close(maindata.vga);
-    buttons_close(maindata.buttons);
 
     sdl_close(maindata.sdl);
     endwin();

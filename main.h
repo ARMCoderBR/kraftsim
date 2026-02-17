@@ -13,11 +13,9 @@
 #include <SDL2/SDL.h>
 
 #include "z80.h"
-#include "leds.h"
 #include "sdlclient.h"
 #include "vga.h"
-#include "lcd.h"
-#include "buttons.h"
+#include "panel.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct {
@@ -30,10 +28,8 @@ typedef struct {
     z80_t z;
     pthread_t z80thread;
     ios_t *ios;
-    leds_t *leds;
-    lcd_t *lcd;
     vga_t *vga;
-    buttons_t *buttons;
+    panel_t *panel;
 } main_data_t;
 
 #endif /* MAIN_H_ */
