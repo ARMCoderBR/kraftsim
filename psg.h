@@ -24,7 +24,6 @@ typedef struct {
 
     uint16_t values[NUM_STAGES];
 
-    ////////
     sound_t *s;
 } psg_t;
 

@@ -1275,16 +1275,6 @@ unsigned int panel_back_png_len = 15092;
 ////////////////////////////////////////////////////////////////////////////////
 static void sdl_drawpanelback(panel_t *panel){
 
-//    SDL_Rect rect;
-//    rect.x = 0;
-//    rect.y = 0;
-//    rect.w = panel->panel_width;
-//    rect.h = panel->panel_height;
-//
-//    SDL_SetRenderDrawColor(panel->renderer_panel, 8, 36, 8, 255);
-//    SDL_RenderFillRect(panel->renderer_panel, &rect);
-//    SDL_SetRenderDrawColor(panel->renderer_panel, 128, 128, 128, 255);
-
     SDL_RWops* rwops = SDL_RWFromMem(panel_back_png, panel_back_png_len);
     SDL_Surface* surface = IMG_Load_RW(rwops, 1);
     SDL_Texture* texture = SDL_CreateTextureFromSurface(panel->renderer_panel,surface);
