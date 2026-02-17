@@ -473,10 +473,39 @@ void *thread_sdl_events(void *arg){
                     if (affectedWindow == maindata->sdl->window_main)
                         maindata->sdl->wminimized_main = 1;
                     else
-                        maindata->sdl->wminimized_panel = 1;                }
-            } else if (event.type == SDL_QUIT) {
-                // Handle quit event
-            } else if (event.type == SDL_KEYDOWN) {
+                        maindata->sdl->wminimized_panel = 1;
+                }
+                else if (event.window.event == SDL_WINDOWEVENT_CLOSE){
+
+                    Uint32 windowID = event.window.windowID;
+                    SDL_Window* affectedWindow = SDL_GetWindowFromID(windowID); // Get the window pointer
+                    if (affectedWindow == maindata->sdl->window_main){
+                        z80_break(&maindata->z);
+                    }
+                    else
+                        SDL_HideWindow(affectedWindow);
+                }
+            }
+            else if (event.type == SDL_MOUSEBUTTONDOWN) {
+                Uint32 windowID = event.window.windowID;
+                SDL_Window* affectedWindow = SDL_GetWindowFromID(windowID); // Get the window pointer
+                if (affectedWindow == maindata->sdl->window_main){
+                    SDL_ShowWindow(maindata->sdl->window_panel);
+                }
+            }
+//            else if (event.type == SDL_QUIT) {
+//
+//                addstr("QUIT!"); refresh();
+//                // Handle quit event
+//                //Uint32 windowID = event.window.windowID;
+//                //SDL_Window* affectedWindow = SDL_GetWindowFromID(windowID); // Get the window pointer
+//                //if (affectedWindow == maindata->sdl->window_main){
+//                    z80_break(&maindata->z);
+//                //}
+//                //else
+//                //    SDL_HideWindow(affectedWindow);
+//            }
+            else if (event.type == SDL_KEYDOWN) {
 //                char buf[80];
 //                sprintf(buf,"Event:%02x Scancode:%02x ",event.key.keysym.sym, event.key.keysym.scancode);
 //                addstr(buf); refresh();
