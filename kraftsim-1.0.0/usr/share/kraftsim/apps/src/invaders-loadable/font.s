@@ -13,8 +13,10 @@
 
 		.globl	print_string
 		.globl	print_number
+		.globl	pos_char
+		.globl	print_char
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 divnum:		push	de	; Divided HL by BC, ASCII digit result in B
 		ld	e,#'0'
@@ -31,20 +33,21 @@ divnum2:	add	hl,bc
 		pop	de
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-procdigit:	
+procdigit:
 		call	divnum
 
 		ld	a,(color)
 		ld	c,a
+		ld	a,b
 		push	hl
 		call	print_char
 		pop	hl
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 print_string:		; HL = string ptr  DE = screen addr  C = color
 
@@ -60,7 +63,6 @@ prints1:
 		or	a
 		ret	z
 
-		ld	b,a
 		push	hl
 		call	print_char
 		pop	hl
@@ -69,7 +71,7 @@ prints1:
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 print_number:		; HL = value  DE = screen addr  C = color
 
@@ -95,12 +97,19 @@ print_number:		; HL = value  DE = screen addr  C = color
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-print_char:		; b = char index  c = color
+pos_char:		; DE = screen addr
+
+		ld	(scraddr),de
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_char:		; a = char index   c = color
 
 		ld	hl,#font_start
-		ld	e,b
+		ld	e,a
 		ld	d,#0
 		sla	e
 		rl	d
@@ -124,11 +133,11 @@ printlb1:	push	bc
 		push	hl
 		ld	b,#4
 		ld	h,#128
-		
-printlb2:	
+
+printlb2:	ld	a,c
+		and	#0xf0
+		ld	l,a
 		ld	a,(de)
-		
-		ld	l,#0
 		and	h
 		jr	z,printlb2a
 		ld	l,c
@@ -138,18 +147,30 @@ printlb2:
 		sla	l
 
 printlb2a:	srl	h
+
 		ld	a,(de)
 		and	h
 		jr	z,printlb2b
 
 		ld	a,c
+		and	#0x0f
 		or	l
 		ld	l,a
 
-printlb2b:	srl	h
+		jr	printlb2c
+
+printlb2b:	ld	a,c
+		srl	a
+		srl	a
+		srl	a
+		srl	a
+		or	l
+		ld	l,a
+
+printlb2c:	srl	h
 		ld	a,l
 		out	(PORTDATA),a
-		djnz	printlb2		
+		djnz	printlb2
 
 		pop	hl
 
@@ -1325,7 +1346,7 @@ font_start:
 		.byte	0b11111110
 		.byte	0b00000000
 
-		.byte	0b01111000
+		.byte	0b01111000	;0x80
 		.byte	0b11001100
 		.byte	0b11000000
 		.byte	0b11001100
@@ -1334,7 +1355,7 @@ font_start:
 		.byte	0b00001100
 		.byte	0b01111000
 
-		.byte	0b00000000
+		.byte	0b00000000	;0x81
 		.byte	0b11001100
 		.byte	0b00000000
 		.byte	0b11001100
@@ -1343,7 +1364,7 @@ font_start:
 		.byte	0b01111110
 		.byte	0b00000000
 
-		.byte	0b00011100
+		.byte	0b00011100	;0x82
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b11001100
@@ -1352,7 +1373,7 @@ font_start:
 		.byte	0b01111000
 		.byte	0b00000000
 
-		.byte	0b01111110
+		.byte	0b01111110	;0x83
 		.byte	0b11000011
 		.byte	0b00111100
 		.byte	0b00000110
@@ -1361,7 +1382,7 @@ font_start:
 		.byte	0b00111111
 		.byte	0b00000000
 
-		.byte	0b11001100
+		.byte	0b11001100	;0x84
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b00001100
@@ -1370,7 +1391,7 @@ font_start:
 		.byte	0b01111110
 		.byte	0b00000000
 
-		.byte	0b11100000
+		.byte	0b11100000	;0x85
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b00001100
@@ -1379,8 +1400,8 @@ font_start:
 		.byte	0b01111110
 		.byte	0b00000000
 
+		.byte	0b00110000	;0x86
 		.byte	0b00110000
-		.byte	0b00110000
 		.byte	0b01111000
 		.byte	0b00001100
 		.byte	0b01111100
@@ -1388,7 +1409,7 @@ font_start:
 		.byte	0b01111110
 		.byte	0b00000000
 
-		.byte	0b00000000
+		.byte	0b00000000	;0x87
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b11000000
@@ -1397,7 +1418,7 @@ font_start:
 		.byte	0b00001100
 		.byte	0b00111000
 
-		.byte	0b01111110
+		.byte	0b01111110	;0x88
 		.byte	0b11000011
 		.byte	0b00111100
 		.byte	0b01100110
@@ -1406,7 +1427,7 @@ font_start:
 		.byte	0b00111100
 		.byte	0b00000000
 
-		.byte	0b11001100
+		.byte	0b11001100	;0x89
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b11001100
@@ -1415,7 +1436,7 @@ font_start:
 		.byte	0b01111000
 		.byte	0b00000000
 
-		.byte	0b11100000
+		.byte	0b11100000	;0x8A
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b11001100
@@ -1424,7 +1445,7 @@ font_start:
 		.byte	0b01111000
 		.byte	0b00000000
 
-		.byte	0b11001100
+		.byte	0b11001100	;0x8B
 		.byte	0b00000000
 		.byte	0b01110000
 		.byte	0b00110000
@@ -1433,7 +1454,7 @@ font_start:
 		.byte	0b01111000
 		.byte	0b00000000
 
-		.byte	0b01111100
+		.byte	0b01111100	;0x8C
 		.byte	0b11000110
 		.byte	0b00111000
 		.byte	0b00011000
@@ -1442,7 +1463,7 @@ font_start:
 		.byte	0b00111100
 		.byte	0b00000000
 
-		.byte	0b11100000
+		.byte	0b11100000	;0x8D
 		.byte	0b00000000
 		.byte	0b01110000
 		.byte	0b00110000
@@ -1451,7 +1472,7 @@ font_start:
 		.byte	0b01111000
 		.byte	0b00000000
 
-		.byte	0b11000110
+		.byte	0b11000110	;0x8E
 		.byte	0b00111000
 		.byte	0b01101100
 		.byte	0b11000110
@@ -1460,7 +1481,7 @@ font_start:
 		.byte	0b11000110
 		.byte	0b00000000
 
-		.byte	0b00110000
+		.byte	0b00110000	;0x8F
 		.byte	0b00110000
 		.byte	0b00000000
 		.byte	0b01111000
@@ -1469,7 +1490,7 @@ font_start:
 		.byte	0b11001100
 		.byte	0b00000000
 
-		.byte	0b00011100
+		.byte	0b00011100	;0x90
 		.byte	0b00000000
 		.byte	0b11111100
 		.byte	0b01100000
@@ -1613,7 +1634,7 @@ font_start:
 		.byte	0b11011000
 		.byte	0b01110000
 
-		.byte	0b00011100
+		.byte	0b00011100	;0xA0
 		.byte	0b00000000
 		.byte	0b01111000
 		.byte	0b00001100
@@ -1757,7 +1778,7 @@ font_start:
 		.byte	0b00000000
 		.byte	0b00000000
 
-		.byte	0b00100010
+		.byte	0b00100010	;0xB0
 		.byte	0b10001000
 		.byte	0b00100010
 		.byte	0b10001000
@@ -1901,7 +1922,7 @@ font_start:
 		.byte	0b00011000
 		.byte	0b00011000
 
-		.byte	0b00011000
+		.byte	0b00011000	;0xC0
 		.byte	0b00011000
 		.byte	0b00011000
 		.byte	0b00011000
@@ -2045,7 +2066,7 @@ font_start:
 		.byte	0b00000000
 		.byte	0b00000000
 
-		.byte	0b00110110
+		.byte	0b00110110	;0xD0
 		.byte	0b00110110
 		.byte	0b00110110
 		.byte	0b00110110
@@ -2189,7 +2210,7 @@ font_start:
 		.byte	0b00000000
 		.byte	0b00000000
 
-		.byte	0b00000000
+		.byte	0b00000000	;0xE0
 		.byte	0b00000000
 		.byte	0b01110110
 		.byte	0b11011100
@@ -2333,7 +2354,7 @@ font_start:
 		.byte	0b11001100
 		.byte	0b00000000
 
-		.byte	0b00000000
+		.byte	0b00000000	;0xF0
 		.byte	0b11111100
 		.byte	0b00000000
 		.byte	0b11111100
@@ -2468,7 +2489,7 @@ font_start:
 		.byte	0b00000000
 		.byte	0b00000000
 
-		.byte	0b00000000
+		.byte	0b00000000	;0xFF
 		.byte	0b00000000
 		.byte	0b00000000
 		.byte	0b00000000

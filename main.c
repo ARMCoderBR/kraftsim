@@ -255,7 +255,8 @@ typedef enum {
     COD_ROM2LOAD_IHX = 4,
     COD_RAMLOAD_BIN = 5,
     COD_MMAP = 6,
-    COD_HELP = 7
+    COD_PANEL = 7,
+    COD_HELP = 8
 } cod_option_t;
 
 struct option longopts[] = {
@@ -314,6 +315,12 @@ struct option longopts[] = {
             COD_HELP,               //int         val;
         },
         {
+            "panel",                //const char *name;
+            0,                      //int         has_arg;
+            0,                      //int        *flag;
+            COD_PANEL,              //int         val;
+        },
+        {
             0,                      //const char *name;
             0,                      //int         has_arg;
             0,                      //int        *flag;
@@ -324,7 +331,7 @@ struct option longopts[] = {
 ////////////////////////////////////////////////////////////////////////////////
 void print_version(){
 
-    printf("\nKraftSim v1.0.0\n(c)2026-02-17 ARMCoderBR\n\n");
+    printf("\nKraftSim v1.0.0\n(c)2026-02-19 ARMCoderBR\n\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -332,11 +339,14 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n]\n");
+    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n] [-panel]\n");
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.\n");
-    printf("    'mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
+    printf("    '-mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
+    printf("    '-panel' shows the LCD/LEDs/Buttons panel on start.\n");
+    printf("        (You can also click on the main window to show the panel if hidden).\n");
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -352,6 +362,8 @@ int main (int argc, char *argv[]){
 
     int loaded_rom = 0;
     int mmap = 0;
+
+    int show_panel = 0;
 
     for (;;) {
 
@@ -456,6 +468,10 @@ int main (int argc, char *argv[]){
                 }
             }
             break;
+
+        case COD_PANEL:
+            show_panel = 1;
+            break;
         }
     }
 
@@ -473,7 +489,7 @@ int main (int argc, char *argv[]){
         return -1;
     }
 
-    maindata.panel = panel_init();
+    maindata.panel = panel_init(show_panel);
     maindata.vga = vga_init(maindata.sdl->renderer_main);
     maindata.ios = ios_init(&maindata);
 

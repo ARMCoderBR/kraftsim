@@ -1283,7 +1283,7 @@ static void sdl_drawpanelback(panel_t *panel){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-panel_t *panel_init(){
+panel_t *panel_init(int show_window){
 
     panel_t *panel = malloc(sizeof(panel_t));
     if (!panel) return NULL;
@@ -1295,9 +1295,11 @@ panel_t *panel_init(){
             "Kraft80 Panel",             // Window title
             SDL_WINDOWPOS_UNDEFINED,     // Initial x position
             SDL_WINDOWPOS_UNDEFINED,     // Initial y position
-            panel->panel_width,            // Width in pixels
-            panel->panel_height,           // Height in pixels
-            SDL_WINDOW_SHOWN             // Flags (SDL_WINDOW_SHOWN is default)
+            panel->panel_width,          // Width in pixels
+            panel->panel_height,         // Height in pixels
+            show_window ?                // Flags (SDL_WINDOW_SHOWN is default)
+                    SDL_WINDOW_SHOWN :
+                    SDL_WINDOW_HIDDEN
         );
 
     if (!panel->window_panel){

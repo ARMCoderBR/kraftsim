@@ -16,17 +16,23 @@
 		.globl	cannon_hpos_px
 		.globl	cannondie_state
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 invaders:
 		call	set_screen
 
+		call	init_sound
 		ld	hl,#timer_service
 		call	init_timer
 
 		call	init_inputs
 
-		ld	hl,#150
+start_menu:
+		call	clrscr
+		call	mainmenu
+		call	wait_fire
+
+start_game:	ld	hl,#150
 		ld	(timer_invaders),hl
 wait_init:	ld	hl,(timer_invaders)
 		ld	a,h
@@ -48,9 +54,14 @@ wait_init:	ld	hl,(timer_invaders)
 		call	print_score
 
 loop_invaders:
+		ld	a,(gameover)
+		or	a
+		jr	nz,start_menu
+
 		call	update_inputs
 		ld	(inputs_state),a
 
+		call	move_ufo
 		call	move_cannon
 		call	move_invaders
 		call	move_missile
@@ -59,7 +70,7 @@ loop_invaders:
 		call	lfsr_update
 		jr	loop_invaders
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 init_vars1:
 		ld	a,#(PLAYFIELD_WIDTH/2) - 8
@@ -68,6 +79,10 @@ init_vars1:
 		xor	a
 		ld	(missile_act),a
 		ld	(timer_missile),a
+		ld	(gameover),a
+		ld	(timer_bombs),a
+		ld	(timer_newbomb),a
+		ld	(procdie),a
 
 		ld	b,#NUM_BOMBS
 		ld	ix,#bomb_basedata
@@ -75,18 +90,20 @@ init_vars1a:	ld	_BOMB_ACT(ix),a
 		inc	ix
 		djnz	init_vars1a
 
-		ld	(timer_bombs),a
-		ld	(timer_newbomb),a
-
 		ld	hl,#0x51af
 		ld	(lfsr_data),hl
 
+		ld	a,#2
+		ld	(livesleft),a
+
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 init_vars2:
 		call	print_bunkers
+		ld	a,(livesleft)
+		call	print_lives
 
 		ld	hl,#invader_matrix
 		ld	a,#1
@@ -99,6 +116,8 @@ init_var1:	ld	(hl),a
 		ld	(invader_count),a
 
 		xor	a
+		ld	(ufo_x),a
+		ld	(ufo_timer),a
 		ld	(col_start),a
 		ld	(stepping),a
 		ld	(hdir_invaders),a
@@ -126,9 +145,9 @@ init_var1:	ld	(hl),a
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-check_hit:	ld	b,#INVADER_ROWS		
+check_hit:	ld	b,#INVADER_ROWS	
 
 		ld	hl,#invader_matrix
 		ld	a,(col_start)
@@ -222,6 +241,8 @@ invr_foundcol:	ld	a,(hl)
 		ld	(score),hl
 		call	print_score
 
+		call	sound_kill
+
 		call	print_invaders
 
 		ld	hl,(invaders_divider)
@@ -283,37 +304,24 @@ check_rows:	ld	a,(row_end)
 		ret	z
 
 		ld	b,a
-		ld	hl,#invader_matrix+(INVADER_ROWS-1)*(INVADER_COLS)
-		ld	de,#-INVADER_COLS
+		ld	hl,#invader_matrix
+		ld	de,#INVADER_COLS
 chkrow0:	add	hl,de
 		djnz	chkrow0
-		
-		ld	a,(row_end)
-		ld	c,a		
-
-chkrow2:	ld	(invader_matnow),hl
+	
 		ld	b,#INVADER_COLS
-
 chkrow1:	ld	a,(hl)
 		or	a
 		ret	nz
-
 		inc	hl
 		djnz	chkrow1
 
 		ld	a,(row_end)
 		dec	a
 		ld	(row_end),a
+		jr	check_rows
 
-		ld	hl,(invader_matnow)
-		ld	de,#-INVADER_COLS
-		add	hl,de
-
-		dec	c
-		jr	nz,chkrow2
-		ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 update_scrpos:	ld	a,(row_invaders)	; Pixel line
 		ld	hl,#0
@@ -337,7 +345,7 @@ update1a:	ld	d,h
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 move_missile:	ld	a,(timer_missile)
 		or	a
@@ -425,7 +433,7 @@ movem4:		ld	a,l
 		djnz	movem4
 		ret
 		
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 move_invaders:	ld	hl,(timer_invaders)
 		ld	a,h
@@ -435,9 +443,10 @@ move_invaders:	ld	hl,(timer_invaders)
 		ld	(timer_invaders),hl
 		
 		ld	a,(stepping)
-		ld	b,#1
-		xor	b
+		xor	#1
 		ld	(stepping),a
+
+		call	sound_move
 
 		ld	a,(hdir_invaders)
 		or	a
@@ -487,7 +496,7 @@ revdir:		ld	a,(hdir_invaders)
 		call	print_invaders
 		jp	clear_lines
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 move_cannon:
 		ld	a,(timer_cannon)
@@ -509,7 +518,27 @@ movecan00:
 		ld	a,(refsh_cannon)
 		or	a
 		jr	z,movecan001
-		call	print_cannon
+
+		ld	a,(procdie)
+		or	a
+		jr	z,movecan0000
+
+		ld	a,(livesleft)
+		or	a
+		jr	nz,movecan0000a
+
+		ld	a,#1
+		ld	(gameover),a
+		ret
+
+movecan0000a:	dec	a
+		ld	(livesleft),a
+		call	print_lives
+
+		xor	a
+		ld	(procdie),a
+
+movecan0000:	call	print_cannon
 		xor	a
 		ld	(refsh_cannon),a
 
@@ -533,6 +562,8 @@ newmis1:	ld	a,(missile_act)
 		ld	a,c
 		jr	nz,movec0
 
+		call	sound_missile		;Sound firing
+
 		ld	a,#1
 		ld	(missile_act),a
 		
@@ -540,12 +571,12 @@ newmis1:	ld	a,(missile_act)
 		sub	a,#5
 		ld	(missile_vpos),a
 		ld	a,(cannon_hpos_px)
-		add	a,#7
+		add	a,#6
 		ld	(missile_hpos_px),a
 		
 		ld	b,#0x0f
 		bit	0,a
-		jr	z,newmis2
+		jr	nz,newmis2
 		ld	b,#0xf0
 
 newmis2:	ld	d,a
@@ -579,13 +610,13 @@ movec1:		bit	7,a			;RIGHT
 		ret	z			;NOT PRESSED
 
 		ld	a,(cannon_hpos_px)
-		cp	#(PLAYFIELD_WIDTH - 16)
+		cp	#(PLAYFIELD_WIDTH - 13)
 		ret	nc
 		inc	a
 		ld	(cannon_hpos_px),a
 		jp	print_cannon
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 timer_service:	ld	hl,(timer_invaders)
 		ld	a,h
@@ -622,13 +653,26 @@ timer_isr5:	ld	a,(timer_newbomb)
 timer_isr6:	ld	hl,(cannondie_state)
 		ld	a,h
 		or	l
-		ret	z
+		jr	z,timer_isr7
 		dec	hl
 		ld	(cannondie_state),hl
 
-		ret
+		ld	a,h
+		or	l
+		jr	nz,timer_isr7
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+		ld	a,#1
+		ld	(procdie),a
+
+timer_isr7:	ld	a,(ufo_timer)
+		or	a
+		jr	z,timer_sound
+		dec	a
+		ld	(ufo_timer),a
+
+timer_sound:	jp	sound_run
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; Fibonacci LFSR
 ; New bit[0] = bit[10] ^ bit[12] ^ bit[13] ^ bit[15]
@@ -655,7 +699,7 @@ lfsr4:		rl	l
 		ld	(lfsr_data),hl
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 newbomb:
 		ld	hl,(cannondie_state)	;If dying, stop launching new bombs
@@ -733,7 +777,7 @@ newbomb2:
 
 		ld	b,#0x0f
 		bit	0,a
-		jr	z,newbomb3
+		jr	nz,newbomb3
 		ld	b,#0xf0
 
 newbomb3:	ld	a,b
@@ -765,7 +809,7 @@ nbupd1a:	ld	d,h
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 nb_testcol:		
 		; will test a column to launch a bomb
@@ -794,7 +838,7 @@ nbcc3:		inc	c
 
 		ret
 	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 move_bombs:
 		ld	a,(timer_bombs)
@@ -867,14 +911,13 @@ moveb1:		inc	a
 		jr	c,moveb1a	;Not the cannon
 
 		ld	a,(cannon_hpos_px)
-		inc	a		;Actual cannon graphics start at next column
 		ld	c,a
 		ld	a,_BOMB_HPOS_PX(ix)
 		cp	c
 		jr	c,moveb1a	;Was at left of cannon
 
 		ld	a,(cannon_hpos_px)
-		add	a,#13		;Cannon graphics end 13 columns after
+		add	a,#14		;Cannon graphics end 13 columns after
 		ld	c,a
 		ld	a,_BOMB_HPOS_PX(ix)
 		cp	c
@@ -924,14 +967,70 @@ moveb4:		ld	a,l
 		djnz	moveb4
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;   |                                                                  111111111
+;   |          111111111122222222223                                   000000011
+;   |0123456789012345678901234567890       N                           345678901
+;  0|#]       
+;  1|##]
+;  2|###]
+;  3|####]
+;  4|#####]
+;  5|######]
+;  6|#######]
+;  7|########]
+;  8|[########]
+;  9| [########]
+; 10|  [########]
+; 11|   [########]
+; 12|    [########]
+; 13|     [########]
+; 14|      [########]
+; 15|       [########]
+;   |
+;   |
+;N+8|                                      [########]
+;   |
+;111|                                                                  [########
+;112|                                                                   [#######
+;113|                                                                    [######
+;114|                                                                     [#####
+;115|                                                                      [####
+;116|                                                                       [###
+;117|                                                                        [##
+;118|                                                                         [#
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+move_ufo:
+		ld	a,(ufo_timer)
+		or	a
+		ret	nz
+
+		ld	a,#15
+		ld	(ufo_timer),a
+
+		ld	a,(ufo_x)
+		call	print_ufo
+
+		ld	a,(ufo_x)
+		inc	a
+		ld	(ufo_x),a
+		cp	#(PLAY_WIDTH_BYTES+7)
+		ret	c
+		call	clr_ufo
+		xor	a
+		ld	(ufo_x),a
+
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 print_score:	ld	hl,#strscore
-		ld	de,#0
-		ld	c,#12	;Light red
+		ld	de,#LEFT_OFFSET_BYTES
+		ld	c,#0x0c	;Light red
 		call	print_string
 		ld	hl,(score)
-		ld	de,#24
+		ld	de,#(LEFT_OFFSET_BYTES+24)
 		ld	c,#9	;Light blue
 		jp	print_number
 
@@ -969,9 +1068,13 @@ sysm_ph8d:
 		pop	bc
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 		.area _DATA
+
+gameover:	.ds	1
+livesleft:	.ds	1
+procdie:	.ds	1
 
 inputs_state: 	.ds	1
 
@@ -1002,6 +1105,9 @@ cannondie_state:.ds	2
 refsh_cannon:	.ds	1
 score:		.ds	2
 scrinc:		.ds	1
+
+ufo_x:		.ds	1
+ufo_timer:	.ds	1
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 bomb_basedata:

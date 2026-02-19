@@ -31,7 +31,7 @@ typedef struct {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-panel_t *panel_init();
+panel_t *panel_init(int show_window);
 void panel_check_refresh(panel_t *panel);
 void panel_close (panel_t *panel);
 

@@ -14,19 +14,21 @@
 		.globl	print_cannon, print_invaders, print_sprite, print_bunkers
 		.globl	scrpos_invaders, stepping
 		.globl	print_cannon_die
+		.globl	print_ufo, print_ufo_r, print_ufo_l, clr_ufo
+		.globl	mainmenu, print_lives
 
 		.module graphics
 
 		.area	CODE
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 set_screen:
 		ld	a,#1
 		out	(PORTMODE),a
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 drawbaseline:
 		ld	hl,#BLINE_SCR_OFS
@@ -40,7 +42,7 @@ bline:		out	(PORTDATA),a
 		djnz	bline
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 clear_lines:	ld	hl,(scrpos_invaders)
 
@@ -90,7 +92,7 @@ clearln1:	out	(PORTDATA),a
 		djnz	cleanln00
 		ret
 		
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 clrscr:		xor	a
 		out	(PORTADDRL),a
@@ -103,42 +105,72 @@ clrscr2:	out	(PORTDATA),a
 		jr	nz,clrscr1
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-print_cannon:
-		ld	bc,#cannon1
+print_cannon:	ld	hl,#CANNON_SCR_OFS
 		ld	a,(cannon_hpos_px)
 		bit	0,a
-		jr	z,baseis1
-		ld	bc,#cannon2
-
-baseis1:	ld	hl,#CANNON_SCR_OFS
+		jr	z,pcan_coleven
+		ld	bc,#cannon_odd
 		srl	a
 		ld	e,a
 		ld	d,#0
 		add	hl,de		; hl = screen mem pos
 		jp	print_sprite
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+pcan_coleven:	ld	bc,#cannon_even
+		srl	a
+		ld	e,a
+		ld	d,#0
+		add	hl,de		; hl = screen mem pos
+		dec	hl
+		jp	print_sprite
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 print_cannon_die:
-		ld	bc,#cannondie1
-		ld	hl,(cannondie_state)
-		bit	4,l
-		jr	z,baseisdie1
-		ld	bc,#cannondie2
-
-baseisdie1:	ld	hl,#CANNON_SCR_OFS
+		ld	hl,#CANNON_SCR_OFS
 		ld	a,(cannon_hpos_px)
+		bit	0,a
+		jr	z,pcan_dieeven
 		srl	a
 		ld	e,a
 		ld	d,#0
 		add	hl,de		; hl = screen mem pos
+		ld	bc,#cannondie1odd
+		ld	a,(cannondie_state)
+		bit	4,a
+		jp	z,print_sprite
+		ld	bc,#cannondie2odd
 		jp	print_sprite
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+pcan_dieeven:
+		srl	a
+		ld	e,a
+		ld	d,#0
+		add	hl,de		; hl = screen mem pos
+		dec	hl
+		ld	bc,#cannondie1even
+		ld	a,(cannondie_state)
+		bit	4,a
+		jp	z,print_sprite
+		ld	bc,#cannondie2even
+		jp	print_sprite
 
-print_invaders:	ld	hl,(scrpos_invaders)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_invaders:	
+	;	ld	a,(row_end)
+	;	add	a,#'0'
+	;	rst	0x08
+	;	ld	a,(col_start)
+	;	add	a,#'0'
+	;	rst	0x08
+	;	ld	a,(col_end)
+	;	add	a,#'0'
+	;	rst	0x08
+
+		ld	hl,(scrpos_invaders)
 		ld	(spritepos),hl
 
 		ld	hl,#invader_matrix
@@ -197,7 +229,7 @@ print_inv1a:	ld	(col_now),a	; Invader row
 		dec	a
 		jr	z,oc2b
 		
-blk:		ld	bc,#blank		
+blk:		ld	bc,#blank
 		jr	sprok
 sq1a:		ld	bc,#squid1a
 		jr	sprok
@@ -264,7 +296,7 @@ print_inv2:	ld	hl,(spritepos)
 
 		jp	print_inv1
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 print_sprite:	ld	d,b		; bc = sprite  hl = scrpos
 		ld	e,c
@@ -278,7 +310,7 @@ printlb1:	ld	a,l
 printlb2:	ld	a,(de)
 		out	(PORTDATA),a
 		inc	de
-		djnz	printlb2		
+		djnz	printlb2
 
 		ld	a,l
 		add	a,#BYTES_PER_LINE
@@ -291,7 +323,7 @@ printlb3:	dec	c
 
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; CGA Colors
 ;; 0 BLACK      8 DARKGRAY
@@ -303,7 +335,7 @@ printlb3:	dec	c
 ;; 6 BROWN     14 YELLOW
 ;; 7 GRAY      15 WHITE
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 print_bunkers:	ld	hl,#BUNKER1_SCR_OFS
 		call	print_bunker
@@ -445,7 +477,43 @@ pbunkl:		out	(PORTDATA),a
 		djnz	pbunkl
 		ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_lives:
+		push	af
+
+		ld	d,#6
+		ld	hl,#LIVES_SCR_OFS
+printlv1:	push	de
+		ld	bc,#blank
+		push	hl
+		call	print_sprite
+		pop	hl
+		ld	de,#8
+		add	hl,de
+		pop	de
+		dec	d
+		jr	nz,printlv1
+
+		pop	af
+
+		or	a
+		ret	z
+
+		ld	d,a
+		ld	hl,#LIVES_SCR_OFS
+printlv2:	push	de
+		ld	bc,#cannon_odd
+		push	hl
+		call	print_sprite
+		pop	hl
+		ld	de,#8
+		add	hl,de
+		pop	de
+		dec	d
+		jr	nz,printlv2
+
+		ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; BLANK (NO COLOR) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ........ ........
@@ -533,7 +601,7 @@ crab1b:		.byte	0x00,0x00,0xa0,0x00, 0x00,0xa0,0x00,0x00
 		.byte	0x00,0xaa,0xaa,0xaa, 0xaa,0xaa,0xa0,0x00
 		.byte	0x00,0xa0,0xaa,0xaa, 0xaa,0xa0,0xa0,0x00
 		.byte	0x00,0xa0,0xa0,0x00, 0x00,0xa0,0xa0,0x00
-		.byte	0x00,0x00,0x0a,0xa0, 0xaa,0x00,0x00,0x00	
+		.byte	0x00,0x00,0x0a,0xa0, 0xaa,0x00,0x00,0x00
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CRAB2 (LIGHTCYAN) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ....#... ..#.....
@@ -568,7 +636,7 @@ crab2b:		.byte	0x00,0x00,0xb0,0x00, 0x00,0xb0,0x00,0x00
 		.byte	0x00,0xbb,0xbb,0xbb, 0xbb,0xbb,0xb0,0x00
 		.byte	0x00,0xb0,0xbb,0xbb, 0xbb,0xb0,0xb0,0x00
 		.byte	0x00,0xb0,0xb0,0x00, 0x00,0xb0,0xb0,0x00
-		.byte	0x00,0x00,0x0b,0xb0, 0xbb,0x00,0x00,0x00	
+		.byte	0x00,0x00,0x0b,0xb0, 0xbb,0x00,0x00,0x00
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; OCTO1 (LIGHTCYAN) ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ......## ##......
@@ -649,7 +717,7 @@ octo2b:		.byte	0x00,0x00,0x00,0xdd, 0xdd,0x00,0x00,0x00
 ;; .####### ######..
 ;; .####### ######..
 ;; .####### ######..
-cannon1:	.byte	0x00,0x00,0x00,0x0b, 0x00,0x00,0x00,0x00
+cannon_odd:	.byte	0x00,0x00,0x00,0x0b, 0x00,0x00,0x00,0x00
   		.byte	0x00,0x00,0x00,0xbb, 0xb0,0x00,0x00,0x00
   		.byte	0x00,0x00,0x00,0xbb, 0xb0,0x00,0x00,0x00
   		.byte	0x00,0xbb,0xbb,0xbb, 0xbb,0xbb,0xb0,0x00
@@ -666,7 +734,7 @@ cannon1:	.byte	0x00,0x00,0x00,0x0b, 0x00,0x00,0x00,0x00
 ;; ..###### #######.
 ;; ..###### #######.
 ;; ..###### #######.
-cannon2:	.byte	0x00,0x00,0x00,0x00, 0xb0,0x00,0x00,0x00
+cannon_even:	.byte	0x00,0x00,0x00,0x00, 0xb0,0x00,0x00,0x00
   		.byte	0x00,0x00,0x00,0x0b, 0xbb,0x00,0x00,0x00
   		.byte	0x00,0x00,0x00,0x0b, 0xbb,0x00,0x00,0x00
   		.byte	0x00,0x0b,0xbb,0xbb, 0xbb,0xbb,0xbb,0x00
@@ -680,36 +748,471 @@ cannon2:	.byte	0x00,0x00,0x00,0x00, 0xb0,0x00,0x00,0x00
 ;; ........ #.#.....
 ;; ..#.#.## ####.#..
 ;; .##.###. .####...
-;; .#.##### ###.###.
+;; .#.##### ######..
 ;; ..###.## ######..
 ;; .####### ######..
-cannondie1:	.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
+cannondie1odd:	.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
 		.byte	0x00,0x0b,0x00,0xbb, 0x00,0x0b,0x00,0x00
 		.byte	0x00,0x00,0x00,0x00, 0xb0,0xb0,0x00,0x00
 		.byte	0x00,0xb0,0xb0,0xbb, 0xbb,0xbb,0x0b,0x00
 		.byte	0x0b,0xb0,0xbb,0xb0, 0x0b,0xbb,0xb0,0x00
-		.byte	0x0b,0x0b,0xbb,0xbb, 0xbb,0xb0,0xbb,0xb0
+		.byte	0x0b,0x0b,0xbb,0xbb, 0xbb,0xbb,0xbb,0x00
 		.byte	0x00,0xbb,0xb0,0xbb, 0xbb,0xbb,0xbb,0x00
 		.byte	0x0b,0xbb,0xbb,0xbb, 0xbb,0xbb,0xbb,0x00
 
 ;; ........ ........
 ;; .#.#..#. .###....
 ;; ....#... #.#.....
-;; .##.#.## ####.#..
+;; .##.#.## ####....
 ;; ..###.## .####...
 ;; .#.##### ###.##..
-;; ..##..## .######.
+;; ..##..## .#####..
 ;; .#.##### .#####..
-cannondie2:	.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
+cannondie2odd:	.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
 		.byte	0x0b,0x0b,0x00,0xb0, 0x0b,0xbb,0x00,0x00
 		.byte	0x00,0x00,0xb0,0x00, 0xb0,0xb0,0x00,0x00
-		.byte	0x0b,0xb0,0xb0,0xbb, 0xbb,0xbb,0x0b,0x00
+		.byte	0x0b,0xb0,0xb0,0xbb, 0xbb,0xbb,0x00,0x00
 		.byte	0x00,0xbb,0xb0,0xbb, 0x0b,0xbb,0xb0,0x00
 		.byte	0x0b,0x0b,0xbb,0xbb, 0xbb,0xb0,0xbb,0x00
-		.byte	0x00,0xbb,0x00,0xbb, 0x0b,0xbb,0xbb,0xb0
+		.byte	0x00,0xbb,0x00,0xbb, 0x0b,0xbb,0xbb,0x00
 		.byte	0x0b,0x0b,0xbb,0xbb, 0x0b,0xbb,0xbb,0x00
 
-	.area	DATA
+;; ........ ........
+;; ....#..# #...#...
+;; ........ .#.#....
+;; ...#.#.# #####.#.
+;; ..##.### ..####..
+;; ..#.#### #######.
+;; ...###.# #######.
+;; ..###### #######.
+cannondie1even:	.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
+		.byte	0x00,0x00,0xb0,0x0b, 0xb0,0x00,0xb0,0x00
+		.byte	0x00,0x00,0x00,0x00, 0x0b,0x0b,0x00,0x00
+		.byte	0x00,0x0b,0x0b,0x0b, 0xbb,0xbb,0xb0,0xb0
+		.byte	0x00,0xbb,0x0b,0xbb, 0x00,0xbb,0xbb,0x00
+		.byte	0x00,0x0b,0xbb,0xbb, 0xbb,0xbb,0xbb,0xb0
+		.byte	0x00,0x0b,0xbb,0x0b, 0xbb,0xbb,0xbb,0xb0
+		.byte	0x00,0xbb,0xbb,0xbb, 0xbb,0xbb,0xbb,0xb0
+
+;; ........ ........
+;; ..#.#..# ..###...
+;; .....#.. .#.#....
+;; ..##.#.# #####...
+;; ...###.# #.####..
+;; ..#.#### ####.##.
+;; ...##..# #.#####.
+;; ..#.#### #.#####.
+cannondie2even:	.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
+		.byte	0x00,0xb0,0xb0,0x0b, 0x00,0xbb,0xb0,0x00
+		.byte	0x00,0x00,0x0b,0x00, 0x0b,0x0b,0x00,0x00
+		.byte	0x00,0xbb,0x0b,0x0b, 0xbb,0xbb,0xb0,0x00
+		.byte	0x00,0x0b,0xbb,0x0b, 0xb0,0xbb,0xbb,0x00
+		.byte	0x00,0xb0,0xbb,0xbb, 0xbb,0xbb,0x0b,0xb0
+		.byte	0x00,0x0b,0xb0,0x0b, 0xb0,0xbb,0xbb,0xb0
+		.byte	0x00,0xb0,0xbb,0xbb, 0xb0,0xbb,0xbb,0xb0
+
+;; ........ ........
+;; .....### ###.....
+;; ...##### #####...
+;; ..###### ######..
+;; .##.##.# #.##.##.
+;; #######. .#######
+;; ..###..# #..###..
+;; ...#.... ....#...
+ufo:		.byte	0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
+		.byte	0x00,0x00,0x0c,0xcc, 0xcc,0xc0,0x00,0x00
+		.byte	0x00,0x0c,0xcc,0xcc, 0xcc,0xcc,0xc0,0x00
+		.byte	0x00,0xcc,0xcc,0xcc, 0xcc,0xcc,0xcc,0x00
+		.byte	0x0c,0xc0,0xcc,0x0c, 0xc0,0xcc,0x0c,0xc0
+		.byte	0xcc,0xcc,0xcc,0xc0, 0x0c,0xcc,0xcc,0xcc
+		.byte	0x00,0xcc,0xc0,0x0c, 0xc0,0x0c,0xcc,0x00
+		.byte	0x00,0x0c,0x00,0x00, 0x00,0x00,0xc0,0x00
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_ufo:				; a = pos X
+		ld	hl,#(BYTES_PER_LINE*8 + LEFT_OFFSET_BYTES)
+
+		cp	#8
+		jr	nc,print_ufo2
+
+		; ufo_x < 8
+
+		sub	#7
+		neg
+		jp	print_ufo_r
+
+print_ufo2:
+		cp	#(PLAY_WIDTH_BYTES-1)
+		jr	c,print_ufo3
+
+		; 111 <= ufo_x <= 118
+
+		ld	hl,#(BYTES_PER_LINE*8 + LEFT_OFFSET_BYTES + PLAY_WIDTH_BYTES-9)
+		sub	#(PLAY_WIDTH_BYTES-1)
+		ld	e,a
+		ld	d,#0
+		add	hl,de
+		neg
+		dec	a
+		and	#7
+		jr	print_ufo_l
+
+print_ufo3:	; 8 <= ufo_x <= 110
+
+		sub	#8
+		ld	hl,#(BYTES_PER_LINE*8 + LEFT_OFFSET_BYTES)
+		ld	e,a
+		ld	d,#0
+		add	hl,de
+		jr	print_ufo_lr
+
+		ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_ufo_lr:	ld	de,#ufo		; hl = scrpos
+		ld	c,#8
+print_ufo_lr1:	ld	a,l
+		out	(PORTADDRL),a
+		ld	a,h
+		out	(PORTADDRH),a
+
+		xor	a		; blank left
+		out	(PORTDATA),a
+		ld	b,#8
+print_ufo_lr2:	ld	a,(de)
+		out	(PORTDATA),a
+		inc	de
+		djnz	print_ufo_lr2
+		xor	a		; blank right
+		out	(PORTDATA),a
+
+		ld	a,l
+		add	a,#BYTES_PER_LINE
+		ld	l,a
+		jr	nc,print_ufo_lr3
+		inc	h
+
+print_ufo_lr3:	dec	c
+		jr	nz,print_ufo_lr1
+
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_ufo_r:	ld	de,#ufo		; hl = scrpos, a = start col (0..7)
+		push	af
+		add	a,e
+		ld	e,a
+		jr	nc,print_ufo_r1
+		inc	d
+print_ufo_r1:	pop	af
+
+		xor	#7
+		ld	b,a
+		inc	b		; B = number of cols
+
+		ld	c,#8		; number of rows
+
+print_ufo_r2:	; Print row
+		push	hl
+
+		ld	a,l
+		out	(PORTADDRL),a
+		ld	a,h
+		out	(PORTADDRH),a
+
+		push	bc
+print_ufo_r3:
+		ld	a,(de)
+		out	(PORTDATA),a
+		inc	de
+		djnz	print_ufo_r3
+		xor	a		; blank right
+		out	(PORTDATA),a
+		
+		pop	bc
+
+		pop	hl
+		push	de
+		ld	de,#BYTES_PER_LINE
+		add	hl,de
+		pop	de
+
+		ld	a,b
+		and	#7
+		xor	#7
+		inc	a
+		and	#7
+		add	a,e
+		ld	e,a
+		jr	nc,print_ufo_r4
+		inc	d
+print_ufo_r4:
+		dec	c
+		jr	nz,print_ufo_r2
+
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_ufo_l:	ld	de,#ufo		; hl = scrpos, a = end col (0..7)
+		inc	a		
+		ld	b,a
+		ld	c,#8		; number of rows
+
+print_ufo_l1:	; Print row
+		ld	a,l
+		out	(PORTADDRL),a
+		ld	a,h
+		out	(PORTADDRH),a
+
+		xor	a		; blank left
+		out	(PORTDATA),a
+		push	bc
+print_ufo_l2:
+		ld	a,(de)
+		out	(PORTDATA),a
+		inc	de
+		djnz	print_ufo_l2
+		pop	bc
+
+		push	de
+		ld	de,#BYTES_PER_LINE
+		add	hl,de
+		pop	de
+
+		ld	a,b
+		sub	#8
+		neg
+		add	a,e
+		ld	e,a
+		jr	nc,print_ufo_l3
+		inc	d
+print_ufo_l3:
+		dec	c
+		jr	nz,print_ufo_l1
+
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+clr_ufo:	ld	hl,#(BYTES_PER_LINE*8 + LEFT_OFFSET_BYTES)
+		ld	de,#BYTES_PER_LINE
+
+		ld	b,#8
+clr_ufo1:	ld	a,l
+		out	(PORTADDRL),a
+		ld	a,h
+		out	(PORTADDRH),a
+		xor	a
+		out	(PORTDATA),a
+		add	hl,de
+		djnz	clr_ufo1
+
+		ld	hl,#(BYTES_PER_LINE*8 + LEFT_OFFSET_BYTES + PLAY_WIDTH_BYTES-1)
+
+		ld	b,#8
+clr_ufo2:	ld	a,l
+		out	(PORTADDRL),a
+		ld	a,h
+		out	(PORTADDRH),a
+		xor	a
+		out	(PORTDATA),a
+		add	hl,de
+		djnz	clr_ufo2
+
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+menuborder:	ld	de,#0
+		call	pos_char
+		ld	b,#20
+menub1:		push	bc
+		ld	a,#0xb1
+		ld	c,#0x9f
+		call	print_char
+		ld	a,#0x20
+		ld	c,#0x9f
+		call	print_char
+		pop	bc
+		djnz	menub1
+		ld	b,#14
+		ld	hl,#(8*BYTES_PER_LINE)
+menub2:		ld	d,h
+		ld	e,l
+		call	pos_char
+		push	bc
+		ld	a,#0x20
+		ld	c,#0x9f
+		push	hl
+		call	print_char
+		pop	hl
+		ld	de,#(8*BYTES_PER_LINE)
+		add	hl,de
+		ld	d,h
+		ld	e,l
+		call	pos_char
+		ld	a,#0xb1
+		ld	c,#0x9f
+		push	hl
+		call	print_char
+		pop	hl
+		pop	bc
+		ld	de,#(8*BYTES_PER_LINE)
+		add	hl,de
+		djnz	menub2
+		ld	de,#(232*BYTES_PER_LINE)
+		call	pos_char
+		ld	b,#20
+menub3:		push	bc
+		ld	a,#0x20
+		ld	c,#0x9f
+		call	print_char
+		ld	a,#0xb1
+		ld	c,#0x9f
+		call	print_char
+		pop	bc
+		djnz	menub3
+		ld	b,#14
+		ld	hl,#(8*BYTES_PER_LINE)+BYTES_PER_CHAR_W*39
+menub4:		ld	d,h
+		ld	e,l
+		call	pos_char
+		push	bc
+		ld	a,#0xb1
+		ld	c,#0x9f
+		push	hl
+		call	print_char
+		pop	hl
+		ld	de,#(8*BYTES_PER_LINE)
+		add	hl,de
+		ld	d,h
+		ld	e,l
+		call	pos_char
+		ld	a,#0x20
+		ld	c,#0x9f
+		push	hl
+		call	print_char
+		pop	hl
+		pop	bc
+		ld	de,#(8*BYTES_PER_LINE)
+		add	hl,de
+		djnz	menub4
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+mainmenu:	call	menuborder
+		ld	hl,#titlestr
+		ld	de,#(24*BYTES_PER_LINE)+BYTES_PER_CHAR_W*6
+		ld	c,#0x0f
+		call	print_string
+
+		ld	hl,#titlestr2
+		ld	de,#(56*BYTES_PER_LINE)+BYTES_PER_CHAR_W*4
+		ld	c,#0x07
+		call	print_string
+
+		ld	hl,#titlestr3
+		ld	de,#(72*BYTES_PER_LINE)+BYTES_PER_CHAR_W*15
+		ld	c,#0x07
+		call	print_string
+
+		ld	bc,#octo1a
+		ld	hl,#(96*BYTES_PER_LINE)+BYTES_PER_CHAR_W*10
+		call	print_sprite
+		ld	bc,#octo2a
+		ld	hl,#(96*BYTES_PER_LINE)+BYTES_PER_CHAR_W*12
+		call	print_sprite
+		ld	hl,#titlestr4
+		ld	de,#(96*BYTES_PER_LINE)+BYTES_PER_CHAR_W*14
+		ld	c,#0x07
+		call	print_string
+
+		ld	bc,#crab2a
+		ld	hl,#(112*BYTES_PER_LINE)+BYTES_PER_CHAR_W*10
+		call	print_sprite
+		ld	bc,#crab1a
+		ld	hl,#(112*BYTES_PER_LINE)+BYTES_PER_CHAR_W*12
+		call	print_sprite
+		ld	hl,#titlestr5
+		ld	de,#(112*BYTES_PER_LINE)+BYTES_PER_CHAR_W*14
+		ld	c,#0x07
+		call	print_string
+
+		ld	bc,#squid1a
+		ld	hl,#(128*BYTES_PER_LINE)+BYTES_PER_CHAR_W*11
+		call	print_sprite
+		ld	hl,#titlestr6
+		ld	de,#(128*BYTES_PER_LINE)+BYTES_PER_CHAR_W*14
+		ld	c,#0x07
+		call	print_string
+
+		ld	bc,#ufo
+		ld	hl,#(144*BYTES_PER_LINE)+BYTES_PER_CHAR_W*11
+		call	print_sprite
+		ld	hl,#titlestr7
+		ld	de,#(144*BYTES_PER_LINE)+BYTES_PER_CHAR_W*14
+		ld	c,#0x07
+		call	print_string
+
+		ld	hl,#titlestr8
+		ld	de,#(168*BYTES_PER_LINE)+BYTES_PER_CHAR_W*3
+		ld	c,#0x07
+		call	print_string
+
+		ld	hl,#titlestr9
+		ld	de,#(176*BYTES_PER_LINE)+BYTES_PER_CHAR_W*3
+		ld	c,#0x07
+		call	print_string
+
+		ld	hl,#titlestr10
+		ld	de,#(184*BYTES_PER_LINE)+BYTES_PER_CHAR_W*3
+		ld	c,#0x07
+		call	print_string
+
+		ld	hl,#titlestr11
+		ld	de,#(208*BYTES_PER_LINE)+BYTES_PER_CHAR_W*8
+		ld	c,#0x0e
+		call	print_string
+
+		ret
+
+titlestr:	.ascii	'---=== KRAFT INVADERS ===---\0'
+titlestr2:	.ascii	'Based on Space Invaders (Taito)\0'
+titlestr3:	.ascii	'Scoring:\0'
+titlestr4:	.ascii	'   ...   10 PTS\0'
+titlestr5:	.ascii	'   ...   20 PTS\0'
+titlestr6:	.ascii	'   ...   30 PTS\0'
+titlestr7:	.ascii	'   ...   MYSTERY\0'
+
+titlestr8:	.byte	0xb3
+		.ascii	'    Buttons     '
+		.byte	0xb3
+		.ascii	'     Keys      '
+		.byte	0xb3,0x00
+
+titlestr9:	.byte	0xb3
+		.ascii	' SW1 & SW2:Move '
+		.byte	0xb3
+		.ascii	'  Arrows:Move  '
+		.byte	0xb3,0x00
+
+titlestr10:	.byte	0xb3
+		.ascii	'    SW8:Fire    '
+		.byte	0xb3
+		.ascii	'  Space:Fire   '
+		.byte	0xb3,0x00
+
+titlestr11:	.ascii	'** PRESS FIRE TO PLAY **\0'
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+		.area	DATA
 
 spritepos:	.ds	2
 spritenow:	.ds	2
