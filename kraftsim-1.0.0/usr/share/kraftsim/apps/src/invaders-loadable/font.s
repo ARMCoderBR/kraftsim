@@ -38,11 +38,9 @@ divnum2:	add	hl,bc
 procdigit:
 		call	divnum
 
-		ld	a,(color)
-		ld	c,a
 		ld	a,b
 		push	hl
-		call	print_char
+		call	print_char2
 		pop	hl
 
 		ret
@@ -52,19 +50,14 @@ procdigit:
 print_string:		; HL = string ptr  DE = screen addr  C = color
 
 		ld	(scraddr),de
+		call	gen_colors
 
-		ld	a,c
-		ld	(color),a
-
-prints1:
-		ld	a,(color)
-		ld	c,a
-		ld	a,(hl)
+prints1:	ld	a,(hl)
 		or	a
 		ret	z
 
 		push	hl
-		call	print_char
+		call	print_char2
 		pop	hl
 		inc	hl
 		jr	prints1
@@ -77,8 +70,7 @@ print_number:		; HL = value  DE = screen addr  C = color
 
 		ld	(scraddr),de
 
-		ld	a,c
-		ld	(color),a
+		call	gen_colors
 
 		ld	bc,#10000
 		call	procdigit
@@ -106,17 +98,45 @@ pos_char:		; DE = screen addr
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-print_char:		; a = char index   c = color
+gen_colors:	ld	a,c
+		ld	(colortmp1),a	;A7A4=BG A3A0=FG
+		rlca
+		rlca
+		rlca
+		rlca
+		ld	(colortmp2),a	;A7A4=FG A3A0=BG
+		ld	d,a
 
-		ld	hl,#font_start
+		and	#0x0f
 		ld	e,a
-		ld	d,#0
-		sla	e
-		rl	d
-		sla	e
-		rl	d
-		sla	e
-		rl	d
+		ld	a,c
+		and	#0xf0
+		or	e
+		ld	(colortmp0),a	;A7A4=BG A3A0=BG
+
+		ld	a,d
+		and	#0xf0
+		ld	e,a
+		ld	a,c
+		and	#0x0f
+		or	e
+		ld	(colortmp3),a	;A7A4=FG A3A0=FG
+		ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+print_char:		; a = char index   c = color: C7C4=BG C3C0=FG
+
+		ld	l,a
+		call	gen_colors
+		ld	a,l
+
+print_char2:	ld	de,#font_start
+		ld	l,a
+		ld	h,#0
+		add	hl,hl
+		add	hl,hl
+		add	hl,hl
 		add	hl,de
 		ld	d,h
 		ld	e,l
@@ -131,46 +151,71 @@ printlb1:	push	bc
 		out	(PORTADDRH),a
 
 		push	hl
-		ld	b,#4
-		ld	h,#128
 
-printlb2:	ld	a,c
-		and	#0xf0
-		ld	l,a
+		ld	hl,#colortmp3
 		ld	a,(de)
-		and	h
-		jr	z,printlb2a
-		ld	l,c
-		sla	l
-		sla	l
-		sla	l
-		sla	l
+		ld	b,a
+		and	#0xc0
+		cp	#0xc0
+		jr	z,printlb2
+		dec	hl
+		cp	#0x80
+		jr	z,printlb2
+		dec	hl
+		cp	#0x40
+		jr	z,printlb2
+		dec	hl
 
-printlb2a:	srl	h
-
-		ld	a,(de)
-		and	h
-		jr	z,printlb2b
-
-		ld	a,c
-		and	#0x0f
-		or	l
-		ld	l,a
-
-		jr	printlb2c
-
-printlb2b:	ld	a,c
-		srl	a
-		srl	a
-		srl	a
-		srl	a
-		or	l
-		ld	l,a
-
-printlb2c:	srl	h
-		ld	a,l
+printlb2:	ld	a,(hl)
 		out	(PORTDATA),a
-		djnz	printlb2
+
+		ld	hl,#colortmp3
+		ld	a,b
+		and	#0x30
+		cp	#0x30
+		jr	z,printlb2a
+		dec	hl
+		cp	#0x20
+		jr	z,printlb2a
+		dec	hl
+		cp	#0x10
+		jr	z,printlb2a
+		dec	hl
+
+printlb2a:	ld	a,(hl)
+		out	(PORTDATA),a
+
+		ld	hl,#colortmp3
+		ld	a,b
+		and	#0x0c
+		cp	#0x0c
+		jr	z,printlb2b
+		dec	hl
+		cp	#0x08
+		jr	z,printlb2b
+		dec	hl
+		cp	#0x04
+		jr	z,printlb2b
+		dec	hl
+
+printlb2b:	ld	a,(hl)
+		out	(PORTDATA),a
+
+		ld	hl,#colortmp3
+		ld	a,b
+		and	#0x03
+		cp	#0x03
+		jr	z,printlb2c
+		dec	hl
+		cp	#0x02
+		jr	z,printlb2c
+		dec	hl
+		cp	#0x01
+		jr	z,printlb2c
+		dec	hl
+
+printlb2c:	ld	a,(hl)
+		out	(PORTDATA),a
 
 		pop	hl
 
@@ -193,8 +238,7 @@ printlb3:	pop	bc
 
 		ret
 
-font_start:
-		.byte	0b00000000
+font_start:	.byte	0b00000000
 		.byte	0b00000000
 		.byte	0b00000000
 		.byte	0b00000000
@@ -2500,6 +2544,10 @@ font_start:
 
 		.area	DATA
 
-color:		.ds	1
+colortmp0:	.ds	1
+colortmp1:	.ds	1
+colortmp2:	.ds	1
+colortmp3:	.ds	1
+
 scraddr:	.ds	2
 
