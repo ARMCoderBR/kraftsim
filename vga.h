@@ -15,13 +15,14 @@
 typedef struct {
 
     SDL_Texture *fontTexture[256];
+    uint16_t dispBufSize;
     uint8_t *displayBuffer;
     SDL_Renderer* renderer;
     uint8_t mode;
     SDL_TimerID vgaTimer;
     int vgaTick;
-    int rdaddr;
-    int wraddr;
+    uint16_t rdaddr;
+    uint16_t wraddr;
     int scrollreg;
     uint8_t cursor;
     int resetmode;

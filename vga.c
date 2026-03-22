@@ -51,8 +51,9 @@ static void vga_set_textmode(vga_t *vga){
     vga->rdaddr = vga->wraddr = 0;
     vga->scrollreg = 0;
 
-    vga->displayBuffer = malloc(COLS*ROWS);
-    memset(vga->displayBuffer,0x20,COLS*ROWS);
+    vga->dispBufSize = COLS*ROWS;
+    vga->displayBuffer = malloc(vga->dispBufSize);
+    memset(vga->displayBuffer,0x00,vga->dispBufSize);
     vga->mode = 0;
     vga->resetmode = 1;
 }
@@ -71,8 +72,9 @@ static void vga_set_graphmode(vga_t *vga){
 
     vga->rdaddr = vga->wraddr = 0;
 
-    vga->displayBuffer = malloc(GCOLS*GROWS/2);
-    memset(vga->displayBuffer,0x00,GCOLS*GROWS/2);
+    vga->dispBufSize = GCOLS*GROWS/2;
+    vga->displayBuffer = malloc(vga->dispBufSize);
+    memset(vga->displayBuffer,0x00,vga->dispBufSize);
     vga->mode = 1;
     vga->resetmode = 1;
 }
@@ -310,9 +312,12 @@ void vga_out(vga_t *vga, uint8_t port, uint8_t value, int wminimized){
     switch (port){
 
         case PORTDATA:
-            vga->displayBuffer[vga->wraddr] = value;
-            if (!wminimized)
-                vga_update(vga);
+            if (vga->wraddr < vga->dispBufSize){
+
+                vga->displayBuffer[vga->wraddr] = value;
+                if (!wminimized)
+                    vga_update(vga);
+            }
             vga->wraddr++;
             break;
         case PORTADDRL:
@@ -353,7 +358,11 @@ void vga_out(vga_t *vga, uint8_t port, uint8_t value, int wminimized){
 uint8_t vga_in(vga_t *vga, uint8_t port){
 
     if (port == PORTDATA){
-        uint8_t val = vga->displayBuffer[vga->rdaddr];
+
+        uint8_t val = 0xFF;
+        if (vga->rdaddr < vga->dispBufSize)
+            val = vga->displayBuffer[vga->rdaddr];
+
         if (vga->mode == 0)
             vga->rdaddr++;
         return val;
