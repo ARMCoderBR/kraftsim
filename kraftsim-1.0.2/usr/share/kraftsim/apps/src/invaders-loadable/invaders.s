@@ -8,10 +8,14 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.include "defines.h"
+		.include "defines.inc"
+		.include "kraft80.inc"
 
-		.area	CODE
+		.module invaders
 
+		.area	_CODE
+
+		.globl	invaders
 		.globl	invader_matrix, col_start, col_end, row_end
 		.globl	cannon_hpos_px
 		.globl	playerdie_state

@@ -17,7 +17,7 @@ void main (void){
     setleds(0x55);
     lcd_begin();
 
-    putstr ("PI CALC BBP\r\n");
+    printf ("PI CALC BBP\n");
     putstr_lcd("PI CALC BBP     ");
     
     int k;
@@ -36,7 +36,7 @@ void main (void){
         pi += sum;
     }
     
-    putstr("PI:3.");
+    printf("PI:3.");
     putstr_lcd("PI:3.");
     
     pi -= (int)pi;
@@ -49,12 +49,8 @@ void main (void){
         pi *= 10;
     }
 
-    putstr("\r\n");
+    printf("\n");
     
-    char *p = 0xfffe;
-    for (;;){
-
-        setleds(*p & readbuttons());
-    }
+    for (;;);
 }
 

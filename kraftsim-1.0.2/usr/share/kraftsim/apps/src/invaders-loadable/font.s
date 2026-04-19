@@ -7,9 +7,12 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.include "defines.h"
+		.include "defines.inc"
+		.include "kraft80.inc"
 
-		.area	CODE
+		.module font
+
+		.area	_CODE
 
 		.globl	print_string
 		.globl	print_number
@@ -2542,7 +2545,9 @@ font_start:	.byte	0b00000000
 		.byte	0b00000000
 		.byte	0b00000000
 
-		.area	DATA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+		.area	_DATA
 
 colortmp0:	.ds	1
 colortmp1:	.ds	1

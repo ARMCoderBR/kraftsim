@@ -1,6 +1,8 @@
 #ifndef __IO_ALPHA_H
 #define __IO_ALPHA_H
 
+#include <stdint.h>
+
 char *lgets_noecho(char *buf, int bufsize);
 char *lgets(char *buf, int bufsize);
 void putstr(char *s);
@@ -19,6 +21,16 @@ void video_begin(int mode);
 int serial_getchar();
 int serial_kbhit();
 int serial_putchar (int a);
+
+typedef struct {
+
+    uint8_t handle;
+
+} FILE;
+
+FILE * fopen(char *name, char *mode) __naked __sdcccall(1);
+int fread(char *buf, int size, int count, FILE *s) __naked __sdcccall(1);
+void fclose (FILE *f) __naked __sdcccall(1);
 
 #endif
 

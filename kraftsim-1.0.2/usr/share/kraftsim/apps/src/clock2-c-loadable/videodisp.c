@@ -129,7 +129,7 @@ const char * base[] = { d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10 };
 ////////////////////////////////////////////////////////////////////////////////
 void rasterchar(char d, int line){
 
-    char *base1 = base[d];
+    const char *base1 = base[d];
     
     int mask=128;
     int i;
@@ -145,8 +145,8 @@ void rasterchar(char d, int line){
 ////////////////////////////////////////////////////////////////////////////////
 void rasterdec(char d, int line){
 
-    char *base1 = base[d / 10];
-    char *base2 = base[d % 10];
+    const char *base1 = base[d / 10];
+    const char *base2 = base[d % 10];
     
     int mask=128;
     int i;

@@ -1,13 +1,16 @@
+ASMOPTS=-o -l -s -g -I../io-kraft80
+COPTS=-c -V --disable-warning 85 -mz80 -I../io-kraft80 --opt-code-size --std-sdcc99
+
 all:				kitt.bin blinker.bin
 
 kitt.bin:			kitt.s
-				sdasz80 -o -l -s -g kitt.s
-				sdcc -mz80 --no-std-crt0 --code-loc 0x4200 kitt.rel
+				sdasz80 $(ASMOPTS) kitt.s
+				sdcc -mz80 --no-std-crt0 --code-loc 0x2000 kitt.rel
 				objcopy --input-target=ihex --output-target=binary kitt.ihx kitt.bin
 
 blinker.bin:			blinker.s
-				sdasz80 -o -l -s -g blinker.s
-				sdcc -mz80 --no-std-crt0 --code-loc 0x4200 blinker.rel
+				sdasz80 $(ASMOPTS) blinker.s
+				sdcc -mz80 --no-std-crt0 --code-loc 0x2000 blinker.rel
 				objcopy --input-target=ihex --output-target=binary blinker.ihx blinker.bin
 
 clean:

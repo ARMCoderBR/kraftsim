@@ -71,7 +71,7 @@ EN              .equ 0x01 ;LCD enable pin (PORTB bit 1)
 RS              .equ 0x01 ;LCD RS pin (uses or logic)
 
 ; Algorithm constants
-NUM_DECS        .equ 11
+NUM_DECS        .equ 30
 NUM_IT          .equ ((NUM_DECS*9)/10)
 NBITS_FR        .equ (3*NUM_DECS + (NUM_DECS >> 1))
 NBITS_INT       .equ 16
@@ -81,7 +81,7 @@ NBITS           .equ NBITS_INT+NBITS_FRAC
 NBYTES          .equ NBITS>>3
 NBYTES1         .equ (NBYTES-1)
 
-    .area	CODE
+    .area	_CODE
 
     jp _main
 
@@ -1972,10 +1972,8 @@ test_pi_bbp_1a:
 test_pi_bbp_2:
 test_pi_bbp_end:
 
-    ;call lcd_clear
     call prints
-    .ascii "\r\nPI:"
-    .db 0
+    .ascii "\r\nPI:\0"
     ld l,(ix)
     ld h,1(ix)         ; IX+0, IX+1: regtotal
     ld bc,#NUM_DECS
@@ -1999,208 +1997,22 @@ test_pi_bbp_end:
 ;   Affects: BC DE HL AF IY BC' DE' HL' AF'
 _main:
 
-    ;call lcd_begin    ;inicializa LCD no modo 4 bits		
-    ;ld d,#2            ;carrega 2d em d 
-    ;call dx100ms      ;aguarda 500ms 				
-    ;ld b,#0x0C        ;desliga cursor e blink 
-    ;call lcd_cmd      ;envia comando 
-    ;call msg_init     ;escreve título "Alpha Z80" 
-
     call test_pi_bbp
     ret
 
 ; =============================================================================
-lcd_home:
-    push bc
-    ld b,#0x02        ;return home
-    call lcd_cmd      ;envia 02h para o LCD
-    push af
-    xor a
-    ld (dispcol),a
-    pop af
-    pop bc
-    ret
-
-; =============================================================================
-lcd_home2:
-    push bc
-    ld b,#0xC0        ;posiciona cursor na linha 1, coluna 0
-    call lcd_cmd      ;envia comando
-    push af
-    ld a,#16
-    ld (dispcol),a
-    pop af
-    pop bc
-    ret
-
-; =============================================================================
-; --- Inicializa LCD modo de 4 bits ---
-lcd_begin:
-    ld d,#50          ;carrega 50d em d 
-    call dx1ms        ;tempo para estabilização (50ms)
-    ld b,#0x30        ;protocolo de inicialização
-    ld c,#0x00        ;envio de comando
-    call send_nibble  ;envia 30h para o LCD
-    ld d,#5           ;carrega 5d em d 
-    call dx1ms        ;aguarda 5ms (tempo superior ao datasheet)
-    ld b,#0x30        ;protocolo de inicialização
-    ld c,#0x00        ;envio de comando
-    call send_nibble  ;envia 30h para o LCD		
-    call d1ms         ;aguarda 1ms (tempo superior ao datasheet)
-    ld b,#0x30        ;protocolo de inicialização
-    ld c,#0x00        ;envio de comando
-    call send_nibble  ;envia 30h para o LCD
-    ld b,#0x20        ;LCD no modo 4 bits
-    ld c,#0x00        ;envio de comando
-    call send_nibble  ;envia 30h para o LCD
-    ld b,#0x28        ;5x8 pontos por caractere, duas linhas
-    call lcd_cmd      ;envia comando 28h
-    ld b,#0x0F        ;liga display, cursor e blink
-    call lcd_cmd      ;envia comando 0Fh
-    ld b,#0x01        ;limpa LCD
-    call lcd_cmd      ;envia comando 01h
-    ld b,#0x06        ;modo de incremento de endereço para direita, movendo apenas o cursor 
-    call lcd_cmd      ;envia comando 06h
-    call lcd_clear    ;limpa o display
-    ret               ;retorno da sub-rotina
-
-; =============================================================================
-; --- Envia Comandos / Escreve no LCD ---
-lcd_cmd:
-    ld c,#0x00
-    jr send_byte
-lcd_write:
-
-    ld a,(dispcol)
-    cp #16
-    jr nz,lcd_w1
-    call lcd_home2
-    jr lcd_w2
-lcd_w1:
-    cp #32
-    jr nz,lcd_w2
-    call lcd_home
-lcd_w2:
-    ld a,(dispcol)
-    inc a
-    ld (dispcol),a
-    ld c,#0x01        ;01h para envio de caracteres
-send_byte:		
-    call send_nibble  ;envia nibble mais significativo
-    ld a,b            ;carrega conteúdo de b em acc
-    rla               ;rotaciona acc para esquerda 4x
-    rla               ;
-    rla               ;
-    rla               ;
-    and #0xF0         ;máscara para preservar nibble mais significativo
-    ld b,a            ;atualiza b
-    call send_nibble  ;envia nibble menos significativo
-    ret						;retorno da sub-rotina
-
-;==============================================================================
-; --- Envia cada nibble separadamente e gera pulso de enable ---
-send_nibble:
-    ld a,#0x00        ;zera conteúdo de ACC
-    bit 0,c           ;bit 0 de c em LOW?
-    jp z,rs_clr       ;sim, desvia para manter RS limpo
-    ld a,#0x00|RS     ;não, seta bit RS
-rs_clr:
-    bit 7,b           ;bit7 de B em LOW?
-    jp z,b6aval       ;sim, desvia para avaliar bit6
-    set 7,a           ;não, seta bit 7 de acc
-b6aval:
-    bit 6,b           ;bit6 de B em LOW?
-    jp z,b5aval       ;sim, desvia para avaliar bit5
-    set 6,a           ;não, seta bit 6 de acc
-b5aval:
-    bit 5,b           ;bit5 de B em LOW?
-    jp z,b4aval       ;sim, desvia para avaliar bit4
-    set 5,a           ;não, seta bit 5 de acc
-b4aval:
-    bit 4,b           ;bit4 de B em LOW?
-    jp z,lcd_en       ;sim, desvia para pulso de enable
-    set 4,a           ;não, set bit 4 de acc
-lcd_en:
-    set EN,a          ;pino enable em HIGH
-    out (PORTB),a     ;escreve no PORTB 
-    ld d,#2           ;carrega 2d em d 
-    call dx1ms        ;aguarda 2ms 
-    res EN,a          ;pino enable em LOW 
-    out (PORTB),a     ;escreve no PORTB 
-    ld d,#2           ;carrega 2d em d
-    call dx1ms        ;aguarda 2ms 		
-    ret               ;retorno da sub-rotina
-
-; =============================================================================
-; --- Limpa LCD ---
-lcd_clear:
-    ;ld b,#0x02        ;return home
-    ;call lcd_cmd      ;envia 02h para o LCD
-    call lcd_home
-    ld b,#0x01        ;limpa o display
-    call lcd_cmd      ;envia 01h para o LCD
-    ret               ;retorno da sub-rotina		
-
-; =============================================================================
-; --- Imprime o título na segunda linha do LCD ---
 msg_init:
-    ;ld b,#0xC0        ;posiciona cursor na linha 1, coluna 0
-    ;call lcd_cmd      ;envia comando
-    ;call lcd_home2
     call prints
-    .ascii "PICALC 1.0"
-    .db 0
+    .ascii "PICALC 1.0\0"
     ret               ;retorna da sub-rotina 
 
-; =============================================================================
-; --- dx1ms multiplies 1ms delay ---	
-dx1ms:				
-    call d1ms         ; 1ms (delay time)
-    dec d             ; 1.0µs    4 T States 
-    jp nz,dx1ms       ; 2.5µs   10 T States 		
-    ret               ; 2.5µs   10 T States 
-
-; =============================================================================
-; --- aprox. 1ms delay (clock 4MHz) ---
-d1ms:                 ; 4.25µs  17 T States (call)
-    push bc           ; 2.75µs  11 T States 
-    ld b,#0xDB        ; 1.75 µs  7 T States 
-dloop:
-    dec b             ; 1.0µs    4 T States 
-    nop               ; 1.0µs    4 T States 
-    jp nz,dloop       ; 2.5µs   10 T States 								
-    pop bc            ; 2.5µs   10 T States 
-    ret               ; 2.5µs   10 T States 
-
-; =============================================================================
-; --- dx100ms multiplies 100ms delay ---	
-dx100ms: 
-    call d100ms       ; 1ms (delay time)
-    dec d             ; 1.0µs    4 T States 
-    jp nz,dx100ms     ; 2.5µs   10 T States 	
-    ret						; 2.5µs   10 T States 
-		
-; =============================================================================
-; --- aprox. 100ms delay (clock 4MHz) ---
-d100ms:               ; 4.25µs  17 T States
-    push bc           ; 2.75µs  11 T States 
-    ld b,#0x97        ; 1.75µs   7 T States 
-aux1:
-    ld c,#0xBD        ; 1.75µs   7 T States 
-aux2:
-    dec c             ; 1.0µs    4 T States 
-    jp nz,aux2        ; 2.5µs   10 T States 
-    dec b             ; 1.0µs    4 T States 
-    jp nz,aux1        ; 2.5µs   10 T States 
-    pop bc            ; 2.5µs   10 T States 
-    ret               ; 2.5µs   10 T States 
-
 ;///////////////////////////////////////////////////////////////////////////////
+
+	.area	_DATA
 
 acc:    .ds NBYTES   ; Global variable, to make things a bit easier.
 dispcol:.ds 1
 
-    .area _DATA
 
 ;    .end
 

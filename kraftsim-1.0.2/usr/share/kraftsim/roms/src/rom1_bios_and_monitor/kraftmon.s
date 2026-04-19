@@ -5,21 +5,8 @@
 ;
 ;--------------------------------------------------------------------------
 
-	.include "defines.s"
+	.include "kraft80.inc"
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; LEDS & BUTTONS
-PORTLEDS	.equ	0x00
-PORTBUTTONS	.equ	0x00
-PORTDISP	.equ	0x10
-
-;RAMBASE	.equ	0x4000
-SYSM_BUFSZ	.equ	128
-SYSM_BUF	.equ	RAMBASE
-SYSM_BUFPTR	.equ	SYSM_BUF+SYSM_BUFSZ
-SYSM_LASTDM 	.equ	SYSM_BUFPTR+1
-SYSM_LASTED 	.equ	SYSM_LASTDM+2
-SYSM_FLAGS	.equ	SYSM_LASTED+2
 
 SOH 		.equ	1
 EOT		.equ	4
@@ -34,9 +21,19 @@ ESC		.equ	27
 
 	.module kraftmon
 
-	.globl kraftmon
+		.globl	kraftmon
+		.globl	SYSM_BUF
 
-	.area	CODE
+		.area	_DATA
+
+SYSM_BUFSZ	.equ	128
+SYSM_BUF:	.ds	SYSM_BUFSZ
+SYSM_BUFPTR:	.ds	1
+SYSM_LASTDM:	.ds	2
+SYSM_LASTED:	.ds	2
+SYSM_FLAGS:	.ds	1
+
+	.area	_CODE
 
 
 signon_kraftmon:
@@ -46,7 +43,9 @@ kraftmon:
 	ld	hl,#signon_kraftmon
 	call	prints
 
-	ld	hl,#RAMTOP
+	call	ch376_init_system
+
+	ld	hl,#PROG_AREA
 	ld	(SYSM_LASTDM),hl
 	ld	(SYSM_LASTED),hl
 
@@ -79,12 +78,10 @@ kraftmon_loop:
 
 	;///////////////////////////////////////////////////////////////////////
 str_basic:
-	.ascii	'basic'
-	.byte	0
+	.ascii	'basic\0'
 
 str_loadx:
-	.ascii	'loadx'
-	.byte	0
+	.ascii	'loadx\0'
 
 sysm_prompt:
 	ld	a,#':'
@@ -102,6 +99,16 @@ sysm_prompt:
 	call	strcompare
 	jp	z,load_xmodem
 
+	ld	hl,#SYSM_BUF
+	ld	de,#str_dir
+	call	strcompare
+	jp	z,_ch376_listdir
+
+	ld	hl,#SYSM_BUF
+	ld	de,#str_load
+	call	strcompare
+	jp	z,loadfile
+
 	ld	a,(SYSM_BUF)	; Check 'd' command
 	cp	#'d'
 	jp	z,sysm_dump
@@ -113,6 +120,17 @@ sysm_prompt:
 	jr	z,sysm_go
 
 	ret
+
+loadfile:
+	ld	hl,#SYSM_BUF+5
+	push	hl
+	call	_ch376_dumpfile
+	pop	hl
+	ret
+
+str_dir:.ascii	'dir\0'
+str_load:
+	.ascii	'load\0'
 
 	;///////////////////////////////////////////////////////////////////////
 str_go:	.ascii	'Go!'
@@ -126,7 +144,7 @@ sysm_go:
 	ld	hl,#SYSM_BUF+1
 	call	skip_spc
 	call	parsehex16
-	ld	hl,#RAMTOP
+	ld	hl,#PROG_AREA
 	jr	z,sysm_go2
 	ld	h,d
 	ld	l,e
@@ -191,8 +209,7 @@ sysm_edit2:
 	
 	;///////////////////////////////////////////////////////////////////////
 dumphdr:
-	.ascii	'      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F'
-	.byte 13,10,0
+	.ascii	'      0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\r\n\0'
 
 sysm_dump:
 	ld	hl,#SYSM_BUF+1
@@ -341,6 +358,11 @@ strcompare:	; STR1 in HL, STR2 in DE
 	ld	a,(de)
 	ld	c,a
 	ld	a,(hl)
+	cp	#' '
+	jr	nz,strcomp0
+	xor	a
+
+strcomp0:
 	cp	c
 	jr	z,strcomp1
 	ret	
@@ -395,6 +417,7 @@ sysm_crlf:
 	;///////////////////////////////////////////////////////////////////////
 sysm_readline:
 
+	call	ch376_run
 	rst	0x18
 	jr	z,sysm_readline
 
@@ -451,14 +474,13 @@ sysm_rdl_bs:
 
 	;///////////////////////////////////////////////////////////////////////
 str_load_xmodem:
-	.ascii '\r\nSend the binary via XMODEM, [ENTER] to abort\r\n'
-	.byte 0
+	.ascii '\r\nSend the binary via XMODEM, [ENTER] to abort\r\n\0'
 
 load_xmodem:
 	ld	hl,#str_load_xmodem
 	call	prints
 	ld	d,#1	;lastseq
-	ld	hl,#RAMTOP
+	ld	hl,#PROG_AREA
 	ld	(SYSM_LASTED),hl
 	ld	bc,#30000
 
@@ -487,7 +509,7 @@ loop_xmodem:
 	ld	c,#13
 	ld	hl,#msg_run
 	rst	0x20
-	jp	RAMTOP
+	jp	PROG_AREA
 
 msg_run:
 	.ascii	"Run...\0"

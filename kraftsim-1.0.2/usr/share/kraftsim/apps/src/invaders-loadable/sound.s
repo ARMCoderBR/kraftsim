@@ -8,7 +8,8 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.include "defines.h"
+		.include "defines.inc"
+		.include "kraft80.inc"
 
 		.globl	init_sound
 		.globl	end_sound
@@ -19,7 +20,9 @@
 		.globl	sound_ply_die
 		.globl	sound_ufo_on, sound_ufo_off
 
-		.area	CODE
+		.module sound
+
+		.area	_CODE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

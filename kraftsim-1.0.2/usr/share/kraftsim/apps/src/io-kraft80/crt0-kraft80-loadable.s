@@ -27,39 +27,34 @@
 ;--------------------------------------------------------------------------
 
 	.module crt0
-	.globl	_main
 
-	.area	HEADER (ABS)
+	.area	_CODE
 
-	.org	0x4200
+	;ld	hl,#0xfffe
+	;xor	a
+	;ld	(hl),a
+	;ld	a,(hl)
+	;or	a
+	;jr	nz,mem32k
+	;inc	(hl)
+	;inc	(hl)
+	;ld	a,(hl)
+	;cp	#2
+	;jr	nz,mem32k
 
-	ld	hl,#0xfffe
-	xor	a
-	ld	(hl),a
-	ld	a,(hl)
-	or	a
-	jr	nz,mem32k
-	inc	(hl)
-	inc	(hl)
-	ld	a,(hl)
-	cp	#2
-	jr	nz,mem32k
+	;di
+	;ld	sp,#0x0000
+	;ei
+	;jr	init
 
-	di
-	ld	sp,#0x0000
-	ei
-	jr	init
+;mem32k:
+	;di
+	;ld	sp,#0x8000
+	;ei
 
-mem32k:
-	di
-	ld	sp,#0x8000
-	ei
-
-init:
+;init:
         call    gsinit
-	call	_main
-	di
-	halt
+	jp	_main
 
 	;///////////////////////////////////////////////////////////////////////
 gsinit:

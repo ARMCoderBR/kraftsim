@@ -7,6 +7,7 @@ LCD control functions by Wagner Rambo - WR Kits - wrkits.com.br
 
 #include <stdio.h>
 #include "io-kraft80.h"
+#include "kraft80.h"
 
 #pragma codeseg CODE
 
@@ -98,6 +99,12 @@ int putchar (int a) __naked{
     __asm
 
     ld a,l
+    cp #0x0a
+    jr nz,_putchar1
+    ld a,#0x0d
+    rst #0x08
+    ld a,#0x0a
+_putchar1:
     rst #0x08
     ld l,#0
     ret
@@ -110,9 +117,7 @@ void setleds(char leds) __naked{
 
     __asm
 
-PORTA .equ 0x00
-
-    out(PORTA),a
+    out(PORTLEDS),a
     ret
     
     __endasm;
@@ -122,9 +127,8 @@ PORTA .equ 0x00
 unsigned char readbuttons() __naked{
 
     __asm
-PORTX .equ 0x00
     
-    in a,(PORTX)
+    in a,(PORTBUTTONS)
     ld l,a
     ret
     
@@ -216,9 +220,9 @@ void video_setpos(int row, int col){
   di
   ld hl,(_pos)
   ld a,l
-  out (0x51),a
+  out (PORTADDRL),a
   ld a,h
-  out (0x52),a
+  out (PORTADDRH),a
   ei
   
   __endasm;
@@ -232,7 +236,7 @@ void video_out(unsigned char b){
 
   __asm
 
-  out (0x50),a
+  out (PORTDATA),a
 
   __endasm;
 }
@@ -245,7 +249,7 @@ int video_in(void){
 
   __asm
 
-    in a,(0x50)
+    in a,(PORTDATA)
     ld e,a
     ld d,#0
     ret
@@ -264,16 +268,22 @@ void video_begin(int mode){
 
   ld hl,(_pos)
   ld a,l
-  out (0x53),a
+  out (PORTMODE),a
+
+  xor a
+  out (PORTADDRL),a
+  out (PORTADDRH),a
+
+  ld c,#240
+nextrow:
+  ld b,#160
+fillrow:
+  out(0x50),a
+  djnz fillrow
+  dec c
+  jr nz,nextrow
 
   __endasm;
-  
-  video_setpos(row,0);
-
-  for (row = 0; row < 240; row++){
-
-    for (col = 0; col < 160; col++) video_out(0x00);
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -319,5 +329,50 @@ int serial_putchar (int a) __naked{
     ret
 
     __endasm;
+}
+
+FILE filedata[3];
+
+////////////////////////////////////////////////////////////////////////////////
+FILE * fopen(char *name, char *mode) __naked __sdcccall(1){
+
+    __asm
+
+    push hl
+
+    ld b,#3
+    ld hl,#_filedata
+fopen0:
+    ld a,(hl)
+    or a
+    jr z,fopen1
+    inc	hl	; As much as sizeof(FILE) - 1x for now
+    djnz fopen0
+    pop hl
+fopen_err:
+    ld de,#0
+    ret
+
+fopen1:
+    push hl
+    pop ix
+
+    pop hl
+
+    ld	bc,#0x000E	;B=0 C=14 -> open file
+    push ix
+    rst #0x20		;HL=name DE=mode
+    pop de
+    jr c,fopen_err
+
+    ld (de),a
+    ret
+
+    __endasm;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void fclose (FILE *f) __naked __sdcccall(1){
+
 }
 

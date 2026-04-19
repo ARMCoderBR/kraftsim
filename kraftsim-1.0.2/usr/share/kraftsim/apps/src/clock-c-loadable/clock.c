@@ -6,8 +6,10 @@ Example program for the KRAFT 80
 
 #include <stdio.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #include "io-kraft80.h"
+#include "kraft80.h"
 
 #pragma codeseg CODE
 
@@ -30,13 +32,8 @@ void main (void){
     unsigned char buttons_a;
     unsigned char delta;
 
-#if USE_KRAFTMON == 1
-    isr2vector = (int*)0xff04;
-    char *p = 0xfffe;
-#else
-    isr2vector = (int*)0x4104;
-    char *p = 0x41fe;
-#endif
+    isr2vector = (int*)isr2vector_addr;
+    uint8_t *pcounter = (uint8_t *)timecount_addr;
 
     setleds(0x55);
     lcd_begin();
@@ -113,8 +110,8 @@ void main (void){
         }
         
         buttons_a = buttons;
-        
-        setleds(*p & buttons);
+
+        setleds(*pcounter & buttons);
         if (secs != secs_a){
             secs_a = secs;
             printtime();

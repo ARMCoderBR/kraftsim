@@ -8,9 +8,12 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.include "defines.h"
+		.include "defines.inc"
+		.include "kraft80.inc"
 
-		.area	CODE
+		.module inputs
+
+		.area	_CODE
 
 		.globl	init_inputs, update_inputs, wait_fire
 
@@ -21,10 +24,10 @@ init_inputs:
 		ld	(kbd_state),a
 		ld	(portbuttons_kbd),a
 		di
-		ld	hl,(isr1vector)
+		ld	hl,(isr1vector_addr)
 		ld	(isr1vector_copy),hl
 		ld	hl,#ps2_isr
-		ld	(isr1vector),hl
+		ld	(isr1vector_addr),hl
 		ei
 		ret
 

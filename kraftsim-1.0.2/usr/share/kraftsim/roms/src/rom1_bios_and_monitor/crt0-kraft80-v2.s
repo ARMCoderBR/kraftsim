@@ -33,52 +33,59 @@
 ;;;    BY ARMCODER - 2025
 ;;;-----------------------------------------------------------------------
 
-	.include "defines.s"
+	.include "kraft80.inc"
 
-;RAMBASE		.equ 0x4000
-STACKTOP	.equ RAMBASE+0x100	;0x4100
-isr0vector	.equ STACKTOP
-isr1vector	.equ STACKTOP+2		;0x4102
-isr2vector	.equ STACKTOP+4		;0x4104
-isr3vector	.equ STACKTOP+6		;0x4106
-isr4vector	.equ STACKTOP+8		;0x4108
-isr5vector	.equ STACKTOP+10	;0x410a
-isr6vector	.equ STACKTOP+12	;0x410c
-isr7vector	.equ STACKTOP+14	;0x410e
+	.area	_CODE
+	.area	_HOME
+	.area	_DATA
+
+	.globl	reset
+	.globl	isr0vector,isr1vector,isr2vector,isr3vector,isr4vector,isr5vector,isr6vector,isr7vector
+
+STACKTOP:
+isr0vector:	.ds	2
+isr1vector:	.ds	2
+isr2vector:	.ds	2
+isr3vector:	.ds	2
+isr4vector:	.ds	2
+isr5vector:	.ds	2
+isr6vector:	.ds	2
+isr7vector:	.ds	2
+diskvector:	.ds	2
+timecount:	.ds	1
+
 BUFRXSIZE	.equ 0x80
-bufrx		.equ STACKTOP+16	;0x4110
-bufrxins	.equ bufrx+BUFRXSIZE	;0x4190
-bufrxget	.equ bufrxins+1		;0x4191
-bufrxqty	.equ bufrxget+1		;0x4192
+bufrx:		.ds	BUFRXSIZE
+bufrxins:	.ds	1
+bufrxget:	.ds	1
+bufrxqty:	.ds	1
 
 VIDROWS		.equ	48
 VIDCOLS		.equ	80
-vidrow		.equ bufrxqty+1		;0x4193
-vidcol		.equ vidrow+1		;0x4194
-vidptr		.equ vidcol+1		;0x4195
+vidrow:		.ds	1
+vidcol:		.ds	1
+vidptr:		.ds	2
 
-scrollcnt	.equ vidptr+2		;0x4197
-lastlineptr	.equ scrollcnt+1	;0x4198
-bufkey		.equ lastlineptr+2	;0x419a
+scrollcnt:	.ds	1
+lastlineptr:	.ds	2
 BUFKEYSIZE	.equ	8
-bufkeyqty	.equ bufkey+BUFKEYSIZE	;0x41a2
-bufkeyins	.equ bufkeyqty+1	;0x41a3
-bufkeyget	.equ bufkeyins+1	;0x41a4
-kflags		.equ bufkeyget+1	;0x41a5	;00xxxxxx
+bufkey:		.ds	BUFKEYSIZE
+bufkeyqty:	.ds	1
+bufkeyins:	.ds	1
+bufkeyget:	.ds	1
+kflags:		.ds	1		;0x41a5	;00xxxxxx
 						;  |||||`-- LShift
 						;  ||||`--- RShift
 						;  |||`---- Caps
 						;  ||`----- Break Code Indicator
 						;  |`------ LCTRL  
 						;  `------- RCTRL (reserved)   
-lastkey		.equ kflags+1		;0x41a6
-sysflag		.equ lastkey+1		;0x41a7
-dispcol		.equ sysflag+1		;0x41a8
+lastkey:	.ds	1
+sysflag:	.ds	1
+dispcol:	.ds	1
 
 __varend__	.equ lastkey+1
 
-;RAMTOP		.equ RAMBASE+0x200	;0x4200
-;timecount	.equ RAMTOP-2		;0x41fe
 
 PORTLEDS	.equ 0x00
 
@@ -143,6 +150,7 @@ PORTFPGASTATUS	.equ	0x5F
 	.area	_HEADER (ABS)
 	;; Reset vector
 	.org 	0
+reset:
 	jp	init
 
 	.org	0x08
@@ -164,21 +172,22 @@ PORTFPGASTATUS	.equ	0x5F
 	;///////////////////////////////////////////////////////////////////////
 	;//////////////////////////   ISR DISPATCH   ///////////////////////////
 	;///////////////////////////////////////////////////////////////////////
+
 	.org	0x38
 	jp	fpga_isr
 
 	;;;; END OF HEADER SECTION
 
-	.area	CODE
+	.area	_CODE
 
 signon:
-	.ascii	'\r\nKraft 80 - Z80 Computer - BIOS v'
-	.ascii	'1.0.2'
+	.ascii	'\r\nKraft 80 v'
+	.ascii	'1.0.3'
 	.ascii	'\r\n\0'
 
 msgk1:	.ascii	'Kraft 80\0'
-msgk2:	.ascii	'BIOS v'
-	.ascii	'1.0.2'
+msgk2:	.ascii	'v'
+	.ascii	'1.0.3'
 	.ascii	'\0'
 
 fpga_isr:
@@ -227,14 +236,13 @@ fpga_isrend:
 
 	;///////////////////////////////////////////////////////////////////////
 
-
 timer_isr:
 	ld	a,(timecount)
 	inc	a
 	ld	(timecount),a
+	jp	ch376_timer_cb
 	;out	(PORTLEDS),a
-	ret
-
+	;ret
 
 ps2_isr:
 	ld	a,(bufkeyqty)
@@ -263,6 +271,7 @@ key_isr1:
 	cp	#BUFKEYSIZE
 	jr	c,key_isr2
 	xor	a
+
 key_isr2:	
 	ld	(bufkeyins),a
 	ret
@@ -306,9 +315,11 @@ rx_isr1a:
 
 rx_isr2:	
 	ld	(bufrxins),a
+retcode:
 	ret
 
 	;///////////////////////////////////////////////////////////////////////
+
 mon_putchar:
 	push	hl
 	ld	hl,#sysflag
@@ -347,11 +358,11 @@ init:
 	ld	(isr1vector),hl
 	ld	hl,#timer_isr
 	ld	(isr2vector),hl
-
-	ld	a,#0xf0
-	ld	(timecount),a
+	ld	hl,#retcode
+	ld	(diskvector),hl
 
 	xor	a
+	ld	(timecount),a
 	ld	(bufrxins),a
 	ld	(bufrxget),a
 	ld	(bufrxqty),a
@@ -476,6 +487,8 @@ user_fns:
 	dec	c		;c = 13
 	jp	z,lcd_wmsg
 
+	dec	c		;c = 14
+	jp	z,disk_fns
 	ret
 
 	;///////////////////////////////////////////////////////////////////////
@@ -483,6 +496,7 @@ user_fns:
 	;///////////////////////////////////////////////////////////////////////
 
 	;///////////////////////////////////////////////////////////////////////
+
 tx_char:
         ;di
 	out	(PORTSERDATA),a
@@ -494,12 +508,14 @@ wait_tx:
 	ret
 
 	;///////////////////////////////////////////////////////////////////////
+
 has_rxchar:
 	ld	a,(bufrxqty)
 	or	a
 	ret
 
 	;///////////////////////////////////////////////////////////////////////
+
 rx_char:
 	ld	a,(bufrxqty)
 	or	a
@@ -673,6 +689,7 @@ putclr1:xor	a
 	ret
 
 	;///////////////////////////////////////////////////////////////////////
+
 scroll_crt:
 	push	bc
 	push	de
@@ -1193,6 +1210,11 @@ delay_15ms_a:
 	jr	nz,delay_15ms_a	; 3 us
 	ret			; 2.5 us
 
+;///////////////////////////////////////////////////////////////////////////////
+disk_fns:
+	ld	hl,(diskvector)
+	jp	(hl)
+
 	;///////////////////////////////////////////////////////////////////////
 	;///////////////////////////// END OF CODE  ////////////////////////////
 	;///////////////////////////////////////////////////////////////////////
@@ -1209,8 +1231,8 @@ gsinit_next:
         ret
 
 	;; Ordering of segments for the linker.
-	.area	_HOME
 	.area	_CODE
+	.area	_HOME
 	.area	_INITIALIZER
 	.area   _GSINIT
 	.area   _GSFINAL

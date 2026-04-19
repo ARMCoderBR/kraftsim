@@ -1,24 +1,4 @@
 ;
-; KRAFT80 Defines
-;
-
-isr1vector	.equ	0x4102	;STACKTOP+2
-isr2vector	.equ	0x4104	;STACKTOP+4
-
-PORTBUTTONS	.equ	0x00	
-PORTDATA	.equ	0x50
-PORTADDRL	.equ	0x51
-PORTADDRH	.equ	0x52
-PORTMODE	.equ	0x53
-
-;   PS2 KEYBOARD
-PORTKEY		.equ	0x55
-
-; AUDIO
-PORTAYADDR	.equ	0x56
-PORTAYDATA	.equ	0x57
-
-;
 ; Game Defines
 ;
 

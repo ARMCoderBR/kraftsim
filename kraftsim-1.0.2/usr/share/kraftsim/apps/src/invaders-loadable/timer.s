@@ -8,21 +8,24 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.include "defines.h"
+		.include "defines.inc"
+		.include "kraft80.inc"
 
 		.globl	init_timer
 
-		.area	CODE
+		.module timer
+
+		.area	_CODE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 init_timer:
 		di
 		ld	(timer_srvector),hl
-		ld	hl,(isr2vector)
+		ld	hl,(isr2vector_addr)
 		ld	(isr2vector_copy),hl
 		ld	hl,#timer_isr
-		ld	(isr2vector),hl
+		ld	(isr2vector_addr),hl
 		ei
 		ret
 
@@ -38,6 +41,7 @@ timer_isr2:
 		jp	(hl)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 		.area _DATA
 
 timer_srvector:	.ds	2	; User service

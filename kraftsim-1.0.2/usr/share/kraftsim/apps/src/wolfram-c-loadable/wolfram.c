@@ -44,10 +44,10 @@ int wolfram(int width, int height, int rulenum) {
 
     ////////////////////////////////////////////////////////////////////////////
 
-    putstr("\r\n.");
+    printf("\n.");
     for (i = 0; i < width; i++)
-        putstr("=");
-    putstr(".\r\n.");
+        putchar('=');
+    printf(".\n.");
 
     int it;
     for (it = 0; it < height; it++) {
@@ -55,12 +55,12 @@ int wolfram(int width, int height, int rulenum) {
         for (i = 0; i < width; i++) {
 
             if (cells[i])
-                putstr("#");
+                putchar('#');
             else
-                putstr(" ");
+                putchar(' ');
         }
 
-        putstr(".\r\n.");
+        printf(".\n.");
 
         for (i = 0; i < width; i++) {
 
@@ -81,9 +81,9 @@ int wolfram(int width, int height, int rulenum) {
     }
 
     for (i = 0; i < width; i++)
-        putstr("=");
+        putchar('=');
 
-    putstr(".\r\n");
+    printf(".\n");
 
     return 0;
 }
@@ -93,11 +93,11 @@ void main (void){
 
 char buf[16];
     
-    putstr("\r\nWolfram Cell Automaton 1.0 by ARMCoder - 2025\r\n");
+    printf("\nWolfram Cell Automaton 1.0 by ARMCoder - 2025,26\n");
 
     for (;;){
 
-        putstr("\r\nEnter rule (0-255):");
+        printf("\nEnter rule (0-255):");
         lgets(buf, sizeof(buf));
         int rule = atoi(buf);
         

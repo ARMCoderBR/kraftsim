@@ -7,7 +7,8 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.include "defines.h"
+		.include "defines.inc"
+		.include "kraft80.inc"
 
 		.globl	set_screen
 		.globl	drawbaseline, clear_lines, clrscr
@@ -19,7 +20,7 @@
 
 		.module graphics
 
-		.area	CODE
+		.area	_CODE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1376,7 +1377,7 @@ menuup2:	ld	a,(stepping)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-		.area	DATA
+		.area	_DATA
 
 spritepos:	.ds	2
 spritenow:	.ds	2

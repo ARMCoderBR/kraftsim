@@ -7,31 +7,20 @@
 ;  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-PORTBUTTONS	.equ	0x00	
-; VIDEO
-PORTDATA	.equ	0x50
-PORTADDRL	.equ	0x51
-PORTADDRH	.equ	0x52
-PORTMODE	.equ	0x53
+		.include	"kraft80.inc"
 
-; AUDIO
-PORTAYADDR	.equ	0x56
-PORTAYDATA	.equ	0x57
-
-isr2vector	.equ	0x4104	;STACKTOP+4
-
-		.area	CODE
+		.area	_CODE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;		
 
 chiptunes:	ld	hl,#song_msg
 		call	prints
 
-		ld	hl,(isr2vector)
+		ld	hl,(isr2vector_addr)
 		ld	(isr2vector_copy),hl
 		di
 		ld	hl,#timer_isr
-		ld	(isr2vector),hl
+		ld	(isr2vector_addr),hl
 
 		xor	a
 		ld	(delay_cnt),a
@@ -42,7 +31,7 @@ chiptunes:	ld	hl,#song_msg
 
 		di
 		ld	hl,(isr2vector_copy)
-		ld	(isr2vector),hl
+		ld	(isr2vector_addr),hl
 		ei
 
 		ret
