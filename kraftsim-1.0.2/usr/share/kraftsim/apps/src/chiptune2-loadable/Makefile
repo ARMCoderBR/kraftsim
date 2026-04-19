@@ -5,7 +5,7 @@ all:				chiptune2.bin vgm
 
 chiptune2.bin:			chiptune2.s challenger.s
 				sdasz80 $(ASMOPTS) chiptune2.s
-				sdcc -mz80 --no-std-crt0 --code-loc 0x4200 chiptune2.rel
+				sdcc -mz80 --no-std-crt0 --code-loc 0x2000 chiptune2.rel
 				objcopy --input-target=ihex --output-target=binary chiptune2.ihx chiptu2.bin
 
 vgm:				vgm.c
