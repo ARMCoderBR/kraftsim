@@ -359,6 +359,7 @@ int main (int argc, char *argv[]){
     int romSZ = ROMSZ_MODE0;
     int ramBASE = RAMBASE_MODE0;
     int ramSZ = RAMSZ_MODE0;
+    int appBase = 0x4200;
 
     int loaded_rom = 0;
     int mmap = 0;
@@ -391,6 +392,7 @@ int main (int argc, char *argv[]){
                     romSZ = ROMSZ_MODE1;
                     ramBASE = RAMBASE_MODE1;
                     ramSZ = RAMSZ_MODE1;
+                    appBase = 0x2000;
                     mmap = 1;
                 }
             break;
@@ -434,7 +436,7 @@ int main (int argc, char *argv[]){
 
             if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
-                res = memload_bin(maindata.ram, ramBASE, ramSZ, filename, 0x4200);
+                res = memload_bin(maindata.ram, ramBASE, ramSZ, filename, appBase);
                 if (res < 0){
                     return -1;
                 }

@@ -32,6 +32,9 @@
 #define    PORTSER_DIS     0
 #define    PORTSER_RTSOFF  0
 #define PORTSERDATA     0x59    // SERIAL DATA
+#define PORTSPISTATUS   0x5A
+#define PORTSPICTL      0x5A
+#define PORTSPIDATA     0x5B
 #define PORTFPGASTATUS  0x5F
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -98,6 +101,9 @@ uint8_t new_in_callback (ios_t *ios, uint8_t port){
             return ios->buttons_state;
 
         case PORTSERSTATUS:
+            return 0;
+
+        case PORTSPISTATUS:
             return 0;
 
         case PORTFPGASTATUS:
