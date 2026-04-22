@@ -58,6 +58,12 @@ void new_out_callback (ios_t *ios, uint8_t port, uint8_t value){
                 refresh();
             }
             break;
+
+        case PORTSPICTL:
+        case PORTSPIDATA:
+            ch376_out(ios->ch376, port, value);
+            break;
+
         case PORTDATA:
         case PORTADDRL:
         case PORTADDRH:
@@ -104,7 +110,8 @@ uint8_t new_in_callback (ios_t *ios, uint8_t port){
             return 0;
 
         case PORTSPISTATUS:
-            return 0;
+        case PORTSPIDATA:
+            return ch376_in(ios->ch376, port);
 
         case PORTFPGASTATUS:
             return ios->fpga_status;
@@ -577,6 +584,7 @@ ios_t *ios_init(void *main){
     ios->presc = 0;
 
     ios->psg = psg_init();
+    ios->ch376 = ch376_init();
 
     ios->ps2_head = ios->ps2_tail = ios->ps2_qty = 0;
 
@@ -599,6 +607,7 @@ void ios_close(ios_t *ios){
     pthread_join(ios->sdleventthread, NULL);
 
     psg_end(ios->psg);
+    ch376_end(ios->ch376);
 
     free(ios);
 }

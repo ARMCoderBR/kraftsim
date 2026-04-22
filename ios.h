@@ -13,6 +13,7 @@
 #include "callback.h"
 #include "z80.h"
 #include "psg.h"
+#include "ch376.h"
 
 typedef struct {
 
@@ -25,6 +26,7 @@ typedef struct {
     uint16_t buttons_state;
 
     psg_t *psg;
+    ch376_t *ch376;
 
     void *maindata;
 
