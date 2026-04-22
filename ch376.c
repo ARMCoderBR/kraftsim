@@ -17,7 +17,7 @@
 #define CTL_CS          0x01
 #define STAT_INTR       0x02
 
-unsigned char disk_mbr[] = {
+const unsigned char disk_mbr[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -56,11 +56,10 @@ unsigned char disk_mbr[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x55, 0xaa
 };
-unsigned int disk_mbr_len = 512;
+const unsigned int disk_mbr_len = 512;
 
 ////////////////////////////////////////////////////////////////////////////////
 void read_sec_chunk(ch376_t *p){
-
 
     //printf("\r\nread_sec_chunk(%d) chunk:%d\r\n",p->secnum,p->sec_chunk);
 
@@ -106,8 +105,10 @@ void ch376_exec(ch376_t *p){
             if (p->wptr == 2){
                 p->rbuf[0] = ANSW_RET_SUCCESS;
                 p->rptr = 0;
-                p->nextintr = ANSW_USB_INT_CONNECT;
-                p->spistatus &= ~STAT_INTR;
+                if (p->fvol){
+                    p->nextintr = ANSW_USB_INT_CONNECT;
+                    p->spistatus &= ~STAT_INTR;
+                }
             }
             break;
 
@@ -115,7 +116,10 @@ void ch376_exec(ch376_t *p){
             if (p->wptr == 1){
                 p->rbuf[0] = ANSW_RET_SUCCESS;
                 p->rptr = 0;
-                p->nextintr = ANSW_USB_INT_SUCCESS;
+                if (!p->fvol)
+                    p->nextintr = ANSW_ERR_DISK_DISCON;
+                else
+                    p->nextintr = ANSW_USB_INT_SUCCESS;
                 p->spistatus &= ~STAT_INTR;
                 memcpy(p->backrbuf,(void*)"\x0cKraft80 Disk",13);
             }
@@ -169,7 +173,6 @@ ch376_t *ch376_init(void){
     ch376_t *p = malloc(sizeof(ch376_t));
 
     p->spistatus = STAT_INTR;
-
     p->fvol = fopen("../disk.vol","r");
 
     return p;
