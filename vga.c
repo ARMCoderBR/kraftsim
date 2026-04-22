@@ -179,7 +179,7 @@ void vga_refresh(vga_t *vga, int force){
 
     vga->vgaTick = 0;
 
-    vga->cursor++; if (vga->cursor > 16) vga->cursor = 0;
+    vga->cursor++; if (vga->cursor > 30) vga->cursor = 0;
 
     SDL_Rect rect;
 
@@ -224,7 +224,7 @@ void vga_refresh(vga_t *vga, int force){
                 SDL_RenderCopy(vga->renderer, vga->fontTexture[vga->displayBuffer[addr]], NULL, &rect);
 
                 if (addr == vga->wraddr){
-                    if (vga->cursor > 8){
+                    if (vga->cursor > 15){
                         rectcur.x = rect.x;
                         rectcur.y = rect.y+(7*PIXEL_SCALE_MODE0);
                         SDL_RenderFillRect(vga->renderer, &rectcur);
