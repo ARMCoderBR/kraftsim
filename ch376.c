@@ -173,7 +173,7 @@ ch376_t *ch376_init(void){
     ch376_t *p = malloc(sizeof(ch376_t));
 
     p->spistatus = STAT_INTR;
-    p->fvol = fopen("../disk.vol","r");
+    p->fvol = fopen("disk.vol","r");
 
     return p;
 }

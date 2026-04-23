@@ -23,6 +23,7 @@ sound.rel:			sound.s defines.inc
 invaders.bin:			invaders.rel graphics.rel inputs.rel timer.rel font.rel sound.rel
 				sdcc -mz80 --no-std-crt0 --code-loc 0x2000 --data-loc 0x4400 invaders.rel graphics.rel inputs.rel timer.rel font.rel sound.rel
 				objcopy --input-target=ihex --output-target=binary invaders.ihx invaders.bin
+				cp invaders.bin ../../invaders.com
 
 clean:
 				rm -f *.ihx *.map *.sym *.lk *.rel *.lst *.noi *.asm *.mem *.hex *.bin
