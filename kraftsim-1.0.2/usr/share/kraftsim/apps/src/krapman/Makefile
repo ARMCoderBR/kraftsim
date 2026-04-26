@@ -3,12 +3,6 @@ COPTS=-c -V --disable-warning 85 -mz80 -I../io-kraft80 --opt-code-size --std-sdc
 
 all:				krapman.bin gensprite
 
-../io-kraft80/crt0-kraft80-loadable.rel:
-				cd ../io-kraft80; make; cd -
-
-../io-kraft80/io-kraft80.rel:
-				cd ../io-kraft80; make; cd -
-
 krapman.rel:			krapman.c *.h ../io-kraft80/io-kraft80.h
 				sdcc $(COPTS) krapman.c
 
@@ -29,6 +23,12 @@ inputs.rel:			inputs.s ../io-kraft80/kraft80.inc
 
 timer.rel:			timer.s ../io-kraft80/kraft80.inc
 				sdasz80 $(ASMOPTS) timer.s
+
+../io-kraft80/crt0-kraft80-loadable.rel:
+				cd ../io-kraft80; make; cd -
+
+../io-kraft80/io-kraft80.rel:
+				cd ../io-kraft80; make; cd -
 
 krapman.bin:			krapman.rel graphics.rel map.rel game.rel graphres.rel inputs.rel timer.rel \
 					../io-kraft80/crt0-kraft80-loadable.rel ../io-kraft80/io-kraft80.rel 
