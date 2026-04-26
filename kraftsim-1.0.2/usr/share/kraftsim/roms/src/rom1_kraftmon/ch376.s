@@ -166,7 +166,7 @@ state_wait_mount:
 		jr	nz,wmount1
 
 		ld	hl,#msgunmounted
-		call	prints
+		call	_prints
 
 		ld	a,#ST_SET_USBH0
 		ld	(run_state),a
@@ -186,7 +186,7 @@ got_mount_ok:	ld	a,#1
 		call	ch376_rdata0
 	;	call	data0_dump
 		ld	hl,#msgmounted
-		call	prints
+		call	_prints
 
 		call	_startfatfs
 
@@ -203,7 +203,7 @@ state_mount_end:
 		ret	nz
 
 resusb:		ld	hl,#msgunmounted
-		call	prints
+		call	_prints
 
 		ld	a,#ST_SET_USBH0
 		ld	(run_state),a
@@ -232,11 +232,11 @@ state_read_sector2:
 		ret	z
 
 	;	ld	hl,#msgunkerr
-	;	call	prints
+	;	call	_prints
 		ret
 
 stsec2a:;	ld	hl,#msgendread
-	;	call	prints
+	;	call	_prints
 		ld	a,#ST_MOUNTEND
 		ld	(run_state),a
 		ret
@@ -268,7 +268,7 @@ rdsec3_1:	ld	(lastreadptr),hl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 abortstate:	;ld	hl,#s_endstate
-		;call	prints
+		;call	_prints
 		xor	a
 		ld	(run_state),a
 		ld	(mountok),a
@@ -295,7 +295,7 @@ ch376_init_system:
 
 ch376_reset:
 	;	ld	hl,#msgreset
-	;	call	prints
+	;	call	_prints
 
 		ld	a,#4
 		out	(PORTSPICTL),a	; Set RST=1 on USB ("disk") controller
@@ -355,14 +355,14 @@ ch376_init:
 
 		ld	(ch376_found),a
 	;	ld	hl,#msg_inerr
-	;	jp	prints
+	;	jp	_prints
 		ret
 
 ch376iniok:	ld	a,#1
 		ld	(ch376_found),a
 
 	;	ld	hl,#msg_inok
-	;	call	prints
+	;	call	_prints
 
 		call	cs_on
 		ld	a,#CMD_SET_SD0_INT
@@ -399,7 +399,7 @@ setusbmode:	push	af
 
 ch376_iniusbh0:
 	;	ld	hl,#msginiusb5
-	;	call	prints
+	;	call	_prints
 		ld	a,#MODE_HOST_0
 		call	setusbmode
 	;	call	out_read
@@ -413,7 +413,7 @@ ch376_iniusbh0:
 
 ch376_iniusbh1:
 	;	ld	hl,#msginiusb7
-	;	call	prints
+	;	call	_prints
 		ld	a,#MODE_HOST_1
 		call	setusbmode
 	;	call	out_read
@@ -427,7 +427,7 @@ ch376_iniusbh1:
 
 ch376_iniusbh2:
 	;	ld	hl,#msginiusb6
-	;	call	prints
+	;	call	_prints
 		ld	a,#MODE_HOST_2
 		call	setusbmode
 	;	call	out_read
@@ -441,7 +441,7 @@ ch376_iniusbh2:
 
 ch376_mount:
 	;	ld	hl,#msgmount
-	;	call	prints
+	;	call	_prints
 		call	cs_on
 		ld	a,#CMD_DISK_MOUNT
 		call	spiwrite
@@ -453,7 +453,7 @@ ch376_mount:
 
 ch376_rdata0:	;push	hl
 		;ld	hl,#msgreaddata0
-		;call	prints
+		;call	_prints
 		;pop	hl
 
 		ld	(lastreadptr),hl
@@ -476,7 +476,7 @@ rddata01:	call	spiread
 
 ch376_rd_sector:
 	;	ld	hl,#msgrdsector
-	;	call	prints
+	;	call	_prints
 		call	cs_on
 		ld	a,#CMD_DISK_READ
 		call	spiwrite
@@ -498,7 +498,7 @@ rdsec1:		ld	a,(hl)
 		;///////////////////////////////////////////////////////////////////////
 
 ch376_rd_secgo:	;ld	hl,#msgrdsectorgo
-		;call	prints
+		;call	_prints
 		call	cs_on
 		ld	a,#CMD_DISK_RD_GO
 		call	spiwrite

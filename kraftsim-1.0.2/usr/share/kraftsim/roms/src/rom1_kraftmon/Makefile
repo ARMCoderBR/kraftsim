@@ -18,6 +18,7 @@ kraftmon.rel:			kraftmon.s kraft80.inc
 kraftbios-v2.ihx:		crt0-kraft80-v2.rel kraftmon.rel spi.rel ch376.rel fat32.rel
 				sdcc -mz80 --no-std-crt0 --code-loc 0x0040 --data-loc 0xf800 crt0-kraft80-v2.rel kraftmon.rel spi.rel ch376.rel fat32.rel
 				mv crt0-kraft80-v2.ihx rom1-kraftmon.ihx
+				cp rom1-kraftmon.ihx ../..
 
 clean:
 				rm -f *.ihx *.map *.sym *.lk *.rel *.lst *.noi *.asm *.mem *.hex

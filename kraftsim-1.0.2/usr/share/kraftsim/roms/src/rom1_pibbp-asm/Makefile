@@ -1,9 +1,10 @@
-all:					rom1-pibbp-asm.ihx
+all:				rom1-pibbp-asm.ihx
 
 rom1-pibbp-asm.ihx:		rom1-pibbp-asm.s
-						sdasz80 -o -l -s -g rom1-pibbp-asm.s
-						sdcc -mz80 --no-std-crt0 rom1-pibbp-asm.rel
+				sdasz80 -o -l -s -g rom1-pibbp-asm.s
+				sdcc -mz80 --no-std-crt0 rom1-pibbp-asm.rel
+				cp rom1-pibbp-asm.ihx ../..
 
 clean:
-						rm *.ihx *.map *.sym *.lk *.rel *.lst *.noi *.asm *.mem *.hex
+				rm *.ihx *.map *.sym *.lk *.rel *.lst *.noi *.asm *.mem *.hex
 

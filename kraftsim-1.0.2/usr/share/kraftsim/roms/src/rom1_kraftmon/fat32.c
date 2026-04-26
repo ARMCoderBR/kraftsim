@@ -17,10 +17,13 @@
 fatfs_t fatdata;
 #define bufdata fatdata.handler[0].bufsector
 
+#define ASMZ80 1
+
 ////////////////////////////////////////////////////////////////////////////////
+#if 0	// Not used for now
 int getchar() __naked{
 
-    __asm
+   __asm
 
     rst #0x10
     jr z,_getchar
@@ -30,6 +33,7 @@ int getchar() __naked{
     
     __endasm;
 }
+#endif
 	
 ////////////////////////////////////////////////////////////////////////////////
 int putchar (int a) __naked{
@@ -45,18 +49,30 @@ int putchar (int a) __naked{
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void putstr(char *s){
 
-    while(*s){
-        putchar(*(s++));
-    }
-}
+#if ASMZ80
 
-////////////////////////////////////////////////////////////////////////////////
-void putcrlf(void){
+  void prints(char *s) __naked __sdcccall(1);
+  #define putstr prints
 
-    putstr("\r\n");
-}
+  void sysm_crlf(void) __naked;
+  #define putcrlf sysm_crlf
+
+#else
+
+  void putstr(char *s){
+
+      while(*s){
+          putchar(*(s++));
+      }
+  }
+
+  void putcrlf(void){
+
+      putstr("\r\n");
+  }
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void printdec(uint32_t x, int8_t nplaces){   //1.000.000.000
@@ -85,11 +101,32 @@ void printdec(uint32_t x, int8_t nplaces){   //1.000.000.000
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#if ASMZ80
+void printAscii(uint8_t *buf, uint8_t n) __sdcccall(1){
+
+    __asm
+
+    push hl
+    ld hl,#4
+    add hl,sp
+    ld b,(hl)
+    pop hl
+
+_prasc1:
+    ld a,(hl)
+    rst 0x08
+    inc hl
+    djnz _prasc1
+
+    __endasm;
+}
+#else
 void printAscii(uint8_t *buf, uint8_t n){
 
     for (uint8_t i = 0; i < n; i++)
         putchar(buf[i]);
 }
+#endif
 
 const char dhex[]="0123456789ABCDEF";
 ////////////////////////////////////////////////////////////////////////////////
@@ -545,12 +582,29 @@ int8_t openRootDir(void){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void prline(void){
+void prline(void) __naked{
 
-    for (uint8_t i = 0; i < 40; i++)
+#if ASMZ80
+
+    __asm
+
+    ld b,#30
+_prlin1:
+    ld a,#'='
+    rst 0x08
+    djnz _prlin1
+    jp _sysm_crlf
+
+    __endasm;
+
+#else
+
+    for (uint8_t i = 0; i < 30; i++)
         putchar('=');
 
     putcrlf();
+
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -574,15 +628,15 @@ int listDir(int handler){
             printAscii(d->fileName,8);
             putstr(".");
             printAscii(d->fileExt,3);
+#if DEBUG
             putstr("  ATTRs:0x");
             printhex8(d->fileAttrs);
-#if DEBUG
             uint32_t startClu = d->startClusterHi;
             startClu <<= 16; startClu |= d->startClusterlo;
             putstr("  St.Clu:0x");
             printhex32(startClu);
 #endif
-            putstr("  SZ:");
+            putstr("    SZ:");
             printdec(d->fileSize,0);
             putcrlf();
         }
@@ -594,24 +648,84 @@ int listDir(int handler){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int check_vchar(uint8_t a){
 
-    if ((a >= 'a') && (a <= 'z'))
-        return 1;
+#if ASMZ80
 
-    if ((a >= 'A') && (a <= 'Z'))
-        return 1;
+  int8_t check_vchar(uint8_t a) __naked __sdcccall(1){
 
-    if ((a >= '0') && (a <= '9'))
-        return 1;
+      __asm
 
-    const uint8_t vchar[] = "!#$%&'()-@^_`{}~.";
+      cp #'0'
+      jr nc,_cv1
 
-    for (int i = 0; i < 17; i++)
-        if (a == vchar[i]) return 1;
+      jr _cvscan
 
-    return -1;
-}
+  _cv1:
+      cp #'9'+1
+      jr c,_cvok
+
+      cp #'A'
+      jr nc,_cv2
+
+      jr _cvscan
+
+  _cv2:
+      cp #'Z'+1
+      jr c,_cvok  
+
+      cp #'a'
+      jr nc,_cv3
+
+      jr _cvscan
+
+  _cv3:
+      cp #'z'+1
+      jr c,_cvok  
+
+  _cvscan:
+      ld hl,#_tabscan
+      ld b,#17
+  _cvscan1:
+      cp (hl)
+      jr z,_cvok
+      inc hl
+      djnz _cvscan1
+
+  _cverr:
+      ld a,#-1
+      ret
+
+  _tabscan: .ascii "!#$%&'()-@^_`{}~."
+
+  _cvok:
+      xor a
+      ret
+
+    __endasm;
+  }
+
+#else
+
+  int8_t check_vchar(uint8_t a){
+
+      if ((a >= 'a') && (a <= 'z'))
+          return 1;
+
+      if ((a >= 'A') && (a <= 'Z'))
+          return 1;
+
+      if ((a >= '0') && (a <= '9'))
+          return 1;
+
+      const uint8_t vchar[] = "!#$%&'()-@^_`{}~.";
+
+      for (int i = 0; i < 17; i++)
+          if (a == vchar[i]) return 1;
+
+      return -1;
+  }
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 int check_fname(const char *fname, char *resname){
@@ -722,50 +836,58 @@ int findFileInDir(uint8_t handler, const char *fname){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int8_t dumpFile(uint8_t *bufread, uint8_t handler, int bufsize){
+int8_t dumpFile(uint8_t *bufread, uint8_t handler, int bufsize, uint8_t *dest){
 
     int res = 1;
-    uint8_t *p = (void*)0x2000;
+    uint8_t *p = dest;
 
     while (res > 0){
 
         res = readHandler (bufread, handler, bufsize);
 	
-        if (res){
+        if (res >= 0){
 
             for (int i = 0; i < res; i++){
 		*(p++) = bufread[i];
             }
         }
+        else
+            return -1;
     }
 
     return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void ch376_dumpfile(char *name) __sdcccall(0){
+int8_t ch376_openHandler(char *name) __sdcccall(0){
 
-    int8_t nHandler;
-
-    putstr(name);
-    putcrlf();
-
-    uint8_t userbuf[DIRENTRYSIZE];
-
-    nHandler = openRootDir();
+    int8_t nHandler = openRootDir();
     if (nHandler > 0){
 
 	int res = findFileInDir(nHandler, name);
         closeHandler(nHandler);
-
         if (res){
-            nHandler = openHandler(fatdata.fi_startCluster, fatdata.fi_fileSize & 0xffff,fatdata.fi_fileSize >> 16);
-            if (nHandler > 0){
-                dumpFile(userbuf, nHandler, sizeof(userbuf));
-                closeHandler(nHandler);
-            }
+            return openHandler(fatdata.fi_startCluster, fatdata.fi_fileSize & 0xffff,fatdata.fi_fileSize >> 16);
         }
     }
+
+    return -1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+int8_t ch376_dumpfile(char *name, uint8_t *dest) __sdcccall(0){
+
+    uint8_t userbuf[DIRENTRYSIZE];
+
+    int8_t nHandler = ch376_openHandler(name);
+    if (nHandler > 0){
+        int8_t res = dumpFile(userbuf, nHandler, sizeof(userbuf), dest);
+        closeHandler(nHandler);
+        if (res < 0) return -2;
+        return 0;
+    }
+
+    return -1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

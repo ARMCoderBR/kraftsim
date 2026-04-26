@@ -26,64 +26,94 @@
 ;  might be covered by the GNU General Public License.
 ;--------------------------------------------------------------------------
 
-	.module crt0
+		.module crt0
 
-	.area	_CODE
+CMD_BUFSZ	.equ	96
+cmd_buf		.equ	0xF813
+cmd_maxargs	.equ	20
 
-	;ld	hl,#0xfffe
-	;xor	a
-	;ld	(hl),a
-	;ld	a,(hl)
-	;or	a
-	;jr	nz,mem32k
-	;inc	(hl)
-	;inc	(hl)
-	;ld	a,(hl)
-	;cp	#2
-	;jr	nz,mem32k
+		.area	_CODE
 
-	;di
-	;ld	sp,#0x0000
-	;ei
-	;jr	init
+	        call	gsinit
 
-;mem32k:
-	;di
-	;ld	sp,#0x8000
-	;ei
+		ld	a,#1
+		ld	(aargc),a
 
-;init:
-        call    gsinit
-	jp	_main
+		ld	hl,#cmd_buf
+		ld	(aargv),hl
+		ld	de,#aargv+2
 
-	;///////////////////////////////////////////////////////////////////////
-gsinit:
-	ld	bc, #l__INITIALIZER
-	ld	a, b
-	or	a, c
-	jr	Z, gsinit_next
-	ld	de, #s__INITIALIZED
-	ld	hl, #s__INITIALIZER
-	ldir
-gsinit_next:
-        ret
+loopargs:	ld	a,(hl)
+		or	a
+		jr	z,endargs
+		cp 	#' '
+		jr	z,end1arg
 
-	.area	DATA
+		inc	hl
+		jr	loopargs
 
-	;; Ordering of segments for the linker.
-	.area	_HOME
-	.area	_CODE
-	.area	_INITIALIZER
-	.area   _GSINIT
-	.area   _GSFINAL
-        .area   _MAIN
-	.area	_DATA
-	.area	_INITIALIZED
-	.area	_BSEG
-	.area   _BSS
-	.area   _HEAP
+end1arg:	xor	a
+		ld	(hl),a
+		inc	hl
+		ld	a,(hl)
+		or	a
+		jr	z,endargs
+		cp 	#' '
+		jr	z,end1arg
 
-	;.area   _CODE
+		ld	a,(aargc)
+		cp	#cmd_maxargs
+		jr	z,endargs
+		inc	a
+		ld	(aargc),a
+		ld	a,l
+		ld	(de),a
+		inc	de
+		ld	a,h
+		ld	(de),a
+		inc	de
+		jr	loopargs
 
-	.area   _GSFINAL
+endargs:	ld	hl,#aargv
+		push	hl
+		ld	a,(aargc)
+		ld	l,a
+		xor	a
+		ld	h,a
+		push	hl
+	
+		call	_main
+
+		pop	hl
+		pop	hl
+		ret
+
+		;///////////////////////////////////////////////////////////////
+
+gsinit:		ld	bc, #l__INITIALIZER
+		ld	a, b
+		or	a, c
+		jr	Z, gsinit_next
+		ld	de, #s__INITIALIZED
+		ld	hl, #s__INITIALIZER
+		ldir
+gsinit_next:	ret
+
+		.area	DATA
+aargc:		.ds	1
+aargv:		.ds	2*cmd_maxargs
+
+		;; Ordering of segments for the linker.
+		.area	_HOME
+		.area	_CODE
+		.area	_INITIALIZER
+		.area   _GSINIT
+		.area   _GSFINAL
+        	.area   _MAIN
+		.area	_DATA
+		.area	_INITIALIZED
+		.area	_BSEG
+		.area   _BSS
+		.area   _HEAP
+		.area   _GSFINAL
 
