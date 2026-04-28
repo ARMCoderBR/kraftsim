@@ -89,7 +89,7 @@ int wolfram(int width, int height, int rulenum) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void main (void){
+int main (int argc, char *argv[]){
 
 char buf[16];
     
@@ -97,11 +97,16 @@ char buf[16];
 
     for (;;){
 
-        printf("\nEnter rule (0-255):");
+        printf("\nEnter rule (0-255), empty to exit:");
         lgets(buf, sizeof(buf));
+
+        if (!buf[0]) break;
+
         int rule = atoi(buf);
         
         wolfram(50, 20, rule);
     }
+
+    return 0;
 }
 

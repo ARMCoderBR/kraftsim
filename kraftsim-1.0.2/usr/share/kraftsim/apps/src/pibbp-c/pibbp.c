@@ -50,7 +50,5 @@ void main (void){
     }
 
     printf("\n");
-    
-    for (;;);
 }
 

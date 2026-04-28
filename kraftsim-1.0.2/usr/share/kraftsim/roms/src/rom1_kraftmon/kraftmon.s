@@ -184,6 +184,7 @@ tryload4:	ld	hl,#PROG_AREA
 		pop	hl
 
 		call	#PROG_AREA
+		ld	(lastresult),hl
 		jp	_sysm_crlf
 
 		;///////////////////////////////////////////////////////////////

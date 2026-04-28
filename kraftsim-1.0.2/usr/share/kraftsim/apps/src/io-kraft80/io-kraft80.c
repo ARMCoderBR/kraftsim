@@ -136,75 +136,237 @@ unsigned char readbuttons() __naked{
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int putchar_lcd (char a) __naked{
+void putchar_lcd (char a) __sdcccall(1){
     __asm
 
-    push bc
-    ld c,#12
-    rst	#0x20
-    ld l,#0
-    pop bc
-    ret
+	;RS R/W DB7 DB6 DB5 DB4
+	;1   0   D7  D6  D5  D4
+	;push	bc
+
+	push	af
+	ld	a,(_dispcol)
+	cp	#16
+	jr	nz,lcd_w1
+	call	_lcd_home2
+	jr	lcd_w2
+
+lcd_w1:	cp	#32
+	jr	nz,lcd_w2
+	call	_lcd_home
+
+lcd_w2:	ld	a,(_dispcol)
+	inc	a
+	ld	(_dispcol),a
+	pop	af
+	
+	ld	c,a
+	and	#0xf0
+	or	#0x01
+	call	lcd_out
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;1   0   D3  D2  D1  D0
+	ld	a,c		
+	sla	a
+	sla	a
+	sla	a
+	sla	a
+	or	#0x01
+	call	lcd_out
+
+	call	delay_5ms
+
+	;pop	bc
+
+	;ret
     
     __endasm;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_home() __naked{
+void lcd_home() {
 
     __asm
     
-    push bc
-    ld c,#10
-    rst #0x20
-    pop bc
-    ret
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   0   0
+	ld	a,#0b00000000
+	call	lcd_out
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   0   0   1   0
+	ld	a,#0b00100000
+	call	lcd_out
+
+	call	delay_5ms
+	xor a
+	ld	(_dispcol),a
+	;ret
 
     __endasm;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_home2() __naked{
+void lcd_home2() {
 
     __asm
 
-    push bc
-    ld c,#11
-    rst #0x20
-    pop bc
-    ret
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   1   1   0   0
+	ld	a,#0b11000000
+	call	lcd_out
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   0   0   0   0
+	ld	a,#0b00000000
+	call	lcd_out
+
+	call	delay_5ms
+	ld	a,#16
+	ld	(_dispcol),a
+	;ret
 
     __endasm;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_clear() __naked{
+void lcd_clear() {
 
     __asm
 
-    push bc
-    ld c,#9
-    rst #0x20
-    pop bc
-    ret
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   0   0
+	ld	a,#0b00000000
+	call	lcd_out
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   0   0   0   1
+	ld	a,#0b00010000
+	call	lcd_out
+
+	call	delay_5ms
+	xor a
+	ld	(_dispcol),a
+	;ret
 
     __endasm;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void lcd_begin() __naked{
+void lcd_begin() {
 
     __asm
     
-    push bc
-    ld c,#8
-    rst #0x20
-    pop bc
-    ret
+	call	delay_15ms
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   1   1
+	ld	a,#0b00110000
+	call	lcd_out
+	call	delay_5ms
+	ld	a,#0b00110000
+	call	lcd_out
+	call	delay_5ms
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   1   0
+	ld	a,#0b00100000		; Set 4 bit mode
+	call	lcd_out
+
+	call	delay_5ms
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   1   0
+	ld	a,#0b00100000		; Will set N F
+	call	lcd_out
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   N   F   x   x  N=1 F=1
+	ld	a,#0b11000000
+	call	lcd_out
+
+	call	delay_5ms
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   0   0
+	ld	a,#0b00000000		; Will turn display on
+	call	lcd_out
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   1   1   0   0
+	ld	a,#0b11000000
+	call	lcd_out
+
+	call	delay_5ms
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   0   0
+	ld	a,#0b00000000		; Will clear display
+	call	lcd_out
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   0   0   0   1
+	ld	a,#0b00010000
+	call	lcd_out
+
+	call	delay_5ms
+
+	;RS R/W DB7 DB6 DB5 DB4
+	;0   0   0   0   0   0
+	ld	a,#0b00000000		; Will set Increment mode
+	call	lcd_out		; No shift
+	;RS R/W DB3 DB2 DB1 DB0
+	;0   0   0   1   1   0
+	ld	a,#0b01100000
+	call	lcd_out
+
+	call	delay_5ms
+
+	call	_lcd_home
 
     __endasm;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+void lcd_out() __naked {
+
+    __asm
+
+lcd_out:
+	out	(PORTDISP),a
+	nop
+	nop
+	set	1,a
+	out	(PORTDISP),a
+	nop
+	nop
+	res	1,a
+	out	(PORTDISP),a
+	ret
+
+	;///////////////////////////////////////////////////////////////
+
+delay_5ms:
+	ld	bc,#768		; 2.5us
+
+delay_5ms_a:
+	dec	bc		; 1.5 us
+	ld	a,b		; 1 us
+	or	c		; 1 us
+	jr	nz,delay_5ms_a	; 3 us
+	ret			; 2.5 us
+
+	;///////////////////////////////////////////////////////////////
+
+delay_15ms:
+	ld	bc,#2307	; 2.5us
+
+delay_15ms_a:
+	dec	bc		; 1.5 us
+	ld	a,b		; 1 us
+	or	c		; 1 us
+	jr	nz,delay_15ms_a	; 3 us
+	ret			; 2.5 us
+
+    __endasm;
+}
+
+uint8_t dispcol;
 int pos;
 
 ////////////////////////////////////////////////////////////////////////////////

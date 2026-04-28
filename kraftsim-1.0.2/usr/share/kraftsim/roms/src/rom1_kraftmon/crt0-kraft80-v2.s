@@ -42,7 +42,7 @@
 		.globl	reset
 		.globl	isr0vector,isr1vector,isr2vector,isr3vector,isr4vector,isr5vector,isr6vector,isr7vector
 		.globl	diskvector
-		.globl	cmd_buf,CMD_BUFSZ,filename
+		.globl	cmd_buf,CMD_BUFSZ,filename,lastresult
 
 ;-------- BEGIN FIXED DATA (DON'T CHANGE HERE)
 
@@ -64,6 +64,7 @@ cmd_buf:	.ds	CMD_BUFSZ	;0xF813
 ;-------- END FIXED DATA
 
 filename:	.ds	13		;xxxxxxxx.xxx\0
+lastresult:	.ds	2
 
 BUFRXSIZE	.equ 0x80
 bufrx:		.ds	BUFRXSIZE
@@ -354,6 +355,9 @@ init:		ld	sp,#STACKTOP
 		ld	hl,#retcode
 		ld	(diskvector),hl
 
+		ld	a,#0x55
+		out	(PORTLEDS),a
+
 		xor	a
 		ld	(timecount),a
 		ld	(bufrxins),a
@@ -380,17 +384,25 @@ init1:		ld	a,#1
 		out	(PORTSERCTL),a	; Enable RTS & INT RX
 
 	        ;; Initialise global variables
-        	call    gsinit
+        ;	call    gsinit
 
 		xor 	a
 		out	(PORTMODE),a
 	
 		ld	hl,#0
 wait1:		dec	hl
-		ld	a,h
-		or	l
+		bit	7,h
 		jr	nz,wait1
-	
+
+		ld	a,#0xAA
+		out	(PORTLEDS),a
+
+		ld	h,#0xff
+
+wait2:		dec	hl
+		bit	7,h
+		jr	nz,wait2
+
 		; Init CRT Video
 		ld	a,#0x10		;Reset scroller
 		out	(PORTMODE),a
@@ -414,17 +426,11 @@ wait1:		dec	hl
 		in	a,(PORTKEY)
 		in	a,(PORTTIMER)
 
-		call	lcd_init
-
-		ld	hl,#msgk1
-		call	lcd_wmsg
-
-		call	lcd_home2
-		ld	hl,#msgk2
-		call	lcd_wmsg
-
 		im	1
 		ei
+
+		xor	a
+		out	(PORTLEDS),a
 
 		jp	kraftmon
 
@@ -453,30 +459,8 @@ user_fns:	dec	c
 		jr	z,rx_char	;c = 3: RX CHAR (outputs Z flag & A)
 
 		dec	c		;c = 4
-		dec	c		;c = 5
-		dec	c		;c = 6
-		dec	c		;c = 7
-
-		dec	c		;c = 8
-		jp	z,lcd_init
-
-		dec	c		;c = 9
-		jp	z,lcd_clear
-
-		dec	c		;c = 10
-		jp	z,lcd_home
-
-		dec	c		;c = 11
-		jp	z,lcd_home2
-
-		dec	c		;c = 12
-		jp	z,lcd_write
-
-		dec	c		;c = 13
-		jp	z,lcd_wmsg
-
-		dec	c		;c = 14
 		jp	z,disk_fns
+
 		ret
 
 	;///////////////////////////////////////////////////////////////////////
@@ -958,207 +942,6 @@ tab_xlat:	; US QWERTY compatible symbols
 		.byte	0x51, '/', '?', '/'
 		.byte	0x00
 
-	;///////////////////////////////////////////////////////////////////////
-	;//////////////////////   LCD DISPLAY FUNCTIONS   //////////////////////
-	;///////////////////////////////////////////////////////////////////////
-
-lcd_write:	;RS R/W DB7 DB6 DB5 DB4
-		;1   0   D7  D6  D5  D4
-		push	bc
-
-		push	af
-		ld	a,(dispcol)
-		cp	#16
-		jr	nz,lcd_w1
-		call	lcd_home2
-		jr	lcd_w2
-
-lcd_w1:		cp	#32
-		jr	nz,lcd_w2
-		call	lcd_home
-
-lcd_w2:		ld	a,(dispcol)
-		inc	a
-		ld	(dispcol),a
-		pop	af
-		
-		ld	c,a
-		and	#0xf0
-		or	#0x01
-		call	lcd_out
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;1   0   D3  D2  D1  D0
-		ld	a,c		
-		sla	a
-		sla	a
-		sla	a
-		sla	a
-		or	#0x01
-		call	lcd_out
-
-		call	delay_5ms
-
-		pop	bc
-
-		ret
-
-		;///////////////////////////////////////////////////////////////
-
-lcd_wmsg:	ld	a,(hl)
-		or	a
-		ret	z
-		call	lcd_write
-		inc	hl
-		jr	lcd_wmsg
-
-		;///////////////////////////////////////////////////////////////
-
-lcd_home:	;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   0   0
-		ld	a,#0b00000000
-		call	lcd_out
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   0   0   1   0
-		ld	a,#0b00100000
-		call	lcd_out
-
-		call	delay_5ms
-		xor a
-		ld (dispcol),a
-		ret
-
-		;///////////////////////////////////////////////////////////////
-
-lcd_home2:	;RS R/W DB7 DB6 DB5 DB4
-		;0   0   1   1   0   0
-		ld	a,#0b11000000
-		call	lcd_out
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   0   0   0   0
-		ld	a,#0b00000000
-		call	lcd_out
-
-		call	delay_5ms
-		ld a,#16
-		ld (dispcol),a
-		ret
-
-		;///////////////////////////////////////////////////////////////
-
-lcd_clear:	;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   0   0
-		ld	a,#0b00000000
-		call	lcd_out
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   0   0   0   1
-		ld	a,#0b00010000
-		call	lcd_out
-
-		call	delay_5ms
-		xor a
-		ld (dispcol),a
-		ret
-
-		;///////////////////////////////////////////////////////////////
-
-lcd_init:	call	delay_15ms
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   1   1
-		ld	a,#0b00110000
-		call	lcd_out
-		call	delay_5ms
-		ld	a,#0b00110000
-		call	lcd_out
-		call	delay_5ms
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   1   0
-		ld	a,#0b00100000		; Set 4 bit mode
-		call	lcd_out
-
-		call	delay_5ms
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   1   0
-		ld	a,#0b00100000		; Will set N F
-		call	lcd_out
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   N   F   x   x  N=1 F=1
-		ld	a,#0b11000000
-		call	lcd_out
-
-		call	delay_5ms
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   0   0
-		ld	a,#0b00000000		; Will turn display on
-		call	lcd_out
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   1   1   0   0
-		ld	a,#0b11000000
-		call	lcd_out
-
-		call	delay_5ms
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   0   0
-		ld	a,#0b00000000		; Will clear display
-		call	lcd_out
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   0   0   0   1
-		ld	a,#0b00010000
-		call	lcd_out
-
-		call	delay_5ms
-
-		;RS R/W DB7 DB6 DB5 DB4
-		;0   0   0   0   0   0
-		ld	a,#0b00000000		; Will set Increment mode
-		call	lcd_out		; No shift
-		;RS R/W DB3 DB2 DB1 DB0
-		;0   0   0   1   1   0
-		ld	a,#0b01100000
-		call	lcd_out
-
-		call	delay_5ms
-
-		jp	lcd_home
-
-		;///////////////////////////////////////////////////////////////
-
-lcd_out:	out	(PORTDISP),a
-		nop
-		nop
-		set	1,a
-		out	(PORTDISP),a
-		nop
-		nop
-		res	1,a
-		out	(PORTDISP),a
-		ret
-
-		;///////////////////////////////////////////////////////////////
-
-delay_5ms:	ld	bc,#768		; 2.5us
-
-delay_5ms_a:	dec	bc		; 1.5 us
-		ld	a,b		; 1 us
-		or	c		; 1 us
-		jr	nz,delay_5ms_a	; 3 us
-		ret			; 2.5 us
-
-		;///////////////////////////////////////////////////////////////
-
-delay_15ms:	ld	bc,#2307	; 2.5us
-
-delay_15ms_a:	dec	bc		; 1.5 us
-		ld	a,b		; 1 us
-		or	c		; 1 us
-		jr	nz,delay_15ms_a	; 3 us
-		ret			; 2.5 us
-
 		;///////////////////////////////////////////////////////////////
 
 disk_fns:	push	hl
@@ -1177,15 +960,15 @@ disk_fns:	push	hl
 	;///////////////////////////// END OF CODE  ////////////////////////////
 	;///////////////////////////////////////////////////////////////////////
 
-gsinit:		ld	bc, #l__INITIALIZER
-		ld	a, b
-		or	a, c
-		jr	Z, gsinit_next
-		ld	de, #s__INITIALIZED
-		ld	hl, #s__INITIALIZER
-		ldir
-
-gsinit_next:	ret
+;gsinit:		ld	bc, #l__INITIALIZER
+;		ld	a, b
+;		or	a, c
+;		jr	Z, gsinit_next
+;		ld	de, #s__INITIALIZED
+;		ld	hl, #s__INITIALIZER
+;		ldir
+;
+;gsinit_next:	ret
 
 		;; Ordering of segments for the linker.
 		.area	_CODE

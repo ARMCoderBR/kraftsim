@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "fat32.h"
+#include "fat16.h"
 
 #define DUMP 0
 #define DEBUG 0
@@ -262,7 +262,7 @@ int getMBRSector (void){
         printhex32 (pp->numberOfSectors);
         putcrlf();
 #endif
-        if (pp->type == 0x0C){	// FAT32
+        if (pp->type == 0x06){	// FAT16B
 
             fatdata.partitionLogicalSector = pp->startSector;
             return 0;
@@ -297,18 +297,18 @@ int getBootSector (void){
         return -1;
     }
 
-    if (get16(bufdata+0x16)){
+    if (!get16(bufdata+0x16)){
 
 #if DEBUG
-        putstr("Not a FAT32 system.\r\n");
+        putstr("Probably FAT32 system, error.\r\n");
 #endif
         return -1;
     }
 
-    if (memcmp(bufdata+0x52,"FAT32   ",8)){
+    if (!memcmp(bufdata+0x52,"FAT32   ",8)){
 
 #if DEBUG
-        putstr("FAT32 signature not found.\r\n");
+        putstr("FAT32 signature found, not supported.\r\n");
 #endif
         return -1;
     }
@@ -325,8 +325,7 @@ int getBootSector (void){
     fatdata.reservedSectors = get16(bufdata+0x0e);
     fatdata.numberOfFATs = bufdata[0x10];
     fatdata.rootDirEntries = get16(bufdata+0x11);
-    fatdata.logicalSectorsPerFat = get32(bufdata+0x24);
-    fatdata.rootDir1stCluster = get32(bufdata+0x2C);
+    fatdata.logicalSectorsPerFat = get16(bufdata+0x16);
     fatdata.fsInfoLogicalSector = get16(bufdata+0x30);
     fatdata.logicalSectorBootAreaCopy = get16(bufdata+0x32);
     fatdata.totalLogicalSectors = get32(bufdata+0x20);
@@ -363,13 +362,23 @@ int getBootSector (void){
     printf("\n");
 #endif
 
-    int rootDirBytes = 32*fatdata.rootDirEntries;
-    int rootDirSectors = rootDirBytes / fatdata.bytesPerSector;
+    uint32_t rootDirBytes = 32*(uint32_t)fatdata.rootDirEntries;
+    uint32_t rootDirSectors = rootDirBytes / fatdata.bytesPerSector;
     if ((rootDirSectors * fatdata.bytesPerSector) < rootDirBytes)
         rootDirSectors++;
 
     fatdata.rootDirSectors = rootDirSectors;
-    fatdata.ssaIndex = fatdata.reservedSectors + fatdata.numberOfFATs*fatdata.logicalSectorsPerFat + rootDirSectors;
+    fatdata.rootDirStartSector = fatdata.partitionLogicalSector + (uint32_t)fatdata.reservedSectors + (uint32_t)fatdata.numberOfFATs*(uint32_t)fatdata.logicalSectorsPerFat;
+    fatdata.ssaIndex = fatdata.rootDirStartSector + rootDirSectors;
+
+//putstr("PAR:0x"); printhex16(fatdata.partitionLogicalSector);
+//putstr(" RES:0x"); printhex16(fatdata.reservedSectors);
+//putstr(" NOF:0x"); printhex8(fatdata.numberOfFATs);
+//putstr(" LSF:0x"); printhex16(fatdata.logicalSectorsPerFat);
+//putstr(" RDE:0x"); printhex16(fatdata.rootDirEntries);
+//putstr(" RDSS:0x"); printhex32(fatdata.rootDirStartSector);
+//putstr(" RDNS:0x"); printhex32(fatdata.rootDirSectors);
+//putcrlf();
 
 #if DEBUG
     printf("SSA Index:%d  RootDirSectors:%d\n",fatdata.ssaIndex,fatdata.rootDirSectors);
@@ -409,17 +418,17 @@ int getFsiSector (void){
 ////////////////////////////////////////////////////////////////////////////////
 void getNextCluster(handler_t *fh){
 
-    uint32_t fatSector = fatdata.partitionLogicalSector + fatdata.reservedSectors + (fh->currentCluster * 4) / fatdata.bytesPerSector;
+    uint32_t fatSector = fatdata.partitionLogicalSector + fatdata.reservedSectors + (fh->currentCluster * 2) / fatdata.bytesPerSector;
     readSector(fh->bufsector, fatSector);
 
-    uint16_t offset = (fh->currentCluster * 4) % fatdata.bytesPerSector;
+    uint16_t offset = (fh->currentCluster * 2) % fatdata.bytesPerSector;
 
 #if DEBUG
     printf("Current cluster(before):%08x\n",fh->currentCluster);
 #endif
 
-    fh->currentCluster = get32(fh->bufsector + offset);
-    if (fh->currentCluster >= 0x0ffffff0)
+    fh->currentCluster = get16(fh->bufsector + offset);
+    if (fh->currentCluster >= 0xfff0)
         fh->eof = 1;
 
 #if DEBUG
@@ -428,9 +437,9 @@ void getNextCluster(handler_t *fh){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-uint32_t getSectorFromCluster (uint32_t cluster){
+uint32_t getSectorFromCluster (uint16_t cluster){
 
-    return (cluster-2) * fatdata.sectorsPerCluster + fatdata.ssaIndex;
+    return ((uint32_t)cluster-2) * fatdata.sectorsPerCluster + fatdata.ssaIndex;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -442,7 +451,7 @@ int8_t openHandler(uint32_t start_cluster, uint16_t strlo, uint16_t strhi){
     printhex32(streamSize); putcrlf();
 #endif
 
-    if (start_cluster < fatdata.rootDir1stCluster)
+    if (start_cluster < 2)
         return -1;  // Invalid cluster
 
     for (uint8_t i = 0; i < MAXHANDLER; i++)
@@ -520,12 +529,10 @@ redo:
             }
 #if DEBUG
             putstr("READH ");
-            printhex32(fatdata.partitionLogicalSector);
-            putstr(" + ");
             printhex32(fh->currentLogicalSector);
             putcrlf();
 #endif
-            /*int res =*/ readSector(fh->bufsector, fatdata.partitionLogicalSector + fh->currentLogicalSector);
+            /*int res =*/ readSector(fh->bufsector, fh->currentLogicalSector);
 
             fh->currentByteInSector = 0;
             fh->currentSectorInCluster++;
@@ -577,6 +584,7 @@ int closeHandler(uint8_t handler){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#if 0
 int8_t openRootDir(void){
 #if DEBUG
     putstr("OpenRoot\r\n");
@@ -584,6 +592,7 @@ int8_t openRootDir(void){
 
     return openHandler(fatdata.rootDir1stCluster,0xFFFF,0xFFFF);
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 void prline(void) __naked{
@@ -612,22 +621,33 @@ _prlin1:
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-int listDir(int handler){
+int ch376_listdir(void){
 
     prline();
 
     int res = 1;
+    uint32_t sec = fatdata.rootDirStartSector;
+    uint16_t seccount = fatdata.rootDirSectors;
+    while (seccount){
 
-    while (res > 0){
+//        putstr("READ SEC:");
+//        printhex32(sec);
+//        putcrlf();
 
-        res = readHandler (fatdata.bufdir, handler, DIRENTRYSIZE);
-        if (res){
+        res = readSector(bufdata, sec);
+        if (res != MAXSECSIZE){
+            return -1;
+        }
 
-            direntry_t *d = (void *)&fatdata.bufdir;
+        int ofs = 0;
 
-            if ((d->fileAttrs & 0x0F) == 0x0F) continue;
-            if (!d->fileName[0]) continue;
-            if (d->fileName[0] == 0xE5) continue;
+        while (ofs < fatdata.bytesPerSector){
+
+	    direntry_t *d = (direntry_t*)(bufdata+ofs);
+
+            if ((d->fileAttrs & 0x0F) == 0x0F) goto nolist;
+            if (!d->fileName[0]) goto nolist;
+            if (d->fileName[0] == 0xE5) goto nolist;
 
             printAscii(d->fileName,8);
             putstr(".");
@@ -635,15 +655,18 @@ int listDir(int handler){
 #if DEBUG
             putstr("  ATTRs:0x");
             printhex8(d->fileAttrs);
-            uint32_t startClu = d->startClusterHi;
-            startClu <<= 16; startClu |= d->startClusterlo;
+            uint16_t startClu = d->startCluster;
             putstr("  St.Clu:0x");
-            printhex32(startClu);
+            printhex16(startClu);
 #endif
             putstr("    SZ:");
             printdec(d->fileSize,0);
             putcrlf();
+nolist:     ofs += DIRENTRYSIZE;
         }
+
+        ++sec;
+        --seccount;
     }
 
     prline();
@@ -786,6 +809,7 @@ int check_fname(const char *fname, char *resname){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#if 0
 int findFileInDir(uint8_t handler, const char *fname){
 
     char namebuf[14];
@@ -815,11 +839,11 @@ int findFileInDir(uint8_t handler, const char *fname){
                 putstr("  ATTRs:0x");
                 printhex8(d->fileAttrs);
 #endif
-                uint32_t startClu = d->startClusterHi;
-                startClu <<= 16; startClu |= d->startClusterlo;
+                uint16_t startClu = d->startCluster;
+
 #if DEBUG
                 putstr("  St.Clu:0x");
-                printhex32(startClu);
+                printhex16(d->startCluster);
                 putstr("  SZ:");
                 printdec(d->fileSize,0);
                 putcrlf();
@@ -838,6 +862,77 @@ int findFileInDir(uint8_t handler, const char *fname){
 
     return 0;
 }
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
+int findFileInRootDir(const char *fname){
+
+    char namebuf[14];
+    if (check_fname(fname,namebuf) < 0) return 0;
+
+    int res = 1;
+    uint32_t sec = fatdata.rootDirStartSector;
+    uint16_t seccount = fatdata.rootDirSectors;
+
+    while (seccount){
+
+    //    putstr("READ SEC:");
+    //    printhex32(sec);
+    //    putcrlf();
+
+        res = readSector(bufdata, sec);
+        if (res != MAXSECSIZE){
+            return -1;
+        }
+
+        int ofs = 0;
+
+        while (ofs < fatdata.bytesPerSector){
+
+	    direntry_t *d = (direntry_t*)(bufdata+ofs);
+
+            if ((d->fileAttrs & 0x0F) == 0x0F) goto nolist;
+            if (!d->fileName[0]) goto nolist;
+            if (d->fileName[0] == 0xE5) goto nolist;
+
+            if (!memcmp(d->fileName,namebuf,11)){
+
+#if DEBUG
+                printAscii(d->fileName,8);
+                putstr(".");
+                printAscii(d->fileExt,3);
+                putstr("FOUND\r\n");
+                putstr("  ATTRs:0x");
+                printhex8(d->fileAttrs);
+#endif
+                uint16_t startClu = d->startCluster;
+
+#if DEBUG
+                putstr("  St.Clu:0x");
+                printhex16(d->startCluster);
+                putstr("  SZ:");
+                printdec(d->fileSize,0);
+                putcrlf();
+#endif
+                fatdata.fi_fileAttrs = d->fileAttrs;
+               // fatdata.fi_fileCreateDate = d->fileCreateDate;
+               // fatdata.fi_fileCreateTime = d->fileCreateTime;
+               // fatdata.fi_fileModDate = d->fileModDate;
+               // fatdata.fi_fileModTime = d->fileModTime;
+                fatdata.fi_fileSize = d->fileSize;
+                fatdata.fi_startCluster = startClu;
+                return 1;
+            }
+
+nolist:     ofs += DIRENTRYSIZE;
+        }
+
+        ++sec;
+        --seccount;
+    }
+
+    return 0;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 int8_t dumpFile(uint8_t *bufread, uint8_t handler, int bufsize, uint8_t *dest){
@@ -848,7 +943,7 @@ int8_t dumpFile(uint8_t *bufread, uint8_t handler, int bufsize, uint8_t *dest){
     while (res > 0){
 
         res = readHandler (bufread, handler, bufsize);
-	
+
         if (res >= 0){
 
             for (int i = 0; i < res; i++){
@@ -865,14 +960,10 @@ int8_t dumpFile(uint8_t *bufread, uint8_t handler, int bufsize, uint8_t *dest){
 ////////////////////////////////////////////////////////////////////////////////
 int8_t ch376_openHandler(char *name) __sdcccall(0){
 
-    int8_t nHandler = openRootDir();
-    if (nHandler > 0){
+    int res = findFileInRootDir(name);
 
-	int res = findFileInDir(nHandler, name);
-        closeHandler(nHandler);
-        if (res){
-            return openHandler(fatdata.fi_startCluster, fatdata.fi_fileSize & 0xffff,fatdata.fi_fileSize >> 16);
-        }
+    if (res){
+        return openHandler(fatdata.fi_startCluster, fatdata.fi_fileSize & 0xffff,fatdata.fi_fileSize >> 16);
     }
 
     return -1;
@@ -900,8 +991,14 @@ int8_t initFatFS(void) {
     memset(&fatdata,0,sizeof(fatfs_t));
 
     int8_t res = getMBRSector();
-
+    if (res < 0){
+        //putstr("MBR\r\n");
+        return res;
+    }
     res = getBootSector();
+    //if (res < 0)
+    //    putstr("BOOT\r\n");
+  
 #if 0
     if (res < 0) goto error;
 
@@ -910,16 +1007,6 @@ int8_t initFatFS(void) {
 error:
 #endif
     return res;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void ch376_listdir(void) {
-
-    int8_t nHandler = openRootDir();
-    if (nHandler > 0){
-        listDir(nHandler);
-        closeHandler(nHandler);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -948,10 +1035,8 @@ void ch376_scan_fat(void){
 
         b = p[offset];
         b |= p[offset+1];
-        b |= p[offset+2];
-        b |= p[offset+3];
 
-        offset += 4;
+        offset += 2;
 
         if (!b)
             ++freeBlocks;
@@ -961,7 +1046,6 @@ void ch376_scan_fat(void){
     putcrlf();
 }
 #endif
-
 ////////////////////////////////////////////////////////////////////////////////
 void startfatfs (void){
 

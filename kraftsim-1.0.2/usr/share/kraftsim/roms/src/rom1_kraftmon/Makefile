@@ -6,8 +6,8 @@ spi.rel:			spi.s kraft80.inc
 ch376.rel:			ch376.s ch376.inc
 				sdasz80 -o -l -s -g ch376.s
 
-fat32.rel:			fat32.c fat32.h
-				sdcc -c -V --disable-warning 85 -mz80 --opt-code-size --std-sdcc99 fat32.c
+fat16.rel:			fat16.c fat16.h
+				sdcc -c -V --disable-warning 85 -mz80 --opt-code-size --std-sdcc99 fat16.c
 
 crt0-kraft80-v2.rel:		crt0-kraft80-v2.s kraft80.inc
 				sdasz80 -o -l -s -g crt0-kraft80-v2.s
@@ -15,8 +15,8 @@ crt0-kraft80-v2.rel:		crt0-kraft80-v2.s kraft80.inc
 kraftmon.rel:			kraftmon.s kraft80.inc
 				sdasz80 -o -l -s -g kraftmon.s
 
-kraftbios-v2.ihx:		crt0-kraft80-v2.rel kraftmon.rel spi.rel ch376.rel fat32.rel
-				sdcc -mz80 --no-std-crt0 --code-loc 0x0040 --data-loc 0xf800 crt0-kraft80-v2.rel kraftmon.rel spi.rel ch376.rel fat32.rel
+kraftbios-v2.ihx:		crt0-kraft80-v2.rel kraftmon.rel spi.rel ch376.rel fat16.rel
+				sdcc -mz80 --no-std-crt0 --code-loc 0x0040 --data-loc 0xf800 crt0-kraft80-v2.rel kraftmon.rel spi.rel ch376.rel fat16.rel
 				mv crt0-kraft80-v2.ihx rom1-kraftmon.ihx
 				cp rom1-kraftmon.ihx ../..
 
