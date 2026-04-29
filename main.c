@@ -25,6 +25,10 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+#define DEFAULT_MMAP    1
+
+////////////////////////////////////////////////////////////////////////////////
+
 #define RUN             1
 #define DEBUGPROMPT     0
 
@@ -350,7 +354,11 @@ void print_help(){
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.\n");
+#if DEFAULT_MMAP
+    printf("    '-mmap' defines the memory map 0 or 1 (default 1). Some ROMs may require 'mmap 0'.\n");
+#else
     printf("    '-mmap' defines the memory map 0 or 1 (default 0). Some ROMs may require 'mmap 1'.\n");
+#endif
     printf("    '-panel' shows the LCD/LEDs/Buttons panel on start.\n");
     printf("        (You can also click on the main window to show the panel if hidden).\n");
 
@@ -364,13 +372,22 @@ int main (int argc, char *argv[]){
     char filename[256] = {0};
     char disk_filename[256] = {0};
 
+#if DEFAULT_MMAP
+    int romSZ = ROMSZ_MODE1;
+    int ramBASE = RAMBASE_MODE1;
+    int ramSZ = RAMSZ_MODE1;
+    int appBase = 0x2000;
+    int mmap = 1;
+#else
     int romSZ = ROMSZ_MODE0;
     int ramBASE = RAMBASE_MODE0;
     int ramSZ = RAMSZ_MODE0;
     int appBase = 0x4200;
+    int mmap = 0;
+#endif
+
 
     int loaded_rom = 0;
-    int mmap = 0;
 
     int show_panel = 0;
 
@@ -396,13 +413,23 @@ int main (int argc, char *argv[]){
 
         case COD_MMAP:
             //if (optarg)
-                if (optarg[0] == '1'){
-                    romSZ = ROMSZ_MODE1;
-                    ramBASE = RAMBASE_MODE1;
-                    ramSZ = RAMSZ_MODE1;
-                    appBase = 0x2000;
-                    mmap = 1;
-                }
+#if DEFAULT_MMAP
+            if (optarg[0] == '0'){
+                romSZ = ROMSZ_MODE0;
+                ramBASE = RAMBASE_MODE0;
+                ramSZ = RAMSZ_MODE0;
+                appBase = 0x4200;
+                mmap = 0;
+            }
+#else
+            if (optarg[0] == '1'){
+                romSZ = ROMSZ_MODE1;
+                ramBASE = RAMBASE_MODE1;
+                ramSZ = RAMSZ_MODE1;
+                appBase = 0x2000;
+                mmap = 1;
+            }
+#endif
             break;
         }
     }
@@ -466,7 +493,7 @@ int main (int argc, char *argv[]){
         case COD_ROM2LOAD_IHX:
 
             if (mmap){
-                printf("ROM2 not allowed in mmap 1.\n");
+                printf("ROM2 not allowed in mmap 1. Select mmap 0.\n");
                 return 0;
             }
 
