@@ -256,7 +256,8 @@ typedef enum {
     COD_RAMLOAD_BIN = 5,
     COD_MMAP = 6,
     COD_PANEL = 7,
-    COD_HELP = 8
+    COD_DISKFNAME = 8,
+    COD_HELP = 9
 } cod_option_t;
 
 struct option longopts[] = {
@@ -282,13 +283,19 @@ struct option longopts[] = {
             "rom1",                 //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_ROM1LOAD_IHX,           //int         val;
+            COD_ROM1LOAD_IHX,       //int         val;
         },
         {
             "rom2",                 //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_ROM2LOAD_IHX,           //int         val;
+            COD_ROM2LOAD_IHX,       //int         val;
+        },
+        {
+            "disk",                 //const char *name;
+            required_argument,      //int         has_arg;
+            0,                      //int        *flag;
+            COD_DISKFNAME,          //int         val;
         },
         {
             "version",              //const char *name;
@@ -331,7 +338,7 @@ struct option longopts[] = {
 ////////////////////////////////////////////////////////////////////////////////
 void print_version(){
 
-    printf("\nKraftSim v1.0.2\n(c)2026-04-19 ARMCoderBR\n\n");
+    printf("\nKraftSim v1.0.3\n(c)2026-04-28 ARMCoderBR\n\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -339,7 +346,7 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-mmap n] [-panel]\n");
+    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-disk <imgdsk.vol>] [-mmap n] [-panel]\n");
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.\n");
@@ -355,6 +362,7 @@ int main (int argc, char *argv[]){
     int res;
     int longindex;
     char filename[256] = {0};
+    char disk_filename[256] = {0};
 
     int romSZ = ROMSZ_MODE0;
     int ramBASE = RAMBASE_MODE0;
@@ -387,7 +395,7 @@ int main (int argc, char *argv[]){
             return 0;
 
         case COD_MMAP:
-            if (optarg)
+            //if (optarg)
                 if (optarg[0] == '1'){
                     romSZ = ROMSZ_MODE1;
                     ramBASE = RAMBASE_MODE1;
@@ -423,36 +431,36 @@ int main (int argc, char *argv[]){
 
         case COD_RAMLOAD_IHX:
 
-            if (optarg){
+            //if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
                 res = memload_ihx(maindata.ram, ramBASE, ramSZ, filename, 0x0000);
                 if (res < 0){
                     return -1;
                 }
-            }
+            //}
             break;
 
         case COD_RAMLOAD_BIN:
 
-            if (optarg){
+            //if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
                 res = memload_bin(maindata.ram, ramBASE, ramSZ, filename, appBase);
                 if (res < 0){
                     return -1;
                 }
-            }
+            //}
             break;
 
         case COD_ROM1LOAD_IHX:
 
-            if (optarg){
+            //if (optarg){
                 loaded_rom = 1;
                 strncpy(filename,optarg,sizeof(filename));
                 res = memload_ihx(maindata.rom, 0, romSZ, filename, 0x0000);
                 if (res < 0){
                     return -1;
                 }
-            }
+            //}
             break;
 
         case COD_ROM2LOAD_IHX:
@@ -462,13 +470,20 @@ int main (int argc, char *argv[]){
                 return 0;
             }
 
-            if (optarg){
+            //if (optarg){
                 strncpy(filename,optarg,sizeof(filename));
                 res = memload_ihx(maindata.rom, 0, romSZ, filename, 0x2000);
                 if (res < 0){
                     return -1;
                 }
-            }
+            //}
+            break;
+
+        case COD_DISKFNAME:
+
+            //if (optarg){
+                strncpy(disk_filename,optarg,sizeof(disk_filename));
+            //}
             break;
 
         case COD_PANEL:
@@ -493,7 +508,7 @@ int main (int argc, char *argv[]){
 
     maindata.panel = panel_init(show_panel);
     maindata.vga = vga_init(maindata.sdl->renderer_main);
-    maindata.ios = ios_init(&maindata);
+    maindata.ios = ios_init(&maindata,disk_filename);
 
     initscr();
 

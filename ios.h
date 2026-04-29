@@ -56,7 +56,7 @@ void new_hw_run(ios_t *ios);
 int default_irq_sample(ios_t *ios);
 int new_irq_sample(ios_t *ios);
 
-ios_t *ios_init(void *new_maindata);
+ios_t *ios_init(void *main, char *disk_filename);
 void ios_close(ios_t *ios);
 
 #endif /* IOS_H_ */

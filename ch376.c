@@ -176,12 +176,16 @@ void ch376_exec(ch376_t *p){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ch376_t *ch376_init(void){
+ch376_t *ch376_init(char *filename){
 
     ch376_t *p = malloc(sizeof(ch376_t));
 
     p->spistatus = STAT_INTR;
-    p->fvol = fopen("disk.vol","r");
+
+    if (filename[0])
+        p->fvol = fopen(filename,"r");
+    else
+        p->fvol = 0;
 
     return p;
 }
@@ -242,6 +246,7 @@ uint8_t ch376_in(ch376_t *p, uint8_t port){
 ////////////////////////////////////////////////////////////////////////////////
 void ch376_end(ch376_t *p){
 
-    fclose(p->fvol);
+    if (p->fvol)
+        fclose(p->fvol);
     free(p);
 }

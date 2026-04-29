@@ -29,7 +29,7 @@ typedef struct {
     FILE *fvol;
 } ch376_t;
 
-ch376_t *ch376_init(void);
+ch376_t *ch376_init(char *filename);
 void ch376_out(ch376_t *p, uint8_t port, uint8_t value);
 uint8_t ch376_in(ch376_t *p, uint8_t port);
 void ch376_end(ch376_t *p);

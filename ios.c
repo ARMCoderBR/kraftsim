@@ -567,7 +567,7 @@ int new_irq_sample(ios_t *ios){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ios_t *ios_init(void *main){
+ios_t *ios_init(void *main, char *disk_filename){
 
     ios_t *ios = malloc(sizeof(ios_t));
     if (!ios) return NULL;
@@ -584,7 +584,7 @@ ios_t *ios_init(void *main){
     ios->presc = 0;
 
     ios->psg = psg_init();
-    ios->ch376 = ch376_init();
+    ios->ch376 = ch376_init(disk_filename);
 
     ios->ps2_head = ios->ps2_tail = ios->ps2_qty = 0;
 
