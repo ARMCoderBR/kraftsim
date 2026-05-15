@@ -39,9 +39,12 @@ void ch376_end(ch376_t *p);
 #define CMD_SET_USB_MODE          0x15    //Switch between different USB modes.
 #define CMD_GET_STATUS            0x22    //Get interrupt status after an interrupt was triggered.
 #define CMD_RD_USB_DATA0          0x27    //Read data from interrupt port, or USB receive buffer.
+#define CMD_WR_USB_DATA           0x2c    //Write data to USB send buffer.
 #define CMD_DISK_MOUNT            0x31    //Mount detected USB drive.
 #define CMD_DISK_READ             0x54    //Reads Logical Sector(s).
 #define CMD_DISK_RD_GO            0x55    //Requests the next 64-byte chunk for the requested Sector(s).
+#define CMD_DISK_WRITE            0x56    //Writes Logical Sector(s).
+#define CMD_DISK_WR_GO            0x57    //Commits the next 64-byte chunk to the requested Sector(s).
 
 /////
 
