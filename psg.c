@@ -203,7 +203,7 @@ void psg_run(psg_t *p){
         if (toneADiv){
 
             p->toneACount+=2;
-            if (p->toneACount == toneADiv){
+            if (p->toneACount >= toneADiv){
                 p->toneACount = 0;
                 p->chanAOut ^= 1;
             }
@@ -216,7 +216,7 @@ void psg_run(psg_t *p){
         if (toneBDiv){
 
             p->toneBCount+=2;
-            if (p->toneBCount == toneBDiv){
+            if (p->toneBCount >= toneBDiv){
                 p->toneBCount = 0;
                 p->chanBOut ^= 1;
             }
@@ -229,7 +229,7 @@ void psg_run(psg_t *p){
         if (toneCDiv){
 
             p->toneCCount+=2;
-            if (p->toneCCount == toneCDiv){
+            if (p->toneCCount >= toneCDiv){
                 p->toneCCount = 0;
                 p->chanCOut ^= 1;
             }
