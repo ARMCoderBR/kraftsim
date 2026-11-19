@@ -61,6 +61,10 @@ void new_out_callback (ios_t *ios, uint8_t port, uint8_t value){
 
         case PORTSPICTL:
         case PORTSPIDATA:
+            if (port == PORTSPICTL)
+                printf("\r\nCTL(%02x)\r\n",value);
+            else
+                printf("\r\nDATA(%02x)\r\n",value);
             ch376_out(ios->ch376, port, value);
             break;
 

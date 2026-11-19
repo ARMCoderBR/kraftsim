@@ -95,6 +95,8 @@ void ch376_exec(ch376_t *p){
 
     if (!p->wptr) return;
 
+    printf("\r\nCMD:%02x\r\n",p->wbuf[0]);
+
     switch(p->wbuf[0]){
 
         case CMD_GET_IC_VER:
@@ -171,6 +173,10 @@ void ch376_exec(ch376_t *p){
             else
                 p->nextintr = ANSW_USB_INT_SUCCESS;
             p->spistatus &= ~STAT_INTR;
+            break;
+
+        default:
+            printf("\r\n???\r\n");
             break;
     }
 }
