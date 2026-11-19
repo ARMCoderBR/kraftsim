@@ -388,6 +388,9 @@ void proc_keydown(ios_t *ios, int asccode){
             break;
         case SDLK_F9:
             ios->buttons_state &= ~0b100000000;  // Reset
+
+            printf("\r\n========================\r\n");
+
             z80_reset(&maindata->z);
             leds_reset(maindata->panel->leds);
             psg_reset(ios->psg);
@@ -571,7 +574,7 @@ int new_irq_sample(ios_t *ios){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-ios_t *ios_init(void *main, char *disk_filename){
+ios_t *ios_init(void *main, char *basedir_name){
 
     ios_t *ios = malloc(sizeof(ios_t));
     if (!ios) return NULL;
@@ -588,7 +591,7 @@ ios_t *ios_init(void *main, char *disk_filename){
     ios->presc = 0;
 
     ios->psg = psg_init();
-    ios->ch376 = ch376_init(disk_filename);
+    ios->ch376 = ch376_init(basedir_name);
 
     ios->ps2_head = ios->ps2_tail = ios->ps2_qty = 0;
 

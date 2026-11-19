@@ -21,12 +21,10 @@ typedef struct {
     uint8_t wptr;
     uint8_t rptr;
     uint8_t nextintr;
-    uint8_t sec_chunk;
-    uint32_t secnum;
     uint8_t wbuf[SPIBUFSZ];
     uint8_t rbuf[SPIBUFSZ];
     uint8_t backrbuf[SPIBUFSZ];
-    FILE *fvol;
+    char basedir_name[256];
 } ch376_t;
 
 ch376_t *ch376_init(char *filename);

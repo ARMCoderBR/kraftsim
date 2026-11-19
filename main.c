@@ -260,7 +260,7 @@ typedef enum {
     COD_RAMLOAD_BIN = 5,
     COD_MMAP = 6,
     COD_PANEL = 7,
-    COD_DISKFNAME = 8,
+    COD_DIRNAME = 8,
     COD_HELP = 9
 } cod_option_t;
 
@@ -296,10 +296,10 @@ struct option longopts[] = {
             COD_ROM2LOAD_IHX,       //int         val;
         },
         {
-            "disk",                 //const char *name;
+            "dir",                  //const char *name;
             required_argument,      //int         has_arg;
             0,                      //int        *flag;
-            COD_DISKFNAME,          //int         val;
+            COD_DIRNAME,            //int         val;
         },
         {
             "version",              //const char *name;
@@ -342,7 +342,7 @@ struct option longopts[] = {
 ////////////////////////////////////////////////////////////////////////////////
 void print_version(){
 
-    printf("\nKraftSim v1.0.4\n(c)2026-08-23 ARMCoderBR\n\n");
+    printf("\nKraftSim v1.1.0\n(c)2026-11-19 ARMCoderBR\n\n");
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -350,7 +350,7 @@ void print_help(){
 
     print_version();
     printf("Use:\n");
-    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-disk <imgdsk.vol>] [-mmap n] [-panel]\n");
+    printf("  kraftsim -rom1 <imgfile.ihx> [-rom2 <imgfile.ihx>] [-loadram <imgfile.bin>] [-dir <basedir>] [-mmap n] [-panel]\n");
     printf("    At least one 'rom1' image must be loaded and must start at 0x0000.\n");
     printf("    Images cannot be loaded to 'rom2' when using 'mmap 1'.\n");
     printf("    Images loaded to RAM only make sense if the program in 'rom1' makes any use of it.\n");
@@ -370,7 +370,7 @@ int main (int argc, char *argv[]){
     int res;
     int longindex;
     char filename[256] = {0};
-    char disk_filename[256] = {0};
+    char basedir_name[256] = {0};
 
 #if DEFAULT_MMAP
     int romSZ = ROMSZ_MODE1;
@@ -506,10 +506,10 @@ int main (int argc, char *argv[]){
             //}
             break;
 
-        case COD_DISKFNAME:
+        case COD_DIRNAME:
 
             //if (optarg){
-                strncpy(disk_filename,optarg,sizeof(disk_filename));
+                strncpy(basedir_name,optarg,sizeof(basedir_name));
             //}
             break;
 
@@ -524,6 +524,13 @@ int main (int argc, char *argv[]){
         return 0;
     }
 
+
+    if (basedir_name[0])
+        if (chdir(basedir_name) < 0){
+            printf("Supplied directory path not found. Aborting.\n");
+            return -1;
+        }
+
     maindata.width = MAIN_WIDTH;
     maindata.height = MAIN_HEIGHT;
 
@@ -535,7 +542,7 @@ int main (int argc, char *argv[]){
 
     maindata.panel = panel_init(show_panel);
     maindata.vga = vga_init(maindata.sdl->renderer_main);
-    maindata.ios = ios_init(&maindata,disk_filename);
+    maindata.ios = ios_init(&maindata,basedir_name);
 
     initscr();
 
